@@ -22,4 +22,4 @@ if __name__ == "__main__":
 
     # Wasmバイナリを読み込んで実行する
     data = WasmLoader(wasm).load()
-    WasmRuntime(data)
+    WasmRuntime(data).start()

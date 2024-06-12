@@ -22,14 +22,18 @@ class WasmRuntime:
         self.export_section = [x for x in data if isinstance(x, ExportSection)]
         self.code_section = [x for x in data if isinstance(x, CodeSection)]
 
-        # エントリーポイントを取得する
-        start = [fn for fn in self.export_section if fn.field == b"_start"][0]
+    def start(self, field: bytes = b"_start", param: list[int] = []):
+        """エントリーポイントを実行する"""
+
+        # エントリーポイントの関数を取得する
+        start = [fn for fn in self.export_section if fn.field == field][0]
         fn, _ = self.get_function(start.index)
 
         # ローカル変数を初期化して実行する
         locals_param = [0 for _ in fn.local]
-        stack = self.run(fn.data.copy(), locals=[*locals_param])
+        stack = self.run(fn.data.copy(), locals=[*param, *locals_param])
         self.logger.logging.info(f"stack: {stack}")
+        return stack
 
     def get_function(self, index: int) -> tuple[CodeSection, TypeSection]:
         """関数のインデックスからCode SectionとType Sectionを取得する"""

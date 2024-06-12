@@ -1,4 +1,7 @@
 {
+    "extensions.ignoreRecommendations": false,
+    "python.analysis.typeCheckingMode": "basic",
+    "python.analysis.diagnosticMode": "workspace",
     "[python]": {
         "editor.codeActionsOnSave": {
             "source.organizeImports": "explicit",
