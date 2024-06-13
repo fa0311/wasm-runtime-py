@@ -1,34 +1,50 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from tools.byte import ByteReader
+from wasm.type import NumericType
+
+
+class SectionBase:
+    """Sectionのデータ構造"""
 
 
 @dataclass
-class TypeSection:
+class TypeSection(SectionBase):
     """Type Sectionのデータ構造"""
 
-    form: int
-    params: list[int]
-    returns: list[int]
+    form: int = field(metadata={"description": "関数の形式"})
+    params: list[int] = field(metadata={"description": "引数の型"})
+    returns: list[int] = field(metadata={"description": "戻り値の型"})
 
 
 @dataclass
-class FunctionSection:
+class FunctionSection(SectionBase):
     """Function Sectionのデータ構造"""
 
-    type: int
+    type: int = field(metadata={"description": "関数の型"})
 
 
 @dataclass
-class CodeSection:
+class CodeInstruction:
+    """Code Sectionの命令セット"""
+
+    opcode: int = field(metadata={"description": "命令コード"})
+    args: list[NumericType] = field(metadata={"description": "命令の引数"})
+
+    def __str__(self):
+        return f"CodeInstruction(opcode={self.opcode:02x}, args={self.args})"
+
+
+@dataclass
+class CodeSection(SectionBase):
     """Code Sectionのデータ構造"""
 
-    data: ByteReader
-    local: list[int]
+    data: list[CodeInstruction] = field(metadata={"description": "命令セット"})
+    local: list[int] = field(metadata={"description": "ローカル変数の型"})
 
 
 @dataclass
-class ExportSection:
+class ExportSection(SectionBase):
     """Export Sectionのデータ構造"""
 
     field: ByteReader

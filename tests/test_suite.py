@@ -11,7 +11,6 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 sys.path.append(str(Path(__file__).parent.parent / "src"))
 
-from src.tools.formatter import ColorFormatter
 from src.wasm.loader import WasmLoader
 from src.wasm.runtime import WasmRuntime
 
@@ -20,13 +19,14 @@ class TestSuite(unittest.TestCase):
     test_suite_data: dict[str, tuple[list, list[dict]]] = {}
 
     def setUp(self):
+        self.__set_logger()
         if not os.path.exists(".cache"):
             self.__set_wasm2json()
         if not self.test_suite_data:
             self.__set_test_suite_data()
 
-        handler = logging.StreamHandler()
-        handler.setFormatter(ColorFormatter())
+    def __set_logger(self):
+        handler = logging.FileHandler("latest.log", mode="w", encoding="utf-8")
         logging.basicConfig(
             level=logging.DEBUG,
             format="%(message)s",

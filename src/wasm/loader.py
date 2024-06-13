@@ -2,7 +2,21 @@ import logging
 
 from tools.byte import ByteReader
 from tools.logger import NestedLogger
-from wasm.struct import CodeSection, ExportSection, FunctionSection, TypeSection
+from wasm.runtime import CodeSectionHelper
+from wasm.struct import (
+    CodeInstruction,
+    CodeSection,
+    ExportSection,
+    FunctionSection,
+    SectionBase,
+    TypeSection,
+)
+from wasm.type import F32, F64, I32, I64, LEB128, NumericType
+
+
+# 形の解決を行う
+def type_resolver(data: bytes) -> NumericType:
+    raise Exception("invalid type")
 
 
 class WasmLoader:
@@ -14,7 +28,7 @@ class WasmLoader:
         self.data = ByteReader(data)
 
     @logger.logger
-    def load(self) -> list:
+    def load(self) -> list[SectionBase]:
         """Wasmバイナリを読み込んで解析する"""
 
         # マジックナンバーとバージョン番号を確認
@@ -55,7 +69,7 @@ class WasmLoader:
         self.logger.debug(f"type count: {type_count}")
 
         # Type Sectionのデータを読み込む
-        res = []
+        res: list[TypeSection] = []
         for _ in range(type_count):
             form = data.read_byte()
             param_count = data.read_leb128()
@@ -77,7 +91,7 @@ class WasmLoader:
         self.logger.debug(f"function count: {function_count}")
 
         # Function Sectionのデータを読み込む
-        res = []
+        res: list[FunctionSection] = []
         for _ in range(function_count):
             type = data.read_leb128()
             self.logger.debug(f"type: {type}")
@@ -87,7 +101,7 @@ class WasmLoader:
         return res
 
     @logger.logger
-    def code_section(self, data: ByteReader) -> list[ByteReader]:
+    def code_section(self, data: ByteReader) -> list[CodeSection]:
         """Code Sectionを読み込む"""
 
         # Code Sectionの数を読み込む
@@ -95,19 +109,50 @@ class WasmLoader:
         self.logger.debug(f"code count: {code_count}")
 
         # Code Sectionのデータを読み込む
-        res = []
+        res: list[CodeSection] = []
         for _ in range(code_count):
             body_size = data.read_leb128()
             code = data.read_bytes(body_size)
             local = self.code_section_local(code)
+            instructions = self.code_section_instructions(code)
             self.logger.debug(f"body size: {body_size}")
-            res.append(CodeSection(data=code, local=local))
+            res.append(CodeSection(data=instructions, local=local))
 
         # 解析結果を返す
         return res
 
     @logger.logger
-    def code_section_local(self, data: ByteReader) -> list:
+    def code_section_instructions(self, data: ByteReader) -> list[CodeInstruction]:
+        res: list[CodeInstruction] = []
+        while data.has_next():
+            opcode = data.read_byte()
+            self.logger.debug(f"opcode: {opcode}")
+            fn = CodeSectionHelper.mapped[opcode]
+
+            annotations: list[type] = [e for e in fn.__annotations__.values()]
+
+            args: list = []
+
+            for annotation in annotations:
+                if annotation == LEB128:
+                    args.append(LEB128(data.read_leb128()))
+                elif annotation == int:
+                    args.append(data.read_byte())
+                elif annotation == I32:
+                    args.append(I32(data.read_leb128()))
+                elif annotation == I64:
+                    args.append(I64(data.read_leb128()))
+                elif annotation == F32:
+                    args.append(F32(data.read_f32()))
+                elif annotation == F64:
+                    args.append(F64(data.read_f64()))
+                else:
+                    raise Exception("invalid type")
+            res.append(CodeInstruction(opcode=opcode, args=args))
+        return res
+
+    @logger.logger
+    def code_section_local(self, data: ByteReader) -> list[int]:
         """Code Sectionのローカル変数を読み込む"""
 
         # ローカル変数の数を読み込む
@@ -115,7 +160,7 @@ class WasmLoader:
         self.logger.debug(f"local count: {count}")
 
         # ローカル変数のデータを読み込む
-        local = []
+        local: list[int] = []
         for _ in range(count):
             local_count = data.read_leb128()
             local_type = data.read_byte()
@@ -134,7 +179,7 @@ class WasmLoader:
         self.logger.debug(f"export count: {export_count}")
 
         # Export Sectionのデータを読み込む
-        res = []
+        res: list[ExportSection] = []
         for _ in range(export_count):
             field_len = data.read_leb128()
             field = data.read_bytes(field_len)
