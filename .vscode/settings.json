@@ -17,5 +17,5 @@
     ],
     "python.testing.pytestEnabled": false,
     "python.testing.cwd": "${workspaceFolder}",
-    "python.testing.unittestEnabled": true
+    "python.testing.unittestEnabled": true,
 }
