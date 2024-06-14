@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 
 from tools.byte import ByteReader
+from wasm.spec import CodeSectionSpec
 from wasm.type import NumericType
 
 
@@ -32,7 +33,13 @@ class CodeInstruction:
     args: list[NumericType] = field(metadata={"description": "命令の引数"})
 
     def __str__(self):
-        return f"CodeInstruction(opcode={self.opcode:02x}, args={self.args})"
+        name = CodeSectionSpec.mapped(self.opcode).__name__
+        return (
+            f"CodeInstruction(opcode={self.opcode:02X}, name={name}, args={self.args})"
+        )
+
+    def __repr__(self):
+        return str(self)
 
 
 @dataclass

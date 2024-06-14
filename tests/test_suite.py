@@ -13,17 +13,14 @@ sys.path.append(str(Path(__file__).parent.parent / "src"))
 
 from src.wasm.loader import WasmLoader
 from src.wasm.runtime import WasmRuntime
+from src.wasm.type import F32, F64, I32, I64
 
 
 class TestSuite(unittest.TestCase):
-    test_suite_data: dict[str, tuple[list, list[dict]]] = {}
-
     def setUp(self):
         self.__set_logger()
         if not os.path.exists(".cache"):
             self.__set_wasm2json()
-        if not self.test_suite_data:
-            self.__set_test_suite_data()
 
     def __set_logger(self):
         handler = logging.FileHandler("latest.log", mode="w", encoding="utf-8")
@@ -47,58 +44,81 @@ class TestSuite(unittest.TestCase):
                 ],
             )
 
-    def __set_test_suite_data(self):
-        filelist = glob.glob(".cache/*/*.json")
-        for path in filelist:
-            name = pathlib.Path(path).stem
+    def __get_test_suite_data(self, name: str):
+        path = pathlib.Path(f".cache/{name}/{name}.json")
 
-            with open(path, "rb") as f:
-                source = json.load(f)
+        with open(path, "rb") as f:
+            source = json.load(f)
 
-            for cmd in source["commands"]:
-                if cmd["type"] == "module":
-                    with open(f".cache/{name}/{cmd['filename']}", "rb") as f:
-                        wasm = f.read()
-                    self.test_suite_data[name] = (WasmLoader(wasm).load(), [])
-                elif cmd["type"] == "assert_return":
-                    self.test_suite_data[name][1].append(cmd)
+        res: list[tuple[bytes, list[dict]]] = []
+        for cmd in source["commands"]:
+            if cmd["type"] == "module":
+                with open(f".cache/{name}/{cmd['filename']}", "rb") as f:
+                    wasm = f.read()
+                    res.append((wasm, []))
+            elif cmd["type"] == "assert_return":
+                res[-1][1].append(cmd)
+
+        return res
 
     def __test_file(self, name: str):
-        case = self.test_suite_data[name]
-        for i in range(len(case[1])):
-            self.__test_case(name, i)
+        case = self.__get_test_suite_data(name)
+        for i in range(len(case)):
+            with self.subTest(name=name, index=i):
+                self.__test_index(name, i)
 
-    def __test_case(self, name: str, index: int):
-        cmd = self.test_suite_data[name][1][index]
-        data = self.test_suite_data[name][0]
+    def __test_index(self, name: str, index: int):
+        d, cmds = self.__get_test_suite_data(name)[index]
+        data = WasmRuntime(WasmLoader(d).load())
 
-        with self.subTest(name=name, case=index):
+        for case, cmd in enumerate(cmds):
+            param = {"name": name, "index": f"{index:04d}", "case": f"{case:04d}"}
+            self.__test_run(data, cmd, param)
+
+    def __test_index_case(self, name: str, index: int, case: int):
+        d, cmds = self.__get_test_suite_data(name)[index]
+        data = WasmRuntime(WasmLoader(d).load())
+        param = {"name": name, "index": f"{index:04d}", "case": f"{case:04d}"}
+        self.__test_run(data, cmds[case], param)
+
+    def __test_run(self, data: WasmRuntime, cmd: dict, param: dict[str, str]):
+        with self.subTest(**param):
             field = bytes(cmd["action"]["field"], "utf-8")
-            param = cmd["action"]["args"]
             type_map = {
-                "i32": int,
-                "i64": int,
-                "f32": float,
-                "f64": float,
+                "i32": lambda x: I32(int(x)),
+                "i64": lambda x: I64(int(x)),
+                "f32": lambda x: F32(float(x)),
+                "f64": lambda x: F64(float(x)),
             }
-            res = WasmRuntime(data).start(
-                field=field,
-                param=[type_map[value["type"]](value["value"]) for value in param],
-            )
+            args = cmd["action"]["args"]
             expect = cmd["expected"]
+            p = [type_map[value["type"]](value["value"]) for value in args]
+            assert data is not None
+            runtime = data.start(
+                field=field,
+                param=p,
+            )
+            res = runtime.run()
             for i, (r, e) in enumerate(zip(res, expect)):
-                if r != type_map[e["type"]](e["value"]):
-                    raise AssertionError(
-                        f"assert_return failed: {r} != {e['value']} at {i}"
-                    )
-
-    @unittest.skip("skip")
-    def test_all(self):
-        for name in self.test_suite_data:
-            self.__test_file(name)
+                a = r.value
+                b = type_map[e["type"]](e["value"]).value
+                if a != b:
+                    self.fail(f"expected: {b}, but got: {a}")
 
     def test_i32(self):
         self.__test_file("i32")
+
+    def test_i32_case_26(self):
+        self.__test_index_case("i32", 0, 26)
+
+    def test_i32_case_29(self):
+        self.__test_index_case("i32", 0, 29)
+
+    def test_i32_case_30(self):
+        self.__test_index_case("i32", 0, 30)
+
+    def test_i32_case_32(self):
+        self.__test_index_case("i32", 0, 32)
 
 
 if __name__ == "__main__":

@@ -2,7 +2,7 @@ import logging
 
 from tools.byte import ByteReader
 from tools.logger import NestedLogger
-from wasm.runtime import CodeSectionHelper
+from wasm.spec import CodeSectionSpec
 from wasm.struct import (
     CodeInstruction,
     CodeSection,
@@ -127,7 +127,7 @@ class WasmLoader:
         while data.has_next():
             opcode = data.read_byte()
             self.logger.debug(f"opcode: {opcode}")
-            fn = CodeSectionHelper.mapped[opcode]
+            fn = CodeSectionSpec.mapped(opcode)
 
             annotations: list[type] = [e for e in fn.__annotations__.values()]
 
