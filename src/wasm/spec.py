@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Callable
 
-from wasm.type import F32, F64, LEB128
+from src.wasm.type.main import F32, F64, LEB128
 
 
 def metadata(*args: int):
@@ -71,8 +71,13 @@ class CodeSectionSpec(ABC):
         pass
 
     @abstractmethod
-    @metadata(0x6F, 0x70, 0x81, 0x82)
+    @metadata(0x70, 0x81, 0x82)
     def rem(self):
+        pass
+
+    @abstractmethod
+    @metadata(0x6F)
+    def rem_s(self):
         pass
 
     @abstractmethod
@@ -91,8 +96,13 @@ class CodeSectionSpec(ABC):
         pass
 
     @abstractmethod
-    @metadata(0x4A, 0x4B, 0x55, 0x56, 0x5E, 0x64)
-    def gt(self):
+    @metadata(0x4A)
+    def gt_s(self):
+        pass
+
+    @abstractmethod
+    @metadata(0x4B, 0x55, 0x56, 0x5E, 0x64)
+    def gt_u(self):
         pass
 
     @abstractmethod
@@ -101,13 +111,33 @@ class CodeSectionSpec(ABC):
         pass
 
     @abstractmethod
-    @metadata(0x48, 0x49, 0x53, 0x54, 0x5D, 0x63)
-    def lt(self):
+    @metadata(0x48)
+    def lt_s(self):
+        pass
+
+    @abstractmethod
+    @metadata(0x49, 0x53, 0x54, 0x5D, 0x63)
+    def lt_u(self):
         pass
 
     @abstractmethod
     @metadata(0x4C, 0x4D, 0x57, 0x58, 0x5F, 0x65)
     def le(self):
+        pass
+
+    @abstractmethod
+    @metadata(0x67)
+    def i32_clz(self):
+        pass
+
+    @abstractmethod
+    @metadata(0x68)
+    def i32_ctz(self):
+        pass
+
+    @abstractmethod
+    @metadata(0x69)
+    def i32_popcnt(self):
         pass
 
     @abstractmethod
@@ -123,6 +153,31 @@ class CodeSectionSpec(ABC):
     @abstractmethod
     @metadata(0x73, 0x85)
     def xor(self):
+        pass
+
+    @abstractmethod
+    @metadata(0x74)
+    def i32_shl(self):
+        pass
+
+    @abstractmethod
+    @metadata(0x75)
+    def i32_shr_s(self):
+        pass
+
+    @abstractmethod
+    @metadata(0x76)
+    def i32_shr_u(self):
+        pass
+
+    @abstractmethod
+    @metadata(0x77)
+    def i32_rotl(self):
+        pass
+
+    @abstractmethod
+    @metadata(0x78)
+    def i32_rotr(self):
         pass
 
     @abstractmethod
@@ -175,6 +230,9 @@ class CodeSectionSpec(ABC):
     def return_(self):
         pass
 
+    def error(self):
+        raise Exception("naver calle")
+
     @classmethod
     def mapped(cls, opcode: int) -> Callable:
         value = CodeSectionSpec.__dict__.values()
@@ -184,8 +242,11 @@ class CodeSectionSpec(ABC):
                 for m in v.metadata:
                     data[m] = v
 
-        return data.get(opcode, lambda *args: None)
+        return data.get(opcode, cls.error)
 
     @classmethod
     def bind(cls, pearent: "CodeSectionSpec", opcode: int):
-        return getattr(pearent, pearent.mapped(opcode).__name__)
+        name = pearent.mapped(opcode).__name__
+        if name == "error":
+            raise Exception(f"opcode: {opcode:02X} is not defined")
+        return getattr(pearent, name)

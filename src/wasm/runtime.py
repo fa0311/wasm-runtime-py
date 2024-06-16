@@ -9,9 +9,10 @@ from wasm.struct import (
     SectionBase,
     TypeSection,
 )
-from wasm.type import F32, F64, LEB128, NumericType
 
 from src.tools.logger import NestedLogger
+from src.wasm.type.base import NumericType
+from src.wasm.type.main import F32, F64, I32, LEB128
 
 
 class WasmRuntime:
@@ -125,12 +126,17 @@ class CodeSectionRunner(CodeSectionSpec):
 
     def div_s(self):
         b, a = self.stack.pop(), self.stack.pop()
-        bb, aa = b.to_signed(), a.to_signed()
-        self.stack.append((aa / bb).to_unsigned())
+        sb, sa = b.to_signed(), a.to_signed()
+        self.stack.append((sa / sb).to_unsigned())
 
     def rem(self):
         b, a = self.stack.pop(), self.stack.pop()
         self.stack.append(a % b)
+
+    def rem_s(self):
+        b, a = self.stack.pop(), self.stack.pop()
+        sb, sa = b.to_signed(), a.to_signed()
+        self.stack.append((sa % sb).to_unsigned())
 
     def eq(self):
         b, a = self.stack.pop(), self.stack.pop()
@@ -144,7 +150,12 @@ class CodeSectionRunner(CodeSectionSpec):
         a = self.stack.pop()
         self.stack.append(a == NumericType(0))
 
-    def gt(self):
+    def gt_s(self):
+        b, a = self.stack.pop(), self.stack.pop()
+        sb, sa = b.to_signed(), a.to_signed()
+        self.stack.append(sa > sb)
+
+    def gt_u(self):
         b, a = self.stack.pop(), self.stack.pop()
         self.stack.append(a > b)
 
@@ -152,13 +163,30 @@ class CodeSectionRunner(CodeSectionSpec):
         b, a = self.stack.pop(), self.stack.pop()
         self.stack.append(a >= b)
 
-    def lt(self):
+    def lt_s(self):
+        b, a = self.stack.pop(), self.stack.pop()
+        sb, sa = b.to_signed(), a.to_signed()
+        self.stack.append(sa < sb)
+
+    def lt_u(self):
         b, a = self.stack.pop(), self.stack.pop()
         self.stack.append(a < b)
 
     def le(self):
         b, a = self.stack.pop(), self.stack.pop()
         self.stack.append(a <= b)
+
+    def i32_clz(self):
+        a = self.stack.pop()
+        self.stack.append(a.clz())
+
+    def i32_ctz(self):
+        a = self.stack.pop()
+        self.stack.append(a.ctz())
+
+    def i32_popcnt(self):
+        a = self.stack.pop()
+        self.stack.append(a.popcnt())
 
     def and_(self):
         b, a = self.stack.pop(), self.stack.pop()
@@ -171,6 +199,27 @@ class CodeSectionRunner(CodeSectionSpec):
     def xor(self):
         b, a = self.stack.pop(), self.stack.pop()
         self.stack.append(a ^ b)
+
+    def i32_shl(self):
+        b, a = self.stack.pop(), self.stack.pop()
+        self.stack.append(a << (b % I32(32)))
+
+    def i32_shr_s(self):
+        b, a = self.stack.pop(), self.stack.pop()
+        sb, sa = b.to_signed(), a.to_signed()
+        self.stack.append((sa >> (sb % I32(32))).to_unsigned())
+
+    def i32_shr_u(self):
+        b, a = self.stack.pop(), self.stack.pop()
+        self.stack.append(a >> (b % I32(32)))
+
+    def i32_rotl(self):
+        b, a = self.stack.pop(), self.stack.pop()
+        self.stack.append((a << (b % I32(32))) | (a >> (I32(32) - (b % I32(32)))))
+
+    def i32_rotr(self):
+        b, a = self.stack.pop(), self.stack.pop()
+        self.stack.append((a >> (b % I32(32))) | (a << (I32(32) - (b % I32(32)))))
 
     def if_(self, type: int):
         a = self.stack.pop()

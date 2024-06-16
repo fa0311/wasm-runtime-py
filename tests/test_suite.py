@@ -13,7 +13,7 @@ sys.path.append(str(Path(__file__).parent.parent / "src"))
 
 from src.wasm.loader import WasmLoader
 from src.wasm.runtime import WasmRuntime
-from src.wasm.type import F32, F64, I32, I64
+from src.wasm.type.main import F32, F64, I32, I64
 
 
 class TestSuite(unittest.TestCase):
@@ -85,10 +85,10 @@ class TestSuite(unittest.TestCase):
         with self.subTest(**param):
             field = bytes(cmd["action"]["field"], "utf-8")
             type_map = {
-                "i32": lambda x: I32(int(x)),
-                "i64": lambda x: I64(int(x)),
-                "f32": lambda x: F32(float(x)),
-                "f64": lambda x: F64(float(x)),
+                "i32": lambda x: I32.truncate(int(x)),
+                "i64": lambda x: I64.truncate(int(x)),
+                "f32": lambda x: F32.truncate(float(x)),
+                "f64": lambda x: F64.truncate(float(x)),
             }
             args = cmd["action"]["args"]
             expect = cmd["expected"]
@@ -102,8 +102,7 @@ class TestSuite(unittest.TestCase):
             for i, (r, e) in enumerate(zip(res, expect)):
                 a = r.value
                 b = type_map[e["type"]](e["value"]).value
-                if a != b:
-                    self.fail(f"expected: {b}, but got: {a}")
+                self.assertEqual(a, b, f"index: {i}")
 
     def test_i32(self):
         self.__test_file("i32")
@@ -119,6 +118,57 @@ class TestSuite(unittest.TestCase):
 
     def test_i32_case_32(self):
         self.__test_index_case("i32", 0, 32)
+
+    def test_i32_case_43(self):
+        self.__test_index_case("i32", 0, 43)
+
+    def test_i32_case_54(self):
+        self.__test_index_case("i32", 0, 54)
+
+    def test_i32_case_61(self):
+        self.__test_index_case("i32", 0, 61)
+
+    def test_i32_case_64(self):
+        self.__test_index_case("i32", 0, 64)
+
+    def test_i32_case_112(self):
+        self.__test_index_case("i32", 0, 112)
+
+    def test_i32_case_123(self):
+        self.__test_index_case("i32", 0, 123)
+
+    def test_i32_case_144(self):
+        self.__test_index_case("i32", 0, 144)
+
+    def test_i32_case_119(self):
+        self.__test_index_case("i32", 0, 119)
+
+    def test_i32_case_125(self):
+        self.__test_index_case("i32", 0, 125)
+
+    def test_i32_case_164(self):
+        self.__test_index_case("i32", 0, 164)
+
+    def test_i32_case_165(self):
+        self.__test_index_case("i32", 0, 165)
+
+    def test_i32_case_183(self):
+        self.__test_index_case("i32", 0, 183)
+
+    def test_i32_case_184(self):
+        self.__test_index_case("i32", 0, 184)
+
+    def test_i32_case_185(self):
+        self.__test_index_case("i32", 0, 185)
+
+    def test_i32_case_193(self):
+        self.__test_index_case("i32", 0, 193)
+
+    def test_i32_case_261(self):
+        self.__test_index_case("i32", 0, 261)
+
+    def test_i32_case_310(self):
+        self.__test_index_case("i32", 0, 310)
 
 
 if __name__ == "__main__":

@@ -17,7 +17,15 @@ class NestedLogger:
                 self.logging.debug(f"┏━[ {func.__name__} ]")
             else:
                 self.logging.debug(f"{'┃' * (self.nested - 1)}┣┳[ {func.__name__} ]")
-            result = func(*args, **kwargs)
+
+            try:
+                result = func(*args, **kwargs)
+            except Exception as e:
+                self.logging.error(f"{'┃' * self.nested}┣━[ {func.__name__} ]")
+                self.logging.error(f"{'┃' * self.nested}┗━[ Error ] {e}")
+                self.nested -= 1
+                raise e
+
             if self.nested == 0:
                 self.logging.debug(f"┗━[ {func.__name__} ]")
             else:

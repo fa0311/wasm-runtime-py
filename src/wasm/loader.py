@@ -11,7 +11,9 @@ from wasm.struct import (
     SectionBase,
     TypeSection,
 )
-from wasm.type import F32, F64, I32, I64, LEB128, NumericType
+
+from src.wasm.type.base import NumericType
+from src.wasm.type.main import F32, F64, I32, I64, LEB128
 
 
 # 形の解決を行う

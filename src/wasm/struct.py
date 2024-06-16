@@ -2,7 +2,8 @@ from dataclasses import dataclass, field
 
 from tools.byte import ByteReader
 from wasm.spec import CodeSectionSpec
-from wasm.type import NumericType
+
+from src.wasm.type.base import NumericType
 
 
 class SectionBase:
@@ -34,9 +35,7 @@ class CodeInstruction:
 
     def __str__(self):
         name = CodeSectionSpec.mapped(self.opcode).__name__
-        return (
-            f"CodeInstruction(opcode={self.opcode:02X}, name={name}, args={self.args})"
-        )
+        return f"CodeInstruction(opcode={self.opcode:02X}, name={name}, args={self.args})"
 
     def __repr__(self):
         return str(self)
