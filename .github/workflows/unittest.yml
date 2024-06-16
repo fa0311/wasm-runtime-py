@@ -8,49 +8,49 @@ jobs:
     permissions:
       contents: write
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      with:
-        submodules: 'recursive'
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: "recursive"
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.x'
-    
-    - name: Install Wabt
-      env:
-        WABT_VERSION: 1.0.34
-      run: |
-        wget https://github.com/WebAssembly/wabt/releases/download/${WABT_VERSION}/wabt-${WABT_VERSION}-ubuntu.tar.gz
-        tar -xzf wabt-${WABT_VERSION}-ubuntu.tar.gz
-        echo "$PWD/wabt-${WABT_VERSION}/bin" >> $GITHUB_PATH
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
 
+      - name: Install Wabt
+        env:
+          WABT_VERSION: 1.0.34
+        run: |
+          wget https://github.com/WebAssembly/wabt/releases/download/${WABT_VERSION}/wabt-${WABT_VERSION}-ubuntu.tar.gz
+          tar -xzf wabt-${WABT_VERSION}-ubuntu.tar.gz
+          echo "$PWD/wabt-${WABT_VERSION}/bin" >> $GITHUB_PATH
 
-    # - name: Install dependencies
-    #   run: |
-    #     python -m pip install --upgrade pip
-    #     pip install -r requirements.txt
-    - name: Run tests
-      id: tests
-      env:
-        OUTPUT_LOG: test_result_temp.log
-      run: |
-        python3 -m unittest discover -p test_*.py -s tests > $OUTPUT_LOG 2>&1 || true
-        echo "TEST_RESULT=$(tail -n 1 $OUTPUT_LOG)" >> $GITHUB_ENV
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-    - name: Comment on commit
-      if: always()
-      uses: actions/github-script@v6
-      with:
-        github-token: ${{secrets.GITHUB_TOKEN}}
-        script: |
-          const commit_sha = context.sha;
-          const test_result = process.env.TEST_RESULT;
-          const message = `Test result: ${test_result}`;
-          github.rest.repos.createCommitComment({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            commit_sha: commit_sha,
-            body: message
-          });
+      - name: Run tests
+        id: tests
+        env:
+          OUTPUT_LOG: test_result_temp.log
+        run: |
+          python3 -m unittest discover -p test_*.py -s tests > $OUTPUT_LOG 2>&1 || true
+          echo "TEST_RESULT=$(tail -n 1 $OUTPUT_LOG)" >> $GITHUB_ENV
+
+      - name: Comment on commit
+        if: always()
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            const commit_sha = context.sha;
+            const test_result = process.env.TEST_RESULT;
+            const message = `Test result: ${test_result}`;
+            github.rest.repos.createCommitComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              commit_sha: commit_sha,
+              body: message
+            });
