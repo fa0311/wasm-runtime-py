@@ -3,56 +3,60 @@ class NumericType:
         self.value = value
 
     @classmethod
-    def truncate(cls, value):
+    def from_value(cls, value):
+        return cls(value)
+
+    @classmethod
+    def from_int(cls, value):
         return cls(value)
 
     def to_signed(self):
         return SignedNumericType(self.value)
 
     def __add__(self, other: "NumericType"):
-        return self.__class__.truncate(self.value + other.value)
+        return self.__class__.from_value(self.value + other.value)
 
     def __sub__(self, other: "NumericType"):
-        return self.__class__.truncate(self.value - other.value)
+        return self.__class__.from_value(self.value - other.value)
 
     def __mul__(self, other: "NumericType"):
-        return self.__class__.truncate(self.value * other.value)
+        return self.__class__.from_value(self.value * other.value)
 
     def __truediv__(self, other: "NumericType"):
-        return self.__class__.truncate(self.value / other.value)
+        return self.__class__.from_value(self.value / other.value)
 
     def __floordiv__(self, other: "NumericType"):
-        return self.__class__.truncate(self.value // other.value)
+        return self.__class__.from_value(self.value // other.value)
 
     def __mod__(self, other: "NumericType"):
-        return self.__class__.truncate(self.value % other.value)
+        return self.__class__.from_value(self.value % other.value)
 
     def __eq__(self, other: "NumericType"):
-        return self.__class__.truncate(self.value == other.value)
+        return self.__class__.from_value(self.value == other.value)
 
     def __ne__(self, other: "NumericType"):
-        return self.__class__.truncate(self.value != other.value)
+        return self.__class__.from_value(self.value != other.value)
 
     def __lt__(self, other: "NumericType"):
-        return self.__class__.truncate(self.value < other.value)
+        return self.__class__.from_value(self.value < other.value)
 
     def __le__(self, other: "NumericType"):
-        return self.__class__.truncate(self.value <= other.value)
+        return self.__class__.from_value(self.value <= other.value)
 
     def __and__(self, other: "NumericType"):
-        return self.__class__.truncate(self.value & other.value)
+        return self.__class__.from_value(self.value & other.value)
 
     def __or__(self, other: "NumericType"):
-        return self.__class__.truncate(self.value | other.value)
+        return self.__class__.from_value(self.value | other.value)
 
     def __xor__(self, other: "NumericType"):
-        return self.__class__.truncate(self.value ^ other.value)
+        return self.__class__.from_value(self.value ^ other.value)
 
     def __lshift__(self, other: "NumericType"):
-        return self.__class__.truncate(self.value << other.value)
+        return self.__class__.from_value(self.value << other.value)
 
     def __rshift__(self, other: "NumericType"):
-        return self.__class__.truncate(self.value >> other.value)
+        return self.__class__.from_value(self.value >> other.value)
 
     def clz(self):
         raise NotImplementedError

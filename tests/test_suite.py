@@ -85,10 +85,10 @@ class TestSuite(unittest.TestCase):
         with self.subTest(**param):
             field = bytes(cmd["action"]["field"], "utf-8")
             type_map = {
-                "i32": lambda x: I32.truncate(int(x)),
-                "i64": lambda x: I64.truncate(int(x)),
-                "f32": lambda x: F32.truncate(float(x)),
-                "f64": lambda x: F64.truncate(float(x)),
+                "i32": lambda x: I32.from_int(int(x)),
+                "i64": lambda x: I64.from_int(int(x)),
+                "f32": lambda x: F32.from_int(float(x)),
+                "f64": lambda x: F64.from_int(float(x)),
             }
             args = cmd["action"]["args"]
             expect = cmd["expected"]
@@ -127,6 +127,9 @@ class TestSuite(unittest.TestCase):
 
     def test_i32_case_61(self):
         self.__test_index_case("i32", 0, 61)
+
+    def test_i32_case_63(self):
+        self.__test_index_case("i32", 0, 63)
 
     def test_i32_case_64(self):
         self.__test_index_case("i32", 0, 64)

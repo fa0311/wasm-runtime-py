@@ -6,11 +6,11 @@ class I32(NumericType):
         self.value = value
 
     @classmethod
-    def truncate(cls, value):
+    def from_value(cls, value):
         return cls(value % (2**32))
 
     def to_signed(self):
-        return SignedI32.truncate(self.value if self.value < 2**31 else self.value - 2**32)
+        return SignedI32.from_value(self.value if self.value < 2**31 else self.value - 2**32)
 
 
 class SignedI32(SignedNumericType):
@@ -18,18 +18,18 @@ class SignedI32(SignedNumericType):
         self.value = value
 
     @classmethod
-    def truncate(cls, value):
+    def from_value(cls, value):
         return cls(value)
 
     def __truediv__(self, other: "SignedI32"):
         res = self.value / other.value
-        return self.__class__.truncate(int(res))
+        return self.__class__.from_value(int(res))
 
     def __mod__(self, other: "SignedI32"):
-        return self.__class__.truncate(abs(self.value % other.value))
+        return self.__class__.from_value(abs(self.value % other.value))
 
     def to_unsigned(self):
-        return I32.truncate(self.value if self.value >= 0 else self.value + 2**32)
+        return I32.from_value(self.value if self.value >= 0 else self.value + 2**32)
 
 
 class I64(NumericType):
