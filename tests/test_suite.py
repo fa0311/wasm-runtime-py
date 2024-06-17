@@ -134,6 +134,9 @@ class TestSuite(unittest.TestCase):
     def test_i32_case_64(self):
         self.__test_index_case("i32", 0, 64)
 
+    def test_i32_case_67(self):
+        self.__test_index_case("i32", 0, 67)
+
     def test_i32_case_112(self):
         self.__test_index_case("i32", 0, 112)
 
