@@ -18,24 +18,6 @@ class I32(NumericType):
     def to_signed(self):
         return SignedI32.from_int(self.value.astype(np.int32))
 
-    def __lshift__(self, other: NumericType):
-        return self.__class__.from_value(self.value << other.value)
-
-    def clz(self):
-        if self.value == 0:
-            return self.__class__.from_int(32)
-        data = bin(self.value)[2:].zfill(32)
-        return self.__class__.from_int(data.index("1"))
-
-    def ctz(self):
-        if self.value == 0:
-            return self.__class__.from_int(32)
-        data = bin(self.value)[2:].zfill(32)
-        return self.__class__.from_int(data[::-1].index("1"))
-
-    def popcnt(self):
-        return self.__class__.from_int(bin(self.value).count("1"))
-
 
 class SignedI32(SignedNumericType):
     def __init__(self, value):

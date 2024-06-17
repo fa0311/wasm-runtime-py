@@ -59,10 +59,19 @@ class NumericType:
         return self.__class__.from_value(self.value >> other.value)
 
     def clz(self):
-        raise NotImplementedError
+        if self.value == 0:
+            return self.__class__.from_int(32)
+        data = bin(self.value)[2:].zfill(32)
+        return self.__class__.from_int(data.index("1"))
 
     def ctz(self):
-        raise NotImplementedError
+        if self.value == 0:
+            return self.__class__.from_int(32)
+        data = bin(self.value)[2:].zfill(32)
+        return self.__class__.from_int(data[::-1].index("1"))
+
+    def popcnt(self):
+        return self.__class__.from_int(bin(self.value).count("1"))
 
 
 class SignedNumericType(NumericType):
