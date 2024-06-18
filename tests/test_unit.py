@@ -5,7 +5,7 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 sys.path.append(str(Path(__file__).parent.parent / "src"))
 
-from src.wasm.type.main import I32, SignedI32
+from src.wasm.type.numpy.int import I32, SignedI32
 
 
 class TestUnit(unittest.TestCase):

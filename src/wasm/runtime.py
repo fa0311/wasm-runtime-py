@@ -13,7 +13,8 @@ from wasm.struct import (
 
 from src.tools.logger import NestedLogger
 from src.wasm.type.base import NumericType
-from src.wasm.type.main import F32, F64, LEB128
+from src.wasm.type.numpy.float import F32, F64
+from src.wasm.type.numpy.int import LEB128
 
 
 class WasmRuntime:

@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import Callable
 
-from src.wasm.type.main import F32, F64, LEB128
+from src.wasm.type.numpy.float import F32, F64
+from src.wasm.type.numpy.int import LEB128
 
 
 def metadata(*args: int):

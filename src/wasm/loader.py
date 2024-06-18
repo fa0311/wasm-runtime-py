@@ -13,7 +13,8 @@ from wasm.struct import (
 )
 
 from src.wasm.type.base import NumericType
-from src.wasm.type.main import F32, F64, I32, I64, LEB128
+from src.wasm.type.numpy.float import F32, F64
+from src.wasm.type.numpy.int import I32, I64, LEB128
 
 
 # 形の解決を行う
@@ -141,13 +142,13 @@ class WasmLoader:
                 elif annotation == int:
                     args.append(data.read_byte())
                 elif annotation == I32:
-                    args.append(I32(data.read_leb128()))
+                    args.append(I32.from_int(data.read_leb128()))
                 elif annotation == I64:
-                    args.append(I64(data.read_leb128()))
+                    args.append(I64.from_int(data.read_leb128()))
                 elif annotation == F32:
-                    args.append(F32(data.read_f32()))
+                    args.append(F32.from_str(data.read_bytes(4).data))
                 elif annotation == F64:
-                    args.append(F64(data.read_f64()))
+                    args.append(F64.from_str(data.read_bytes(8).data))
                 else:
                     raise Exception("invalid type")
             res.append(CodeInstruction(opcode=opcode, args=args))

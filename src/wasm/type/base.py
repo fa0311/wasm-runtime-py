@@ -1,11 +1,4 @@
-from typing import Callable
-
-
-def catch_error(func: Callable):
-    try:
-        return func()
-    except Exception:
-        return None
+from typing import Union
 
 
 class NumericType:
@@ -21,7 +14,7 @@ class NumericType:
         return cls(value)
 
     @classmethod
-    def from_str(cls, value: str):
+    def from_str(cls, value: Union[str, bytes]):
         return cls(int(value))
 
     @classmethod
@@ -31,14 +24,6 @@ class NumericType:
     @classmethod
     def get_length(cls):
         return 32
-
-    def to_signed(self):
-        return SignedNumericType(self.value)
-
-    def __repr__(self):
-        cls_name = self.__class__.__name__
-        signed = catch_error(lambda: self.to_signed().value)
-        return f"{cls_name}({self.value}, signed={signed}, floated={self.value:.32f})"
 
     def __add__(self, other: "NumericType"):
         return self.__class__.from_value(self.value + other.value)
@@ -99,24 +84,6 @@ class NumericType:
     def __round__(self):
         return self.__class__.from_value(self.value.__round__())
 
-    # def __neg__(self):
-    #     return self.__class__.from_value(-self.value)
-
-    # def __invert__(self):
-    #     return self.__class__.from_value(~self.value)
-
-    # def __abs__(self):
-    #     return self.__class__.from_value(abs(self.value))
-
-    # def __pos__(self):
-    #     return self.__class__.from_value(+self.value)
-
-    # def __round__(self):
-    #     return self.__class__.from_value(round(self.value))
-
-    # def __pow__(self, other: "NumericType"):
-    #     return self.__class__.from_value(self.value**other.value)
-
     def clz(self):
         if self.value == 0:
             return self.__class__.from_int(self.__class__.get_length())
@@ -149,7 +116,18 @@ class NumericType:
     def sqrt(self):
         return self.__class__.from_value(self.value**0.5)
 
+    def to_signed(self):
+        raise NotImplementedError
+
+    def to_unsigned(self):
+        raise NotImplementedError
+
+
+class UnsignedNumericType(NumericType):
+    def to_signed(self):
+        return SignedNumericType(self.value)
+
 
 class SignedNumericType(NumericType):
     def to_unsigned(self):
-        return self.__class__(self.value)
+        return UnsignedNumericType(self.value)

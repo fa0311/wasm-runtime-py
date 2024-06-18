@@ -13,7 +13,8 @@ sys.path.append(str(Path(__file__).parent.parent / "src"))
 
 from src.wasm.loader import WasmLoader
 from src.wasm.runtime import WasmRuntime
-from src.wasm.type.main import F32, F64, I32, I64
+from src.wasm.type.numpy.float import F32, F64
+from src.wasm.type.numpy.int import I32, I64
 
 
 class TestSuite(unittest.TestCase):
@@ -116,6 +117,10 @@ class TestSuite(unittest.TestCase):
 
     def test_f64(self):
         self.__test_file("f64")
+
+    # 29
+    def test_i32_0_29(self):
+        self.__test_index_case("i32", 0, 29)
 
 
 if __name__ == "__main__":

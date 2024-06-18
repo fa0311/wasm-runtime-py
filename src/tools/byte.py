@@ -1,4 +1,3 @@
-import struct
 from typing import Union
 
 
@@ -34,18 +33,6 @@ class ByteReader:
             if byte & 0x80 == 0:
                 break
         return result
-
-    def read_f32(self) -> float:
-        """ポインタが指す位置からf32形式の数値を読み取り、ポインタを進める"""
-        decoded = self.read_bytes(4)
-        number = struct.unpack("f", decoded.data)[0]
-        return number
-
-    def read_f64(self) -> float:
-        """ポインタが指す位置からf64形式の数値を読み取り、ポインタを進める"""
-        decoded = self.read_bytes(8)
-        number = struct.unpack("d", decoded.data)[0]
-        return number
 
     def has_next(self) -> bool:
         """ポインタが指す位置がバイト列の最後かどうかを返す"""
