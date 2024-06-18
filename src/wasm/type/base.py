@@ -1,3 +1,13 @@
+from typing import Callable
+
+
+def catch_error(func: Callable):
+    try:
+        return func()
+    except Exception:
+        return None
+
+
 class NumericType:
     def __init__(self, value):
         self.value = value
@@ -7,24 +17,28 @@ class NumericType:
         return cls(value)
 
     @classmethod
-    def from_int(cls, value):
+    def from_int(cls, value: int):
         return cls(value)
+
+    @classmethod
+    def from_str(cls, value: str):
+        return cls(int(value))
+
+    @classmethod
+    def from_bool(cls, value: bool):
+        return cls(1 if value else 0)
 
     @classmethod
     def get_length(cls):
         return 32
-
-    @classmethod
-    def from_bool(cls, value):
-        return cls(1 if value else 0)
 
     def to_signed(self):
         return SignedNumericType(self.value)
 
     def __repr__(self):
         cls_name = self.__class__.__name__
-        signed = self.to_signed()
-        return f"{cls_name}({self.value}, signed={signed.value})"
+        signed = catch_error(lambda: self.to_signed().value)
+        return f"{cls_name}({self.value}, signed={signed}, floated={self.value:.32f})"
 
     def __add__(self, other: "NumericType"):
         return self.__class__.from_value(self.value + other.value)
@@ -95,6 +109,15 @@ class NumericType:
     def rotr(self, other: "NumericType"):
         length = self.__class__.from_int(self.__class__.get_length())
         return self >> other | (self << length - other)
+
+    def min(self, other: "NumericType"):
+        return self if self.value < other.value else other
+
+    def max(self, other: "NumericType"):
+        return self if self.value > other.value else other
+
+    def sqrt(self):
+        return self.__class__.from_value(self.value**0.5)
 
 
 class SignedNumericType(NumericType):

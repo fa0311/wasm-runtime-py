@@ -191,6 +191,21 @@ class CodeSectionSpec(ABC):
         pass
 
     @abstractmethod
+    @metadata(0x96, 0xA4)
+    def min(self):
+        pass
+
+    @abstractmethod
+    @metadata(0x97, 0xA5)
+    def max(self):
+        pass
+
+    @abstractmethod
+    @metadata(0x91, 0x9F)
+    def sqrt(self):
+        pass
+
+    @abstractmethod
     @metadata(0x04)
     def if_(self, type: int):
         pass

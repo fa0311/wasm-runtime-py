@@ -122,12 +122,12 @@ class CodeSectionRunner(CodeSectionSpec):
 
     def div(self):
         b, a = self.stack.pop(), self.stack.pop()
-        self.stack.append(a // b)
+        self.stack.append(a / b)
 
     def div_s(self):
         b, a = self.stack.pop(), self.stack.pop()
         sb, sa = b.to_signed(), a.to_signed()
-        self.stack.append((sa // sb).to_unsigned())
+        self.stack.append((sa / sb).to_unsigned())
 
     def rem(self):
         b, a = self.stack.pop(), self.stack.pop()
@@ -230,6 +230,18 @@ class CodeSectionRunner(CodeSectionSpec):
     def rotr(self):
         b, a = self.stack.pop(), self.stack.pop()
         self.stack.append(a.rotr(b))
+
+    def min(self):
+        b, a = self.stack.pop(), self.stack.pop()
+        self.stack.append(a.min(b))
+
+    def max(self):
+        b, a = self.stack.pop(), self.stack.pop()
+        self.stack.append(a.max(b))
+
+    def sqrt(self):
+        a = self.stack.pop()
+        self.stack.append(a.sqrt())
 
     def if_(self, type: int):
         a = self.stack.pop()
