@@ -12,7 +12,7 @@ from wasm.struct import (
 
 from src.tools.logger import NestedLogger
 from src.wasm.type.base import NumericType
-from src.wasm.type.main import F32, F64, I32, LEB128
+from src.wasm.type.main import F32, F64, LEB128
 
 
 class WasmRuntime:
@@ -122,12 +122,12 @@ class CodeSectionRunner(CodeSectionSpec):
 
     def div(self):
         b, a = self.stack.pop(), self.stack.pop()
-        self.stack.append(a / b)
+        self.stack.append(a // b)
 
     def div_s(self):
         b, a = self.stack.pop(), self.stack.pop()
         sb, sa = b.to_signed(), a.to_signed()
-        self.stack.append((sa / sb).to_unsigned())
+        self.stack.append((sa // sb).to_unsigned())
 
     def rem(self):
         b, a = self.stack.pop(), self.stack.pop()
@@ -163,6 +163,11 @@ class CodeSectionRunner(CodeSectionSpec):
         b, a = self.stack.pop(), self.stack.pop()
         self.stack.append(a >= b)
 
+    def ge_s(self):
+        b, a = self.stack.pop(), self.stack.pop()
+        sb, sa = b.to_signed(), a.to_signed()
+        self.stack.append(sa >= sb)
+
     def lt_s(self):
         b, a = self.stack.pop(), self.stack.pop()
         sb, sa = b.to_signed(), a.to_signed()
@@ -176,15 +181,20 @@ class CodeSectionRunner(CodeSectionSpec):
         b, a = self.stack.pop(), self.stack.pop()
         self.stack.append(a <= b)
 
-    def i32_clz(self):
+    def le_s(self):
+        b, a = self.stack.pop(), self.stack.pop()
+        sb, sa = b.to_signed(), a.to_signed()
+        self.stack.append(sa <= sb)
+
+    def clz(self):
         a = self.stack.pop()
         self.stack.append(a.clz())
 
-    def i32_ctz(self):
+    def ctz(self):
         a = self.stack.pop()
         self.stack.append(a.ctz())
 
-    def i32_popcnt(self):
+    def popcnt(self):
         a = self.stack.pop()
         self.stack.append(a.popcnt())
 
@@ -200,26 +210,26 @@ class CodeSectionRunner(CodeSectionSpec):
         b, a = self.stack.pop(), self.stack.pop()
         self.stack.append(a ^ b)
 
-    def i32_shl(self):
+    def shl(self):
         b, a = self.stack.pop(), self.stack.pop()
-        self.stack.append(a << (b % I32(32)))
+        self.stack.append(a << b)
 
-    def i32_shr_s(self):
+    def shr_s(self):
         b, a = self.stack.pop(), self.stack.pop()
         sb, sa = b.to_signed(), a.to_signed()
-        self.stack.append((sa >> (sb % I32(32))).to_unsigned())
+        self.stack.append((sa >> sb).to_unsigned())
 
-    def i32_shr_u(self):
+    def shr_u(self):
         b, a = self.stack.pop(), self.stack.pop()
-        self.stack.append(a >> (b % I32(32)))
+        self.stack.append(a >> b)
 
-    def i32_rotl(self):
+    def rotl(self):
         b, a = self.stack.pop(), self.stack.pop()
-        self.stack.append((a << (b % I32(32))) | (a >> (I32(32) - (b % I32(32)))))
+        self.stack.append(a.rotl(b))
 
-    def i32_rotr(self):
+    def rotr(self):
         b, a = self.stack.pop(), self.stack.pop()
-        self.stack.append((a >> (b % I32(32))) | (a << (I32(32) - (b % I32(32)))))
+        self.stack.append(a.rotr(b))
 
     def if_(self, type: int):
         a = self.stack.pop()

@@ -33,12 +33,10 @@ class CodeInstruction:
     opcode: int = field(metadata={"description": "命令コード"})
     args: list[NumericType] = field(metadata={"description": "命令の引数"})
 
-    def __str__(self):
-        name = CodeSectionSpec.mapped(self.opcode).__name__
-        return f"CodeInstruction(opcode={self.opcode:02X}, name={name}, args={self.args})"
-
     def __repr__(self):
-        return str(self)
+        cls_name = self.__class__.__name__
+        name = CodeSectionSpec.mapped(self.opcode).__name__
+        return f"{cls_name}(opcode={self.opcode:02X}, name={name}, args={self.args})"
 
 
 @dataclass

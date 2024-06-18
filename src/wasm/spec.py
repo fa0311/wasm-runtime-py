@@ -61,22 +61,22 @@ class CodeSectionSpec(ABC):
         pass
 
     @abstractmethod
-    @metadata(0x6E, 0x7F, 0x80, 0x95, 0xA3)
+    @metadata(0x6E, 0x80, 0x95, 0xA3)
     def div(self):
         pass
 
     @abstractmethod
-    @metadata(0x6D)
+    @metadata(0x6D, 0x7F)
     def div_s(self):
         pass
 
     @abstractmethod
-    @metadata(0x70, 0x81, 0x82)
+    @metadata(0x70, 0x82)
     def rem(self):
         pass
 
     @abstractmethod
-    @metadata(0x6F)
+    @metadata(0x6F, 0x81)
     def rem_s(self):
         pass
 
@@ -96,48 +96,58 @@ class CodeSectionSpec(ABC):
         pass
 
     @abstractmethod
-    @metadata(0x4A)
+    @metadata(0x4A, 0x55)
     def gt_s(self):
         pass
 
     @abstractmethod
-    @metadata(0x4B, 0x55, 0x56, 0x5E, 0x64)
+    @metadata(0x4B, 0x56, 0x5E, 0x64)
     def gt_u(self):
         pass
 
     @abstractmethod
-    @metadata(0x4E, 0x4F, 0x59, 0x5A, 0x60, 0x66)
+    @metadata(0x4F, 0x5A, 0x60, 0x66)
     def ge(self):
         pass
 
     @abstractmethod
-    @metadata(0x48)
+    @metadata(0x4E, 0x59)
+    def ge_s(self):
+        pass
+
+    @abstractmethod
+    @metadata(0x48, 0x53)
     def lt_s(self):
         pass
 
     @abstractmethod
-    @metadata(0x49, 0x53, 0x54, 0x5D, 0x63)
+    @metadata(0x49, 0x54, 0x5D, 0x63)
     def lt_u(self):
         pass
 
     @abstractmethod
-    @metadata(0x4C, 0x4D, 0x57, 0x58, 0x5F, 0x65)
+    @metadata(0x4D, 0x58, 0x5F, 0x65)
     def le(self):
         pass
 
     @abstractmethod
-    @metadata(0x67)
-    def i32_clz(self):
+    @metadata(0x4C, 0x57)
+    def le_s(self):
         pass
 
     @abstractmethod
-    @metadata(0x68)
-    def i32_ctz(self):
+    @metadata(0x67, 0x79)
+    def clz(self):
         pass
 
     @abstractmethod
-    @metadata(0x69)
-    def i32_popcnt(self):
+    @metadata(0x68, 0x7A)
+    def ctz(self):
+        pass
+
+    @abstractmethod
+    @metadata(0x69, 0x7B)
+    def popcnt(self):
         pass
 
     @abstractmethod
@@ -156,28 +166,28 @@ class CodeSectionSpec(ABC):
         pass
 
     @abstractmethod
-    @metadata(0x74)
-    def i32_shl(self):
+    @metadata(0x74, 0x86)
+    def shl(self):
         pass
 
     @abstractmethod
-    @metadata(0x75)
-    def i32_shr_s(self):
+    @metadata(0x75, 0x87)
+    def shr_s(self):
         pass
 
     @abstractmethod
-    @metadata(0x76)
-    def i32_shr_u(self):
+    @metadata(0x76, 0x88)
+    def shr_u(self):
         pass
 
     @abstractmethod
-    @metadata(0x77)
-    def i32_rotl(self):
+    @metadata(0x77, 0x89)
+    def rotl(self):
         pass
 
     @abstractmethod
-    @metadata(0x78)
-    def i32_rotr(self):
+    @metadata(0x78, 0x8A)
+    def rotr(self):
         pass
 
     @abstractmethod
