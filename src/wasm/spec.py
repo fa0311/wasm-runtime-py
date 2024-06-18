@@ -191,6 +191,26 @@ class CodeSectionSpec(ABC):
         pass
 
     @abstractmethod
+    @metadata(0x8D, 0x9B)
+    def ceil(self):
+        pass
+
+    @abstractmethod
+    @metadata(0x8E, 0x9C)
+    def floor(self):
+        pass
+
+    @abstractmethod
+    @metadata(0x8F, 0x9D)
+    def trunc(self):
+        pass
+
+    @abstractmethod
+    @metadata(0x90, 0x9E)
+    def nearest(self):
+        pass
+
+    @abstractmethod
     @metadata(0x96, 0xA4)
     def min(self):
         pass

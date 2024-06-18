@@ -40,7 +40,7 @@ class TestUnit(unittest.TestCase):
         b = SignedI32.from_int(-3)
         self.assertEqual((a / b).value, 2)
 
-    def test_signed_i32_div_cell(self):
+    def test_signed_i32_div_ceil(self):
         a = SignedI32.from_int(-7)
         b = SignedI32.from_int(4)
         self.assertEqual((a / b).value, -1)
@@ -79,7 +79,7 @@ class TestUnit(unittest.TestCase):
         b = SignedI32.from_int(-3)
         self.assertEqual((a / b).value, 2)
 
-    def test_signed_i64_div_cell(self):
+    def test_signed_i64_div_ceil(self):
         a = SignedI32.from_int(-7)
         b = SignedI32.from_int(4)
         self.assertEqual((a / b).value, -1)

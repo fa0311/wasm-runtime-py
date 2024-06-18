@@ -1,4 +1,5 @@
 import logging
+from math import ceil, floor, trunc
 
 from wasm.spec import CodeSectionSpec
 from wasm.struct import (
@@ -230,6 +231,22 @@ class CodeSectionRunner(CodeSectionSpec):
     def rotr(self):
         b, a = self.stack.pop(), self.stack.pop()
         self.stack.append(a.rotr(b))
+
+    def ceil(self):
+        a = self.stack.pop()
+        self.stack.append(ceil(a))
+
+    def floor(self):
+        a = self.stack.pop()
+        self.stack.append(floor(a))
+
+    def trunc(self):
+        a = self.stack.pop()
+        self.stack.append(trunc(a))
+
+    def nearest(self):
+        a = self.stack.pop()
+        self.stack.append(round(a))
 
     def min(self):
         b, a = self.stack.pop(), self.stack.pop()

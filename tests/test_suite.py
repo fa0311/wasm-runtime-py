@@ -111,34 +111,11 @@ class TestSuite(unittest.TestCase):
     def test_i64(self):
         self.__test_file("i64")
 
-    def test_i64_0_46(self):
-        self.__test_index_case("i64", 0, 46)
-
     def test_f32(self):
         self.__test_file("f32")
 
-    def test_f32_0_32(self):
-        self.__test_index_case("f32", 0, 32)
-
-    def test_f32_0_33(self):
-        self.__test_index_case("f32", 0, 33)
-
-    def test_f32_0_1248(self):
-        self.__test_index_case("f32", 0, 1248)
-
-    def test_f32_0_1602(self):
-        self.__test_index_case("f32", 0, 1602)
-
-    def test_f32_0_2320(self):
-        self.__test_index_case("f32", 0, 2320)
-
-    # 2414
-    def test_f32_0_2414(self):
-        self.__test_index_case("f32", 0, 2414)
-
-    # 2420
-    def test_f32_0_2420(self):
-        self.__test_index_case("f32", 0, 2420)
+    def test_f64(self):
+        self.__test_file("f64")
 
 
 if __name__ == "__main__":

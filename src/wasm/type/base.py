@@ -87,6 +87,36 @@ class NumericType:
         length = self.__class__.from_int(self.__class__.get_length())
         return self.__class__.from_value(self.value << (other.value % length.value))
 
+    def __ceil__(self):
+        return self.__class__.from_value(self.value.__ceil__())
+
+    def __floor__(self):
+        return self.__class__.from_value(self.value.__floor__())
+
+    def __trunc__(self):
+        return self.__class__.from_value(self.value.__trunc__())
+
+    def __round__(self):
+        return self.__class__.from_value(self.value.__round__())
+
+    # def __neg__(self):
+    #     return self.__class__.from_value(-self.value)
+
+    # def __invert__(self):
+    #     return self.__class__.from_value(~self.value)
+
+    # def __abs__(self):
+    #     return self.__class__.from_value(abs(self.value))
+
+    # def __pos__(self):
+    #     return self.__class__.from_value(+self.value)
+
+    # def __round__(self):
+    #     return self.__class__.from_value(round(self.value))
+
+    # def __pow__(self, other: "NumericType"):
+    #     return self.__class__.from_value(self.value**other.value)
+
     def clz(self):
         if self.value == 0:
             return self.__class__.from_int(self.__class__.get_length())
