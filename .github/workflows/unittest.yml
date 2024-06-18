@@ -20,11 +20,11 @@ jobs:
 
       - name: Install Wabt
         env:
-          WABT_VERSION: 1.0.34
+          WABT_VERSION: 1.0.35
         run: |
-          wget https://github.com/WebAssembly/wabt/releases/download/${WABT_VERSION}/wabt-${WABT_VERSION}-ubuntu.tar.gz
-          tar -xzf wabt-${WABT_VERSION}-ubuntu.tar.gz
-          echo "$PWD/wabt-${WABT_VERSION}/bin" >> $GITHUB_PATH
+          wget https://github.com/WebAssembly/wabt/releases/download/${WABT_VERSION}/wabt-${WABT_VERSION}-ubuntu-20.04.tar.gz
+          tar -xzf wabt-${WABT_VERSION}-ubuntu-20.04.tar.gz
+          echo "$(pwd)/wabt-${WABT_VERSION}/bin" >> $GITHUB_PATH
 
       - name: Install dependencies
         run: |
@@ -36,8 +36,10 @@ jobs:
         env:
           OUTPUT_LOG: test_result_temp.log
         run: |
+          wast2json --version
           python3 -m unittest discover -p test_*.py -s tests > $OUTPUT_LOG 2>&1 || true
           echo "TEST_RESULT=$(tail -n 1 $OUTPUT_LOG)" >> $GITHUB_ENV
+          cat $OUTPUT_LOG
 
       - name: Comment on commit
         if: always()
