@@ -44,7 +44,7 @@ class FloatType(NumericType):
 
 
 class F32(FloatType):
-    def __init__(self, value):
+    def __init__(self, value: np.float32):
         self.value = value
 
     @classmethod
@@ -71,7 +71,7 @@ class F32(FloatType):
         return 32
 
 
-class F64(NumericType):
+class F64(FloatType):
     def __init__(self, value: np.float64):
         self.value = value
 

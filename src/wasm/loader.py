@@ -14,7 +14,7 @@ from wasm.struct import (
 
 from src.wasm.type.base import NumericType
 from src.wasm.type.numpy.float import F32, F64
-from src.wasm.type.numpy.int import I32, I64, LEB128
+from src.wasm.type.numpy.int import I32, I64
 
 
 # 形の解決を行う
@@ -137,9 +137,7 @@ class WasmLoader:
             args: list = []
 
             for annotation in annotations:
-                if annotation == LEB128:
-                    args.append(LEB128(data.read_leb128()))
-                elif annotation == int:
+                if annotation == int:
                     args.append(data.read_byte())
                 elif annotation == I32:
                     args.append(I32.from_int(data.read_leb128()))

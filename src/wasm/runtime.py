@@ -14,7 +14,7 @@ from wasm.struct import (
 from src.tools.logger import NestedLogger
 from src.wasm.type.base import NumericType
 from src.wasm.type.numpy.float import F32, F64
-from src.wasm.type.numpy.int import LEB128
+from src.wasm.type.numpy.int import I32, I64, SignedI8, SignedI16, SignedI32
 
 
 class WasmRuntime:
@@ -92,13 +92,16 @@ class CodeSectionRunner(CodeSectionSpec):
         self.pointer += count
         # self.logger.debug(f"skip: {count} instructions")
 
-    def i32_const(self, value: LEB128):
+    def const_i32(self, value: I32):
         self.stack.append(value)
 
-    def push_f32(self, value: F32):
+    def const_i64(self, value: I64):
         self.stack.append(value)
 
-    def push_f64(self, value: F64):
+    def const_f32(self, value: F32):
+        self.stack.append(value)
+
+    def const_f64(self, value: F64):
         self.stack.append(value)
 
     def local_get(self, index: int):
@@ -319,3 +322,33 @@ class CodeSectionRunner(CodeSectionSpec):
 
     def return_(self):
         return self.stack
+
+    def i32_extend8(self):
+        a = self.stack.pop()
+        i8 = SignedI8.from_value(a.value)
+        i32 = I32.from_value(i8.value)
+        self.stack.append(i32)
+
+    def i32_extend16(self):
+        a = self.stack.pop()
+        i16 = SignedI16.from_value(a.value)
+        i32 = I32.from_value(i16.value)
+        self.stack.append(i32)
+
+    def i64_extend8(self):
+        a = self.stack.pop()
+        i8 = SignedI8.from_value(a.value)
+        i64 = I64.from_value(i8.value)
+        self.stack.append(i64)
+
+    def i64_extend16(self):
+        a = self.stack.pop()
+        i16 = SignedI16.from_value(a.value)
+        i64 = I64.from_value(i16.value)
+        self.stack.append(i64)
+
+    def i64_extend32(self):
+        a = self.stack.pop()
+        i32 = SignedI32.from_value(a.value)
+        i64 = I64.from_value(i32.value)
+        self.stack.append(i64)

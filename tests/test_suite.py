@@ -118,10 +118,6 @@ class TestSuite(unittest.TestCase):
     def test_f64(self):
         self.__test_file("f64")
 
-    # 29
-    def test_i32_0_29(self):
-        self.__test_index_case("i32", 0, 29)
-
 
 if __name__ == "__main__":
     unittest.main()

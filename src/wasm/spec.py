@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Callable
 
 from src.wasm.type.numpy.float import F32, F64
-from src.wasm.type.numpy.int import LEB128
+from src.wasm.type.numpy.int import I32, I64
 
 
 def metadata(*args: int):
@@ -17,18 +17,23 @@ class CodeSectionSpec(ABC):
     """Code Sectionの仕様"""
 
     @abstractmethod
-    @metadata(0x41, 0x42)
-    def i32_const(self, value: LEB128):
+    @metadata(0x41)
+    def const_i32(self, value: I32):
+        pass
+
+    @abstractmethod
+    @metadata(0x42)
+    def const_i64(self, value: I64):
         pass
 
     @abstractmethod
     @metadata(0x43)
-    def push_f32(self, value: F32):
+    def const_f32(self, value: F32):
         pass
 
     @abstractmethod
     @metadata(0x44)
-    def push_f64(self, value: F64):
+    def const_f64(self, value: F64):
         pass
 
     @abstractmethod
@@ -274,6 +279,31 @@ class CodeSectionSpec(ABC):
     @abstractmethod
     @metadata(0x0F)
     def return_(self):
+        pass
+
+    @abstractmethod
+    @metadata(0xC0)
+    def i32_extend8(self):
+        pass
+
+    @abstractmethod
+    @metadata(0xC1)
+    def i32_extend16(self):
+        pass
+
+    @abstractmethod
+    @metadata(0xC2)
+    def i64_extend8(self):
+        pass
+
+    @abstractmethod
+    @metadata(0xC3)
+    def i64_extend16(self):
+        pass
+
+    @abstractmethod
+    @metadata(0xC4)
+    def i64_extend32(self):
         pass
 
     def error(self):
