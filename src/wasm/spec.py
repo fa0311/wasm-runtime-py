@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
-from typing import Callable
+from typing import Callable, List, Optional
 
+from src.wasm.type.base import NumericType
 from src.wasm.type.numpy.float import F32, F64
 from src.wasm.type.numpy.int import I32, I64
 
@@ -321,7 +322,7 @@ class CodeSectionSpec(ABC):
         return data.get(opcode, cls.error)
 
     @classmethod
-    def bind(cls, pearent: "CodeSectionSpec", opcode: int):
+    def bind(cls, pearent: "CodeSectionSpec", opcode: int) -> Callable[[NumericType], Optional[List[NumericType]]]:
         name = pearent.mapped(opcode).__name__
         if name == "error":
             raise Exception(f"opcode: {opcode:02X} is not defined")

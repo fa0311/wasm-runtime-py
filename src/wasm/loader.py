@@ -129,7 +129,6 @@ class WasmLoader:
         res: list[CodeInstruction] = []
         while data.has_next():
             opcode = data.read_byte()
-            self.logger.debug(f"opcode: {opcode}")
             fn = CodeSectionSpec.mapped(opcode)
 
             annotations: list[type] = [e for e in fn.__annotations__.values()]
@@ -149,7 +148,9 @@ class WasmLoader:
                     args.append(F64.from_str(data.read_bytes(8).data))
                 else:
                     raise Exception("invalid type")
-            res.append(CodeInstruction(opcode=opcode, args=args))
+            instruction = CodeInstruction(opcode=opcode, args=args)
+            self.logger.debug(instruction)
+            res.append(instruction)
         return res
 
     @logger.logger

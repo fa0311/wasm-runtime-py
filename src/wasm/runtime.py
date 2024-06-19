@@ -79,8 +79,10 @@ class CodeSectionRunner(CodeSectionSpec):
             instruction = self.data[self.pointer]
             opcode = instruction.opcode
             args = instruction.args
-            self.bind(self, opcode)(*args)
             self.logger.debug(f"run: {instruction}")
+            res = self.bind(self, opcode)(*args)
+            if res:
+                return res
 
             self.pointer += 1
         return self.stack
@@ -306,7 +308,7 @@ class CodeSectionRunner(CodeSectionSpec):
             else:
                 raise Exception("unknown block type")
         else:
-            pass
+            return self.stack
 
     def call(self, index: int):
         fn, fn_type = self.parent.get_function(index)
@@ -321,7 +323,7 @@ class CodeSectionRunner(CodeSectionSpec):
         self.stack.pop()
 
     def return_(self):
-        return self.stack
+        return [self.stack.pop()]
 
     def i32_extend8(self):
         a = self.stack.pop()

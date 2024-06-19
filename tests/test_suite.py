@@ -106,6 +106,9 @@ class TestSuite(unittest.TestCase):
                 if str(a) != str(b):
                     self.fail(f"expect: {b}, actual: {a}")
 
+    def test_comments(self):
+        self.__test_file("comments")
+
     def test_i32(self):
         self.__test_file("i32")
 
