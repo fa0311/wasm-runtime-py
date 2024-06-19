@@ -79,8 +79,9 @@ class WasmLoader:
             params = [data.read_byte() for _ in range(param_count)]
             return_count = data.read_leb128()
             returns = [data.read_byte() for _ in range(return_count)]
-            self.logger.debug(f"form: {form}, params: {params}, returns: {returns}")
-            res.append(TypeSection(form=form, params=params, returns=returns))
+            section = TypeSection(form=form, params=params, returns=returns)
+            self.logger.debug(section)
+            res.append(section)
 
         # 解析結果を返す
         return res
@@ -97,8 +98,9 @@ class WasmLoader:
         res: list[FunctionSection] = []
         for _ in range(function_count):
             type = data.read_leb128()
-            self.logger.debug(f"type: {type}")
-            res.append(FunctionSection(type=type))
+            section = FunctionSection(type=type)
+            self.logger.debug(section)
+            res.append(section)
 
         # 解析結果を返す
         return res
@@ -119,7 +121,9 @@ class WasmLoader:
             local = self.code_section_local(code)
             instructions = self.code_section_instructions(code)
             self.logger.debug(f"body size: {body_size}")
-            res.append(CodeSection(data=instructions, local=local))
+            section = CodeSection(data=instructions, local=local)
+            self.logger.debug(section)
+            res.append(section)
 
         # 解析結果を返す
         return res
@@ -187,8 +191,9 @@ class WasmLoader:
             field = data.read_bytes(field_len)
             kind = data.read_byte()
             index = data.read_leb128()
-            self.logger.debug(f"field: {field}, kind: {kind}, index: {index}")
-            res.append(ExportSection(field=field, kind=kind, index=index))
+            section = ExportSection(field=field, kind=kind, index=index)
+            self.logger.debug(section)
+            res.append(section)
 
         # 解析結果を返す
         return res
