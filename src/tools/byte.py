@@ -34,6 +34,20 @@ class ByteReader:
                 break
         return result
 
+    def read_sleb128(self) -> int:
+        """ポインタが指す位置からSLEB128形式の数値を読み取り、ポインタを進める"""
+        result = 0
+        shift = 0
+        while True:
+            byte = self.read_byte()
+            result |= (byte & 0x7F) << shift
+            shift += 7
+            if byte & 0x80 == 0:
+                break
+        if byte & 0x40:
+            result |= -(1 << shift)
+        return result
+
     def has_next(self) -> bool:
         """ポインタが指す位置がバイト列の最後かどうかを返す"""
         return self.pointer < len(self.data)

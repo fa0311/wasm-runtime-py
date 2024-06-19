@@ -65,8 +65,7 @@ class TestSuite(unittest.TestCase):
     def __test_file(self, name: str):
         case = self.__get_test_suite_data(name)
         for i in range(len(case)):
-            with self.subTest(name=name, index=i):
-                self.__test_index(name, i)
+            self.__test_index(name, i)
 
     def __test_index(self, name: str, index: int):
         d, cmds = self.__get_test_suite_data(name)[index]
@@ -114,6 +113,9 @@ class TestSuite(unittest.TestCase):
 
     def test_inline_module(self):
         self.__test_file("inline-module")
+
+    def test_int_literals(self):
+        self.__test_file("int_literals")
 
     def test_i32(self):
         self.__test_file("i32")
