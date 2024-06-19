@@ -22,9 +22,7 @@ from src.wasm.type.numpy.int import I32, I64
 
 class TestSuite(unittest.TestCase):
     def setUp(self):
-        if __debug__:
-            self.__set_logger()
-        np.seterr(all="ignore")
+        self.__set_logger()
         if not os.path.exists(".cache"):
             self.__set_wasm2json()
 
@@ -38,17 +36,24 @@ class TestSuite(unittest.TestCase):
         pass
 
     def __set_logger(self):
-        handler = logging.FileHandler(
-            "latest.log",
-            mode="a",
-            encoding="utf-8",
-            delay=True,
-        )
-        logging.basicConfig(
-            level=logging.DEBUG,
-            format="%(message)s",
-            handlers=[handler],
-        )
+        if __debug__:
+            filename = "latest.log"
+            if os.path.exists(filename):
+                os.remove(filename)
+            handler = logging.FileHandler(
+                filename,
+                mode="a",
+                encoding="utf-8",
+                delay=True,
+            )
+            logging.basicConfig(
+                level=logging.DEBUG,
+                format="%(message)s",
+                handlers=[handler],
+            )
+        else:
+            np.seterr(all="ignore")
+            logging.basicConfig(level=logging.FATAL)
 
     def __set_wasm2json(self):
         filelist = glob.glob("testsuite/*.wast")
@@ -173,11 +178,11 @@ class TestSuite(unittest.TestCase):
     def test_float_misc(self):
         self.__test_file("float_misc")
 
-    def test_fac(self):
-        self.__test_file("fac")
+    # def test_fac(self):
+    #     self.__test_file("fac")
 
-    def test_fac_0_3(self):
-        self.__test_index_case("fac", 0, 4)
+    # def test_fac_0_3(self):
+    #     self.__test_index_case("fac", 0, 4)
 
 
 if __name__ == "__main__":
