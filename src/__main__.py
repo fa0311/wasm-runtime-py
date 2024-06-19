@@ -2,8 +2,9 @@ import logging
 import sys
 
 from tools.formatter import ColorFormatter
-from wasm.loader import WasmLoader
-from wasm.runtime import WasmRuntime
+
+from src.wasm.loader.loader import WasmLoader
+from src.wasm.runtime.runtime import WasmRuntime
 
 if __name__ == "__main__":
     # ログの設定

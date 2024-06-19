@@ -1,8 +1,9 @@
 import logging
 from math import ceil, floor, trunc
 
-from wasm.spec import CodeSectionSpec
-from wasm.struct import (
+from src.tools.logger import NestedLogger
+from src.wasm.loader.spec import CodeSectionSpec
+from src.wasm.loader.struct import (
     CodeInstruction,
     CodeSection,
     ExportSection,
@@ -10,8 +11,6 @@ from wasm.struct import (
     SectionBase,
     TypeSection,
 )
-
-from src.tools.logger import NestedLogger
 from src.wasm.type.base import NumericType
 from src.wasm.type.numpy.float import F32, F64
 from src.wasm.type.numpy.int import I32, I64, SignedI8, SignedI16, SignedI32
@@ -43,6 +42,10 @@ class WasmRuntime:
         locals_param = [NumericType(0) for _ in fn.local]
         locals = [*param, *locals_param]
         stack = CodeSectionRunner(self, fn.data, locals=locals)
+
+        # デバッグ用の変数を初期化
+        self.instruction_count = 0
+
         return stack
 
     def get_function(self, index: int) -> tuple[CodeSection, TypeSection]:
@@ -73,9 +76,16 @@ class CodeSectionRunner(CodeSectionSpec):
         self.block_stack: list[tuple] = []
         self.pointer = 0
 
+        self.logger.debug(f"locals: {locals}")
+
     @logger.logger
     def run(self) -> list[NumericType]:
         while self.pointer < len(self.data):
+            if __debug__:
+                self.parent.instruction_count += 1
+                if self.parent.instruction_count > 1000:
+                    raise Exception("infinite loop")
+
             instruction = self.data[self.pointer]
             opcode = instruction.opcode
             args = instruction.args
@@ -89,10 +99,10 @@ class CodeSectionRunner(CodeSectionSpec):
 
     def skip(self):
         count = 0
-        while self.data[self.pointer + count].opcode not in [0x0B, 0x05]:
+        while self.data[self.pointer + count + 1].opcode not in [0x0B, 0x05]:
             count += 1
         self.pointer += count
-        # self.logger.debug(f"skip: {count} instructions")
+        self.logger.debug(f"skip: {count} instructions")
 
     def const_i32(self, value: I32):
         self.stack.append(value)
@@ -280,7 +290,7 @@ class CodeSectionRunner(CodeSectionSpec):
 
     def if_(self, type: int):
         a = self.stack.pop()
-        if not a:
+        if not bool(a):
             self.skip()
             self.pointer += 1
 
@@ -290,7 +300,7 @@ class CodeSectionRunner(CodeSectionSpec):
 
     def br_if(self, count: int):
         a = self.stack.pop()
-        if a:
+        if bool(a):
             for _ in range(count):
                 self.block_stack.pop()
                 self.skip()
@@ -320,14 +330,14 @@ class CodeSectionRunner(CodeSectionSpec):
             else:
                 raise Exception("unknown block type")
         else:
-            return self.stack
+            pass
 
     def call(self, index: int):
         fn, fn_type = self.parent.get_function(index)
         param = [self.stack.pop() for _ in fn_type.params]
         locals_param = [0 for _ in fn.local]
         locals = [*param, *locals_param]
-        runner = CodeSectionRunner(self.parent, fn.data.copy(), locals=locals)
+        runner = CodeSectionRunner(self.parent, data=fn.data.copy(), locals=locals)
         res = runner.run()
         self.stack.extend([res.pop() for _ in fn_type.returns])
 

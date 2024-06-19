@@ -11,8 +11,8 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 sys.path.append(str(Path(__file__).parent.parent / "src"))
 
-from src.wasm.loader import WasmLoader
-from src.wasm.runtime import WasmRuntime
+from src.wasm.loader.loader import WasmLoader
+from src.wasm.runtime.runtime import WasmRuntime
 from src.wasm.type.base import NumericType
 from src.wasm.type.numpy.float import F32, F64
 from src.wasm.type.numpy.int import I32, I64
@@ -160,6 +160,12 @@ class TestSuite(unittest.TestCase):
 
     def test_float_misc(self):
         self.__test_file("float_misc")
+
+    def test_fac(self):
+        self.__test_file("fac")
+
+    def test_fac_0_3(self):
+        self.__test_index_case("fac", 0, 4)
 
 
 if __name__ == "__main__":

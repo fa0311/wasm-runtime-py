@@ -25,6 +25,9 @@ class NumericType:
     def get_length(cls):
         return 32
 
+    def __bool__(self):
+        return bool(self.value)
+
     def __add__(self, other: "NumericType"):
         return self.__class__.from_value(self.value + other.value)
 

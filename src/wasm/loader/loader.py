@@ -2,8 +2,9 @@ import logging
 
 from tools.byte import ByteReader
 from tools.logger import NestedLogger
-from wasm.spec import CodeSectionSpec
-from wasm.struct import (
+
+from src.wasm.loader.spec import CodeSectionSpec
+from src.wasm.loader.struct import (
     CodeInstruction,
     CodeSection,
     ExportSection,
@@ -11,7 +12,6 @@ from wasm.struct import (
     SectionBase,
     TypeSection,
 )
-
 from src.wasm.type.base import NumericType
 from src.wasm.type.numpy.float import F32, F64
 from src.wasm.type.numpy.int import I32, I64
