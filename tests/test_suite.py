@@ -109,6 +109,9 @@ class TestSuite(unittest.TestCase):
     def test_comments(self):
         self.__test_file("comments")
 
+    def test_type(self):
+        self.__test_file("type")
+
     def test_i32(self):
         self.__test_file("i32")
 
