@@ -8,6 +8,8 @@ import sys
 import unittest
 from pathlib import Path
 
+import numpy as np
+
 sys.path.append(str(Path(__file__).parent.parent))
 sys.path.append(str(Path(__file__).parent.parent / "src"))
 
@@ -20,9 +22,14 @@ from src.wasm.type.numpy.int import I32, I64
 
 class TestSuite(unittest.TestCase):
     def setUp(self):
-        self.__set_logger()
+        if __debug__:
+            self.__set_logger()
+        np.seterr(all="ignore")
         if not os.path.exists(".cache"):
             self.__set_wasm2json()
+
+    def tearDown(self):
+        logging.shutdown()
 
     def __enter__(self):
         pass
@@ -31,7 +38,12 @@ class TestSuite(unittest.TestCase):
         pass
 
     def __set_logger(self):
-        handler = logging.FileHandler("latest.log", mode="w", encoding="utf-8")
+        handler = logging.FileHandler(
+            "latest.log",
+            mode="a",
+            encoding="utf-8",
+            delay=True,
+        )
         logging.basicConfig(
             level=logging.DEBUG,
             format="%(message)s",

@@ -12,14 +12,8 @@ from src.wasm.loader.struct import (
     SectionBase,
     TypeSection,
 )
-from src.wasm.type.base import NumericType
 from src.wasm.type.numpy.float import F32, F64
-from src.wasm.type.numpy.int import I32, I64
-
-
-# 形の解決を行う
-def type_resolver(data: bytes) -> NumericType:
-    raise Exception("invalid type")
+from src.wasm.type.numpy.int import I32, I64, SignedI32, SignedI64
 
 
 class WasmLoader:
@@ -143,9 +137,9 @@ class WasmLoader:
                 if annotation == int:
                     args.append(data.read_byte())
                 elif annotation == I32:
-                    args.append(I32.from_int(data.read_sleb128()))
+                    args.append(SignedI32.from_int(data.read_sleb128()).to_unsigned())
                 elif annotation == I64:
-                    args.append(I64.from_int(data.read_sleb128()))
+                    args.append(SignedI64.from_int(data.read_sleb128()).to_unsigned())
                 elif annotation == F32:
                     args.append(F32.from_str(data.read_bytes(4).data))
                 elif annotation == F64:
