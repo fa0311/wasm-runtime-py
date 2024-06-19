@@ -283,6 +283,21 @@ class CodeSectionSpec(ABC):
         pass
 
     @abstractmethod
+    @metadata(0xA7)
+    def wrap_i64(self):
+        pass
+
+    @abstractmethod
+    @metadata(0xAC)
+    def i64_extend_i32_s(self):
+        pass
+
+    @abstractmethod
+    @metadata(0xAD)
+    def i64_extend_i32(self):
+        pass
+
+    @abstractmethod
     @metadata(0xC0)
     def i32_extend8(self):
         pass

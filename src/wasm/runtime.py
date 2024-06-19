@@ -325,6 +325,23 @@ class CodeSectionRunner(CodeSectionSpec):
     def return_(self):
         return [self.stack.pop()]
 
+    def wrap_i64(self):
+        a = self.stack.pop()
+        i64 = I64.from_value(a.value)
+        self.stack.append(i64)
+
+    def i64_extend_i32(self):
+        a = self.stack.pop()
+        i32 = SignedI32.from_value(a.value)
+        i64 = I64.from_value(i32.value)
+        self.stack.append(i64)
+
+    def i64_extend_i32_s(self):
+        a = self.stack.pop()
+        i32 = SignedI32.from_value(a.value)
+        i64 = I64.from_value(i32.value)
+        self.stack.append(i64)
+
     def i32_extend8(self):
         a = self.stack.pop()
         i8 = SignedI8.from_value(a.value)

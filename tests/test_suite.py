@@ -13,6 +13,7 @@ sys.path.append(str(Path(__file__).parent.parent / "src"))
 
 from src.wasm.loader import WasmLoader
 from src.wasm.runtime import WasmRuntime
+from src.wasm.type.base import NumericType
 from src.wasm.type.numpy.float import F32, F64
 from src.wasm.type.numpy.int import I32, I64
 
@@ -22,6 +23,12 @@ class TestSuite(unittest.TestCase):
         self.__set_logger()
         if not os.path.exists(".cache"):
             self.__set_wasm2json()
+
+    def __enter__(self):
+        pass
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        pass
 
     def __set_logger(self):
         handler = logging.FileHandler("latest.log", mode="w", encoding="utf-8")
@@ -92,8 +99,8 @@ class TestSuite(unittest.TestCase):
             }
             args = cmd["action"]["args"]
             expect = cmd["expected"]
-            p = [type_map[value["type"]](value["value"]) for value in args]
-            ee = [type_map[value["type"]](value["value"]) for value in expect]
+            p: list[NumericType] = [type_map[value["type"]](value["value"]) for value in args]
+            ee: list[NumericType] = [type_map[value["type"]](value["value"]) for value in expect]
             assert data is not None
             runtime = data.start(
                 field=field,
@@ -104,6 +111,13 @@ class TestSuite(unittest.TestCase):
                 a, b = r.value, e.value
                 if str(a) != str(b):
                     self.fail(f"expect: {b}, actual: {a}")
+
+    def subTest(self, **param):
+        SUBTEST = False
+        if SUBTEST:
+            return super().subTest(**param)
+        else:
+            return self
 
     def test_comments(self):
         self.__test_file("comments")
@@ -122,6 +136,9 @@ class TestSuite(unittest.TestCase):
 
     def test_i64(self):
         self.__test_file("i64")
+
+    def test_int_exprs(self):
+        self.__test_file("int_exprs")
 
     def test_f32(self):
         self.__test_file("f32")
