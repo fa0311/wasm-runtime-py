@@ -112,6 +112,9 @@ class TestSuite(unittest.TestCase):
     def test_type(self):
         self.__test_file("type")
 
+    def test_inline_module(self):
+        self.__test_file("inline-module")
+
     def test_i32(self):
         self.__test_file("i32")
 
