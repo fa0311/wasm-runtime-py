@@ -79,6 +79,9 @@ class FloatType(NumericType):
     def sqrt(self):
         return self.__class__.from_value(np.sqrt(self.value))
 
+    def copysign(self, other: "NumericType"):
+        return self.__class__.from_value(np.copysign(self.value, other.value))
+
     @fallback_x87(FloatFallbackType.fallback_x87_min)
     def min(self, other: NumericType):
         return self.__class__.from_value(np.minimum(self.value, other.value))

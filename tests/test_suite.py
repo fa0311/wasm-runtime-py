@@ -113,7 +113,7 @@ class TestSuite(unittest.TestCase):
                     self.fail(f"expect: {b}, actual: {a}")
 
     def subTest(self, **param):
-        SUBTEST = False
+        SUBTEST = True
         if SUBTEST:
             return super().subTest(**param)
         else:
@@ -143,8 +143,23 @@ class TestSuite(unittest.TestCase):
     def test_f32(self):
         self.__test_file("f32")
 
+    def test_f32_bitwise(self):
+        self.__test_file("f32_bitwise")
+
+    def test_f32_cmp(self):
+        self.__test_file("f32_cmp")
+
     def test_f64(self):
         self.__test_file("f64")
+
+    def test_f64_bitwise(self):
+        self.__test_file("f64_bitwise")
+
+    def test_f64_cmp(self):
+        self.__test_file("f64_cmp")
+
+    def test_float_misc(self):
+        self.__test_file("float_misc")
 
 
 if __name__ == "__main__":

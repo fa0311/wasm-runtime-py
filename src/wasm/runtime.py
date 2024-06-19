@@ -238,6 +238,14 @@ class CodeSectionRunner(CodeSectionSpec):
         b, a = self.stack.pop(), self.stack.pop()
         self.stack.append(a.rotr(b))
 
+    def abs(self):
+        a = self.stack.pop()
+        self.stack.append(abs(a))
+
+    def neg(self):
+        a = self.stack.pop()
+        self.stack.append(-a)
+
     def ceil(self):
         a = self.stack.pop()
         self.stack.append(ceil(a))
@@ -265,6 +273,10 @@ class CodeSectionRunner(CodeSectionSpec):
     def sqrt(self):
         a = self.stack.pop()
         self.stack.append(a.sqrt())
+
+    def copysign(self):
+        b, a = self.stack.pop(), self.stack.pop()
+        self.stack.append(a.copysign(b))
 
     def if_(self, type: int):
         a = self.stack.pop()

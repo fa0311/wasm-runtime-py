@@ -198,6 +198,16 @@ class CodeSectionSpec(ABC):
         pass
 
     @abstractmethod
+    @metadata(0x8B, 0x99)
+    def abs(self):
+        pass
+
+    @abstractmethod
+    @metadata(0x8C, 0x9A)
+    def neg(self):
+        pass
+
+    @abstractmethod
     @metadata(0x8D, 0x9B)
     def ceil(self):
         pass
@@ -230,6 +240,11 @@ class CodeSectionSpec(ABC):
     @abstractmethod
     @metadata(0x91, 0x9F)
     def sqrt(self):
+        pass
+
+    @abstractmethod
+    @metadata(0x98, 0xA6)
+    def copysign(self):
         pass
 
     @abstractmethod

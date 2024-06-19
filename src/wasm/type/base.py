@@ -72,6 +72,12 @@ class NumericType:
         length = self.__class__.from_int(self.__class__.get_length())
         return self.__class__.from_value(self.value << (other.value % length.value))
 
+    def __abs__(self):
+        return self.__class__.from_value(self.value.__abs__())
+
+    def __neg__(self):
+        return self.__class__.from_value(self.value.__neg__())
+
     def __ceil__(self):
         return self.__class__.from_value(self.value.__ceil__())
 
@@ -116,10 +122,13 @@ class NumericType:
     def sqrt(self):
         return self.__class__.from_value(self.value**0.5)
 
-    def to_signed(self):
+    def copysign(self, other: "NumericType"):
+        return self.__class__.from_value(abs(self.value) * (1 if other.value >= 0 else -1))
+
+    def to_signed(self) -> "SignedNumericType":
         raise NotImplementedError
 
-    def to_unsigned(self):
+    def to_unsigned(self) -> "UnsignedNumericType":
         raise NotImplementedError
 
 
