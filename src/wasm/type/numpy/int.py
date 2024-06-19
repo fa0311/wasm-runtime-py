@@ -17,7 +17,7 @@ class UnsignedIntType(UnsignedNumericType):
 
     def __repr__(self):
         cls_name = self.__class__.__name__
-        cls_value = self.value
+        cls_value = self.to_signed().value
         return f"{cls_name}({cls_value})"
 
 
@@ -146,7 +146,7 @@ class SignedIntType(SignedNumericType):
 
     def __repr__(self):
         cls_name = self.__class__.__name__
-        cls_value = self.to_unsigned().value
+        cls_value = self.to_signed().value
         return f"{cls_name}({cls_value})"
 
 

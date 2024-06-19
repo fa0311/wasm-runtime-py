@@ -1,10 +1,59 @@
 import struct
-from typing import Union
+from typing import Callable, Union
 
 import numpy as np
 
 from src.wasm.type.base import NumericType
 from src.wasm.type.numpy.int import I32
+
+
+def fallback_x87(fallback_func: Callable):
+    x87 = np.signbit(np.minimum(np.float32(0.0), np.float32(-0.0)))
+
+    def decorator(func: Callable):
+        def wrapper(self: NumericType, other: NumericType):
+            if x87:
+                return fallback_func(self, other)
+            else:
+                return func(self, other)
+
+        return wrapper
+
+    return decorator
+
+
+class FloatFallbackType(NumericType):
+    def fallback_x87_min(self, other: NumericType):
+        if np.isnan(self.value):
+            return self
+        elif np.isnan(other.value):
+            return other
+        elif self.value < other.value:
+            return self
+        elif self.value > other.value:
+            return other
+        elif np.signbit(self.value) and not np.signbit(other.value):
+            return self
+        elif not np.signbit(self.value) and np.signbit(other.value):
+            return other
+        else:
+            return self
+
+    def fallback_x87_max(self, other: NumericType):
+        if np.isnan(self.value):
+            return self
+        elif np.isnan(other.value):
+            return other
+        elif self.value > other.value:
+            return self
+        elif self.value < other.value:
+            return other
+        elif not np.signbit(self.value) and np.signbit(other.value):
+            return self
+        elif np.signbit(self.value) and not np.signbit(other.value):
+            return other
+        else:
+            return self
 
 
 class FloatType(NumericType):
@@ -30,17 +79,13 @@ class FloatType(NumericType):
     def sqrt(self):
         return self.__class__.from_value(np.sqrt(self.value))
 
+    @fallback_x87(FloatFallbackType.fallback_x87_min)
     def min(self, other: NumericType):
-        if np.isnan(self.value) or np.isnan(other.value):
-            return self.__class__(np.nan)
-        else:
-            return self.__class__.from_value(np.fmin(self.value, other.value))
+        return self.__class__.from_value(np.minimum(self.value, other.value))
 
+    @fallback_x87(FloatFallbackType.fallback_x87_max)
     def max(self, other: NumericType):
-        if np.isnan(self.value) or np.isnan(other.value):
-            return self.__class__(np.nan)
-        else:
-            return self.__class__.from_value(np.fmax(self.value, other.value))
+        return self.__class__.from_value(np.maximum(self.value, other.value))
 
 
 class F32(FloatType):
