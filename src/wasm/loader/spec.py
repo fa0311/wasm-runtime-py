@@ -1,7 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Callable, List, Optional
 
-from src.wasm.type.base import NumericType
 from src.wasm.type.numpy.float import F32, F64
 from src.wasm.type.numpy.int import I32, I64
 
@@ -336,24 +334,3 @@ class CodeSectionSpec(ABC):
     @metadata(0xC4)
     def i64_extend32(self):
         pass
-
-    def error(self):
-        raise Exception("naver calle")
-
-    @classmethod
-    def mapped(cls, opcode: int) -> Callable:
-        value = CodeSectionSpec.__dict__.values()
-        data = {}
-        for v in value:
-            if hasattr(v, "metadata"):
-                for m in v.metadata:
-                    data[m] = v
-
-        return data.get(opcode, cls.error)
-
-    @classmethod
-    def bind(cls, pearent: "CodeSectionSpec", opcode: int) -> Callable[[NumericType], Optional[List[NumericType]]]:
-        name = pearent.mapped(opcode).__name__
-        if name == "error":
-            raise Exception(f"opcode: {opcode:02X} is not defined")
-        return getattr(pearent, name)

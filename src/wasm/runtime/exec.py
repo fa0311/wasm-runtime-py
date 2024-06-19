@@ -2,46 +2,40 @@ import logging
 from math import ceil, floor, trunc
 
 from src.tools.logger import NestedLogger
+from src.wasm.loader.helper import CodeSectionSpecHelper
 from src.wasm.loader.spec import CodeSectionSpec
 from src.wasm.loader.struct import (
     CodeInstruction,
     CodeSection,
-    ExportSection,
-    FunctionSection,
-    SectionBase,
     TypeSection,
+    WasmSections,
 )
 from src.wasm.type.base import NumericType
 from src.wasm.type.numpy.float import F32, F64
 from src.wasm.type.numpy.int import I32, I64, SignedI8, SignedI16, SignedI32
 
 
-class WasmRuntime:
-    """Wasmバイナリを実行するためのクラス"""
+class WasmExec:
+    """Code Sectionのデータ構造"""
 
-    type_section: list[TypeSection]
-    function_section: list[FunctionSection]
-    export_section: list[ExportSection]
-    code_section: list[CodeSection]
+    logger = NestedLogger(logging.getLogger(__name__))
 
-    def __init__(self, data: list[SectionBase]):
-        # セクションを分類する
-        self.type_section = [x for x in data if isinstance(x, TypeSection)]
-        self.function_section = [x for x in data if isinstance(x, FunctionSection)]
-        self.export_section = [x for x in data if isinstance(x, ExportSection)]
-        self.code_section = [x for x in data if isinstance(x, CodeSection)]
+    def __init__(self, sections: WasmSections):
+        self.sections = sections
+        self.instruction_count = 0
+        self.logger.debug(f"locals: {locals}")
 
     def start(self, field: bytes, param: list[NumericType]):
         """エントリーポイントを実行する"""
 
         # エントリーポイントの関数を取得する
-        start = [fn for fn in self.export_section if fn.field == field][0]
+        start = [fn for fn in self.sections.export_section if fn.field == field][0]
         fn, _ = self.get_function(start.index)
 
         # ローカル変数を初期化して実行する
         locals_param = [NumericType(0) for _ in fn.local]
         locals = [*param, *locals_param]
-        stack = CodeSectionRunner(self, fn.data, locals=locals)
+        stack = CodeSectionExec(self, code=fn.data, locals=locals)
 
         # デバッグ用の変数を初期化
         self.instruction_count = 0
@@ -51,25 +45,23 @@ class WasmRuntime:
     def get_function(self, index: int) -> tuple[CodeSection, TypeSection]:
         """関数のインデックスからCode SectionとType Sectionを取得する"""
 
-        fn = self.function_section[index]
-        type = self.type_section[fn.type]
-        code = self.code_section[index]
+        fn = self.sections.function_section[index]
+        type = self.sections.type_section[fn.type]
+        code = self.sections.code_section[index]
         return code, type
 
 
-class CodeSectionRunner(CodeSectionSpec):
-    """Code Sectionのデータ構造"""
-
+class CodeSectionExec(CodeSectionSpec):
     logger = NestedLogger(logging.getLogger(__name__))
 
     def __init__(
         self,
-        parent: WasmRuntime,
-        data: list[CodeInstruction],
+        env: WasmExec,
+        code: list[CodeInstruction],
         locals: list[NumericType],
     ):
-        self.parent = parent
-        self.data = data
+        self.env = env
+        self.code = code
         self.locals = locals
 
         self.stack: list[NumericType] = []
@@ -80,17 +72,18 @@ class CodeSectionRunner(CodeSectionSpec):
 
     @logger.logger
     def run(self) -> list[NumericType]:
-        while self.pointer < len(self.data):
+        while self.pointer < len(self.code):
             if __debug__:
-                self.parent.instruction_count += 1
-                if self.parent.instruction_count > 1000:
+                self.env.instruction_count += 1
+                if self.env.instruction_count > 1000:
                     raise Exception("infinite loop")
 
-            instruction = self.data[self.pointer]
+            instruction = self.code[self.pointer]
             opcode = instruction.opcode
             args = instruction.args
             self.logger.debug(f"run: {instruction}")
-            res = self.bind(self, opcode)(*args)
+            fn = CodeSectionSpecHelper.bind(self, opcode)
+            res = fn(*args)
             if res:
                 return res
 
@@ -99,7 +92,7 @@ class CodeSectionRunner(CodeSectionSpec):
 
     def skip(self):
         count = 0
-        while self.data[self.pointer + count + 1].opcode not in [0x0B, 0x05]:
+        while self.code[self.pointer + count + 1].opcode not in [0x0B, 0x05]:
             count += 1
         self.pointer += count
         self.logger.debug(f"skip: {count} instructions")
@@ -333,11 +326,11 @@ class CodeSectionRunner(CodeSectionSpec):
             pass
 
     def call(self, index: int):
-        fn, fn_type = self.parent.get_function(index)
+        fn, fn_type = self.env.get_function(index)
         param = [self.stack.pop() for _ in fn_type.params]
         locals_param = [0 for _ in fn.local]
         locals = [*param, *locals_param]
-        runner = CodeSectionRunner(self.parent, data=fn.data.copy(), locals=locals)
+        runner = CodeSectionExec(self.env, code=fn.data, locals=locals)
         res = runner.run()
         self.stack.extend([res.pop() for _ in fn_type.returns])
 

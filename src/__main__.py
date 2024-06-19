@@ -4,7 +4,7 @@ import sys
 from tools.formatter import ColorFormatter
 
 from src.wasm.loader.loader import WasmLoader
-from src.wasm.runtime.runtime import WasmRuntime
+from src.wasm.runtime.exec import WasmExec
 
 if __name__ == "__main__":
     # ログの設定
@@ -23,6 +23,6 @@ if __name__ == "__main__":
 
     # Wasmバイナリを読み込んで実行する
     data = WasmLoader(wasm).load()
-    runner = WasmRuntime(data).start(field=b"_start", param=[])
+    runner = WasmExec(data).start(field=b"_start", param=[])
     res = runner.run()
     logging.info(f"result: {res}")

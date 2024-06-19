@@ -1,16 +1,11 @@
 from dataclasses import dataclass, field
 
-from tools.byte import ByteReader
-
+from src.tools.byte import ByteReader
 from src.wasm.type.base import NumericType
 
 
-class SectionBase:
-    """Sectionのデータ構造"""
-
-
 @dataclass
-class TypeSection(SectionBase):
+class TypeSection:
     """Type Sectionのデータ構造"""
 
     form: int = field(metadata={"description": "関数の形式"})
@@ -19,7 +14,7 @@ class TypeSection(SectionBase):
 
 
 @dataclass
-class FunctionSection(SectionBase):
+class FunctionSection:
     """Function Sectionのデータ構造"""
 
     type: int = field(metadata={"description": "関数の型"})
@@ -34,7 +29,7 @@ class CodeInstruction:
 
 
 @dataclass
-class CodeSection(SectionBase):
+class CodeSection:
     """Code Sectionのデータ構造"""
 
     data: list[CodeInstruction] = field(metadata={"description": "命令セット"})
@@ -42,9 +37,17 @@ class CodeSection(SectionBase):
 
 
 @dataclass
-class ExportSection(SectionBase):
+class ExportSection:
     """Export Sectionのデータ構造"""
 
     field: ByteReader
     kind: int
     index: int
+
+
+@dataclass
+class WasmSections:
+    type_section: list[TypeSection]
+    function_section: list[FunctionSection]
+    code_section: list[CodeSection]
+    export_section: list[ExportSection]

@@ -3,14 +3,14 @@ import logging
 from tools.byte import ByteReader
 from tools.logger import NestedLogger
 
-from src.wasm.loader.spec import CodeSectionSpec
+from src.wasm.loader.helper import CodeSectionSpecHelper
 from src.wasm.loader.struct import (
     CodeInstruction,
     CodeSection,
     ExportSection,
     FunctionSection,
-    SectionBase,
     TypeSection,
+    WasmSections,
 )
 from src.wasm.type.numpy.float import F32, F64
 from src.wasm.type.numpy.int import I32, I64, SignedI32, SignedI64
@@ -25,7 +25,7 @@ class WasmLoader:
         self.data = ByteReader(data)
 
     @logger.logger
-    def load(self) -> list[SectionBase]:
+    def load(self) -> WasmSections:
         """Wasmバイナリを読み込んで解析する"""
 
         # マジックナンバーとバージョン番号を確認
@@ -54,8 +54,15 @@ class WasmLoader:
             else:
                 self.logger.error(f"unknown id: {id}")
 
+        sections = WasmSections(
+            type_section=[x for x in res if isinstance(x, TypeSection)],
+            function_section=[x for x in res if isinstance(x, FunctionSection)],
+            code_section=[x for x in res if isinstance(x, CodeSection)],
+            export_section=[x for x in res if isinstance(x, ExportSection)],
+        )
+
         # 解析結果を返す
-        return res
+        return sections
 
     @logger.logger
     def type_section(self, data: ByteReader) -> list[TypeSection]:
@@ -127,7 +134,7 @@ class WasmLoader:
         res: list[CodeInstruction] = []
         while data.has_next():
             opcode = data.read_byte()
-            fn = CodeSectionSpec.mapped(opcode)
+            fn = CodeSectionSpecHelper.mapped(opcode)
 
             annotations: list[type] = [e for e in fn.__annotations__.values()]
 

@@ -10,11 +10,12 @@ from pathlib import Path
 
 import numpy as np
 
+from src.wasm.runtime.exec import WasmExec
+
 sys.path.append(str(Path(__file__).parent.parent))
 sys.path.append(str(Path(__file__).parent.parent / "src"))
 
 from src.wasm.loader.loader import WasmLoader
-from src.wasm.runtime.runtime import WasmRuntime
 from src.wasm.type.base import NumericType
 from src.wasm.type.numpy.float import F32, F64
 from src.wasm.type.numpy.int import I32, I64
@@ -93,7 +94,7 @@ class TestSuite(unittest.TestCase):
 
     def __test_index(self, name: str, index: int):
         d, cmds = self.__get_test_suite_data(name)[index]
-        data = WasmRuntime(WasmLoader(d).load())
+        data = WasmExec(WasmLoader(d).load())
 
         for case, cmd in enumerate(cmds):
             param = {"name": name, "index": f"{index:04d}", "case": f"{case:04d}"}
@@ -101,11 +102,11 @@ class TestSuite(unittest.TestCase):
 
     def __test_index_case(self, name: str, index: int, case: int):
         d, cmds = self.__get_test_suite_data(name)[index]
-        data = WasmRuntime(WasmLoader(d).load())
+        data = WasmExec(WasmLoader(d).load())
         param = {"name": name, "index": f"{index:04d}", "case": f"{case:04d}"}
         self.__test_run(data, cmds[case], param)
 
-    def __test_run(self, data: WasmRuntime, cmd: dict, param: dict[str, str]):
+    def __test_run(self, data: WasmExec, cmd: dict, param: dict[str, str]):
         with self.subTest(**param):
             field = bytes(cmd["action"]["field"], "utf-8")
             type_map = {
