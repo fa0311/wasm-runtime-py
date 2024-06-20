@@ -10,12 +10,12 @@ from pathlib import Path
 
 import numpy as np
 
-from src.wasm.runtime.exec import WasmExec
-
 sys.path.append(str(Path(__file__).parent.parent))
 sys.path.append(str(Path(__file__).parent.parent / "src"))
 
 from src.wasm.loader.loader import WasmLoader
+from src.wasm.optimizer.optimizer import WasmOptimizer
+from src.wasm.runtime.exec import WasmExec
 from src.wasm.type.base import NumericType
 from src.wasm.type.numpy.float import F32, F64
 from src.wasm.type.numpy.int import I32, I64
@@ -93,42 +93,45 @@ class TestSuite(unittest.TestCase):
             self.__test_index(name, i)
 
     def __test_index(self, name: str, index: int):
-        d, cmds = self.__get_test_suite_data(name)[index]
-        data = WasmExec(WasmLoader(d).load())
+        wasm, cmds = self.__get_test_suite_data(name)[index]
+        data = WasmLoader(wasm).load()
+        optimizer = WasmOptimizer(data).optimize()
+        data = WasmExec(optimizer)
 
         for case, cmd in enumerate(cmds):
             param = {"name": name, "index": f"{index:04d}", "case": f"{case:04d}"}
-            self.__test_run(data, cmd, param)
+            with self.subTest(**param):
+                self.__test_run(data, cmd)
 
     def __test_index_case(self, name: str, index: int, case: int):
-        d, cmds = self.__get_test_suite_data(name)[index]
-        data = WasmExec(WasmLoader(d).load())
-        param = {"name": name, "index": f"{index:04d}", "case": f"{case:04d}"}
-        self.__test_run(data, cmds[case], param)
+        wasm, cmds = self.__get_test_suite_data(name)[index]
+        data = WasmLoader(wasm).load()
+        optimizer = WasmOptimizer(data).optimize()
+        data = WasmExec(optimizer)
+        self.__test_run(data, cmds[case])
 
-    def __test_run(self, data: WasmExec, cmd: dict, param: dict[str, str]):
-        with self.subTest(**param):
-            field = bytes(cmd["action"]["field"], "utf-8")
-            type_map = {
-                "i32": lambda x: I32.from_str(x),
-                "i64": lambda x: I64.from_str(x),
-                "f32": lambda x: F32.from_str(x),
-                "f64": lambda x: F64.from_str(x),
-            }
-            args = cmd["action"]["args"]
-            expect = cmd["expected"]
-            p: list[NumericType] = [type_map[value["type"]](value["value"]) for value in args]
-            ee: list[NumericType] = [type_map[value["type"]](value["value"]) for value in expect]
-            assert data is not None
-            runtime = data.start(
-                field=field,
-                param=p,
-            )
-            res = runtime.run()
-            for i, (r, e) in enumerate(zip(res, ee)):
-                a, b = r.value, e.value
-                if str(a) != str(b):
-                    self.fail(f"expect: {b}, actual: {a}")
+    def __test_run(self, data: WasmExec, cmd: dict):
+        field = bytes(cmd["action"]["field"], "utf-8")
+        type_map = {
+            "i32": lambda x: I32.from_str(x),
+            "i64": lambda x: I64.from_str(x),
+            "f32": lambda x: F32.from_str(x),
+            "f64": lambda x: F64.from_str(x),
+        }
+        args = cmd["action"]["args"]
+        expect = cmd["expected"]
+        p: list[NumericType] = [type_map[value["type"]](value["value"]) for value in args]
+        ee: list[NumericType] = [type_map[value["type"]](value["value"]) for value in expect]
+        assert data is not None
+        runtime = data.start(
+            field=field,
+            param=p,
+        )
+        res = runtime.run()
+        for i, (r, e) in enumerate(zip(res, ee)):
+            a, b = r.value, e.value
+            if str(a) != str(b):
+                self.fail(f"expect: {b}, actual: {a}")
 
     def subTest(self, **param):
         SUBTEST = True
@@ -151,6 +154,9 @@ class TestSuite(unittest.TestCase):
 
     def test_i32(self):
         self.__test_file("i32")
+
+    def test_i32_0_9(self):
+        self.__test_index_case("i32", 0, 9)
 
     def test_i64(self):
         self.__test_file("i64")
@@ -179,11 +185,17 @@ class TestSuite(unittest.TestCase):
     def test_float_misc(self):
         self.__test_file("float_misc")
 
-    # def test_fac(self):
-    #     self.__test_file("fac")
+    def test_fac(self):
+        self.__test_file("fac")
 
-    # def test_fac_0_3(self):
-    #     self.__test_index_case("fac", 0, 4)
+    def test_fac_0_5(self):
+        self.__test_index_case("fac", 0, 5)
+
+    def test_call(self):
+        self.__test_file("call")
+
+    def test_call_0_9(self):
+        self.__test_index_case("call", 0, 9)
 
 
 if __name__ == "__main__":

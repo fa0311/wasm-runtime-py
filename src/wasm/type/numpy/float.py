@@ -100,10 +100,8 @@ class F32(FloatType):
         return cls(value.astype(np.float32))
 
     @classmethod
-    def from_int(cls, value: int):
-        bytes_value = struct.pack("I", value)
-        float_value = struct.unpack("f", bytes_value)[0]
-        return cls(np.float32(float_value))
+    def from_int(cls, value: Union[int, float]):
+        return cls(np.float32(value))
 
     @classmethod
     def from_str(cls, value: Union[str, bytes]):
@@ -112,7 +110,9 @@ class F32(FloatType):
         elif value == "nan:arithmetic":
             return cls(np.float32(np.nan))
         else:
-            return cls.from_int(int(value))
+            bytes_value = struct.pack("I", int(value))
+            float_value = struct.unpack("f", bytes_value)[0]
+            return cls.from_int(float_value)
 
     @classmethod
     def get_length(cls):
@@ -128,10 +128,8 @@ class F64(FloatType):
         return cls(value.astype(np.float64))
 
     @classmethod
-    def from_int(cls, value: int):
-        bytes_value = struct.pack("Q", value)
-        float_value = struct.unpack("d", bytes_value)[0]
-        return cls(np.float64(float_value))
+    def from_int(cls, value: Union[int, float]):
+        return cls(np.float64(value))
 
     @classmethod
     def from_str(cls, value: Union[str, bytes]):
@@ -140,7 +138,9 @@ class F64(FloatType):
         elif value == "nan:arithmetic":
             return cls(np.float64(np.nan))
         else:
-            return cls.from_int(int(value))
+            bytes_value = struct.pack("Q", int(value))
+            float_value = struct.unpack("d", bytes_value)[0]
+            return cls.from_int(float_value)
 
     @classmethod
     def get_length(cls):

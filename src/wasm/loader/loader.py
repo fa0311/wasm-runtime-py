@@ -148,9 +148,9 @@ class WasmLoader:
                 elif annotation == I64:
                     args.append(SignedI64.from_int(data.read_sleb128()).to_unsigned())
                 elif annotation == F32:
-                    args.append(F32.from_str(data.read_bytes(4).data))
+                    args.append(F32.from_int(data.read_f32()))
                 elif annotation == F64:
-                    args.append(F64.from_str(data.read_bytes(8).data))
+                    args.append(F64.from_int(data.read_f64()))
                 else:
                     raise Exception("invalid type")
             instruction = CodeInstruction(opcode=opcode, args=args)
@@ -192,7 +192,7 @@ class WasmLoader:
             field = data.read_bytes(field_len)
             kind = data.read_byte()
             index = data.read_leb128()
-            section = ExportSection(field=field, kind=kind, index=index)
+            section = ExportSection(field_name=field, kind=kind, index=index)
             self.logger.debug(section)
             res.append(section)
 
