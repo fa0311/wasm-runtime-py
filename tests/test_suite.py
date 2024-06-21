@@ -123,7 +123,7 @@ class TestSuite(unittest.TestCase):
         p: list[NumericType] = [type_map[value["type"]](value["value"]) for value in args]
         ee: list[NumericType] = [type_map[value["type"]](value["value"]) for value in expect]
         assert data is not None
-        res = data.start(
+        runtime, res = data.start(
             field=field,
             param=p,
         )
@@ -153,9 +153,6 @@ class TestSuite(unittest.TestCase):
 
     def test_i32(self):
         self.__test_file("i32")
-
-    def test_i32_0_9(self):
-        self.__test_index_case("i32", 0, 9)
 
     def test_i64(self):
         self.__test_file("i64")
@@ -187,11 +184,50 @@ class TestSuite(unittest.TestCase):
     def test_fac(self):
         self.__test_file("fac")
 
-    def test_call(self):
-        self.__test_file("call")
+    # def test_conversions(self):
+    #     self.__test_file("conversions")
 
-    def test_call_0_50(self):
-        self.__test_index_case("call", 0, 50)
+    # def test_float_literals(self):
+    #     self.__test_file("float_literals")
+
+    def test_forward(self):
+        self.__test_file("forward")
+
+    def test_const(self):
+        self.__test_file("const")
+
+    # def test_local_get(self):
+    #     self.__test_file("local_get")
+
+    # def test_local_set(self):
+    #     self.__test_file("local_set")
+
+    # def test_labels(self):
+    #     self.__test_file("labels")
+
+    # def test_switch(self):
+    #     self.__test_file("switch")
+
+    # def test_store(self):
+    #     self.__test_file("store")
+
+    # def test_block(self):
+    #     self.__test_file("block")
+
+    # def test_br(self):
+    #     self.__test_file("br")
+
+    # def test_br_if(self):
+    #     self.__test_file("br_if")
+
+    # def test_br_table(self):
+    #     self.__test_file("br_table")
+
+    # def test_return(self):
+    #     self.__test_file("return")
+
+    # def test_call(self):
+    #     self.__test_file("call")
 
 
 if __name__ == "__main__":

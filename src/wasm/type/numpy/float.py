@@ -124,7 +124,7 @@ class F64(FloatType):
         self.value = value
 
     @classmethod
-    def from_value(cls, value: np.float64):
+    def from_value(cls, value: np.generic):
         return cls(value.astype(np.float64))
 
     @classmethod

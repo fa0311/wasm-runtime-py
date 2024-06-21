@@ -233,6 +233,9 @@ class WasmLoader:
         res: list[CodeInstruction] = []
         while data.has_next():
             opcode = data.read_byte()
+            if CodeSectionSpecHelper.is_prefix(opcode):
+                opcode = (opcode << 8) | data.read_byte()
+
             fn = CodeSectionSpecHelper.mapped(opcode)
 
             annotations: list[type] = [e for e in fn.__annotations__.values()]

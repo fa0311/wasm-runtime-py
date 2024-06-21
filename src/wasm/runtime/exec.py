@@ -11,7 +11,7 @@ from src.wasm.optimizer.struct import (
 )
 from src.wasm.type.base import NumericType
 from src.wasm.type.numpy.float import F32, F64
-from src.wasm.type.numpy.int import I32, I64, SignedI8, SignedI16, SignedI32
+from src.wasm.type.numpy.int import I32, I64, SignedI8, SignedI16, SignedI32, SignedI64
 
 
 class WasmExec:
@@ -51,7 +51,7 @@ class WasmExec:
                 raise Exception("invalid param length")
             for a, b in zip(param, fn_type.params):
                 if a.__class__ != self.get_number_type(b):
-                    raise Exception("invalid param type")
+                    raise Exception(f"invalid return type {a.__class__} != {self.get_number_type(b)}")
 
         locals_param = [self.get_number_type(x).from_int(0) for x in fn.local]
         locals = [*param, *locals_param]
@@ -64,9 +64,9 @@ class WasmExec:
                 raise Exception("invalid return length")
             for a, b in zip(res, fn_type.returns):
                 if a.__class__ != self.get_number_type(b):
-                    raise Exception("invalid return type")
+                    raise Exception(f"invalid return type {a.__class__} != {self.get_number_type(b)}")
 
-        return res
+        return (runner, res)
 
     def get_function(self, index: int) -> tuple[CodeSectionOptimize, TypeSectionOptimize]:
         """関数のインデックスからCode SectionとType Sectionを取得する"""
@@ -359,7 +359,7 @@ class CodeSectionExec(CodeSectionSpec):
 
         param = [self.stack.pop() for _ in fn_type.params][::-1]
 
-        res = self.env.run(index, param)
+        runtime, res = self.env.run(index, param)
         self.stack.extend(res)
 
     def call_indirect(self, index: int):
@@ -377,13 +377,32 @@ class CodeSectionExec(CodeSectionSpec):
 
     def wrap_i64(self):
         a = self.stack.pop()
-        i64 = I64.from_value(a.value)
-        self.stack.append(i64)
+        i32 = I32.from_value(a.value)
+        self.stack.append(i32)
+
+    def i32_trunc_f32_s(self):
+        a = self.stack.pop()
+        i32 = SignedI32.from_value(a.value)
+        self.stack.append(i32.to_unsigned())
+
+    def i32_trunc_f32(self):
+        a = self.stack.pop()
+        i32 = I32.from_value(a.value)
+        self.stack.append(i32)
+
+    def i32_trunc_f64_s(self):
+        a = self.stack.pop()
+        i32 = SignedI32.from_value(a.value)
+        self.stack.append(i32.to_unsigned())
+
+    def i32_trunc_f64(self):
+        a = self.stack.pop()
+        i32 = I32.from_value(a.value)
+        self.stack.append(i32)
 
     def i64_extend_i32(self):
         a = self.stack.pop()
-        i32 = SignedI32.from_value(a.value)
-        i64 = I64.from_value(i32.value)
+        i64 = I64.from_value(a.value)
         self.stack.append(i64)
 
     def i64_extend_i32_s(self):
@@ -391,6 +410,60 @@ class CodeSectionExec(CodeSectionSpec):
         i32 = SignedI32.from_value(a.value)
         i64 = I64.from_value(i32.value)
         self.stack.append(i64)
+
+    def f32_convert_i32_s(self):
+        a = self.stack.pop()
+        i32 = SignedI32.from_value(a.value)
+        f32 = F32.from_value(i32.value)
+        self.stack.append(f32)
+
+    def f32_convert_i32(self):
+        a = self.stack.pop()
+        f32 = F32.from_value(a.value)
+        self.stack.append(f32)
+
+    def f32_convert_i64_s(self):
+        a = self.stack.pop()
+        i64 = SignedI64.from_value(a.value)
+        f32 = F32.from_value(i64.value)
+        self.stack.append(f32)
+
+    def f32_convert_i64(self):
+        a = self.stack.pop()
+        f32 = F32.from_value(a.value)
+        self.stack.append(f32)
+
+    def f32_demote_f64(self):
+        a = self.stack.pop()
+        f32 = F32.from_value(a.value)
+        self.stack.append(f32)
+
+    def f64_convert_i32_s(self):
+        a = self.stack.pop()
+        i32 = SignedI32.from_value(a.value)
+        f64 = F64.from_value(i32.value)
+        self.stack.append(f64)
+
+    def f64_convert_i32(self):
+        a = self.stack.pop()
+        f64 = F64.from_value(a.value)
+        self.stack.append(f64)
+
+    def f64_convert_i64_s(self):
+        a = self.stack.pop()
+        i64 = SignedI64.from_value(a.value)
+        f64 = F64.from_value(i64.value)
+        self.stack.append(f64)
+
+    def f64_convert_i64(self):
+        a = self.stack.pop()
+        f64 = F64.from_value(a.value)
+        self.stack.append(f64)
+
+    def f64_promote_f32(self):
+        a = self.stack.pop()
+        f64 = F64.from_value(a.value)
+        self.stack.append(f64)
 
     def i32_extend8(self):
         a = self.stack.pop()
@@ -421,3 +494,93 @@ class CodeSectionExec(CodeSectionSpec):
         i32 = SignedI32.from_value(a.value)
         i64 = I64.from_value(i32.value)
         self.stack.append(i64)
+
+    def i64_trunc_f32_s(self):
+        a = self.stack.pop()
+        i64 = SignedI64.from_value(a.value)
+        self.stack.append(i64.to_unsigned())
+
+    def i64_trunc_f32(self):
+        a = self.stack.pop()
+        i64 = I64.from_value(a.value)
+        self.stack.append(i64)
+
+    def i64_trunc_f64_s(self):
+        a = self.stack.pop()
+        i64 = SignedI64.from_value(a.value)
+        self.stack.append(i64.to_unsigned())
+
+    def i64_trunc_f64(self):
+        a = self.stack.pop()
+        i64 = I64.from_value(a.value)
+        self.stack.append(i64)
+
+    def i32_trunc_sat_f32_s(self):
+        a = self.stack.pop()
+        i32 = SignedI32.from_value(trunc(a).value)
+        self.stack.append(i32.to_unsigned())
+
+    def i32_trunc_sat_f32(self):
+        a = self.stack.pop()
+        i32 = I32.from_value(a.value)
+        self.stack.append(i32)
+
+    def i32_trunc_sat_f64_s(self):
+        a = self.stack.pop()
+        i32 = SignedI32.from_value(trunc(a).value)
+        self.stack.append(i32.to_unsigned())
+
+    def i32_trunc_sat_f64(self):
+        a = self.stack.pop()
+        i32 = I32.from_value(trunc(a).value)
+        self.stack.append(i32)
+
+    def i64_trunc_sat_f32_s(self):
+        a = self.stack.pop()
+        i64 = SignedI64.from_value(trunc(a).value)
+        self.stack.append(i64.to_unsigned())
+
+    def i64_trunc_sat_f32(self):
+        a = self.stack.pop()
+        i64 = I64.from_value(trunc(a).value)
+        self.stack.append(i64)
+
+    def i64_trunc_sat_f64_s(self):
+        a = self.stack.pop()
+        i64 = SignedI64.from_value(trunc(a).value)
+        self.stack.append(i64.to_unsigned())
+
+    def i64_trunc_sat_f64(self):
+        a = self.stack.pop()
+        i64 = I64.from_value(trunc(a).value)
+        self.stack.append(i64)
+
+    def memory_init(self):
+        pass
+
+    def data_drop(self):
+        pass
+
+    def memory_copy(self):
+        pass
+
+    def memory_fill(self):
+        pass
+
+    def table_init(self):
+        pass
+
+    def elem_drop(self):
+        pass
+
+    def table_copy(self):
+        pass
+
+    def table_grow(self):
+        pass
+
+    def table_size(self):
+        pass
+
+    def table_fill(self):
+        pass

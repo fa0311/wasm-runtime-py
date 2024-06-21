@@ -21,6 +21,18 @@ class CodeSectionSpecHelper:
         return data.get(opcode, cls.naver)
 
     @classmethod
+    def is_prefix(cls, opcode: int) -> bool:
+        """2バイトのopcodeの先頭かどうかを判定する"""
+        value = CodeSectionSpec.__dict__.values()
+        prefix = {}
+        for v in value:
+            if hasattr(v, "opcode"):
+                for m in v.opcode:
+                    if m > 0xFF:
+                        prefix[m >> 8] = True
+        return opcode in prefix
+
+    @classmethod
     def bind(cls, pearent: "CodeSectionSpec", opcode: int) -> BindingType:
         fn = cls.mapped(opcode)
         if fn is cls.naver:

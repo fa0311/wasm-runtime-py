@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from enum import Enum
+from typing import Callable
 
 from src.wasm.type.numpy.float import F32, F64
 from src.wasm.type.numpy.int import I32, I64
@@ -14,7 +15,7 @@ class BlockType(Enum):
 class Metadata:
     @staticmethod
     def opcode(*args: int):
-        def decorator(func):
+        def decorator(func: Callable):
             func.opcode = args
             return func
 
@@ -22,7 +23,7 @@ class Metadata:
 
     @staticmethod
     def block(block: BlockType):
-        def decorator(func):
+        def decorator(func: Callable):
             func.block = block
             return func
 
@@ -348,6 +349,26 @@ class CodeSectionSpec(ABC):
         pass
 
     @abstractmethod
+    @Metadata.opcode(0xA8)
+    def i32_trunc_f32_s(self):
+        pass
+
+    @abstractmethod
+    @Metadata.opcode(0xA9)
+    def i32_trunc_f32(self):
+        pass
+
+    @abstractmethod
+    @Metadata.opcode(0xAA)
+    def i32_trunc_f64_s(self):
+        pass
+
+    @abstractmethod
+    @Metadata.opcode(0xAB)
+    def i32_trunc_f64(self):
+        pass
+
+    @abstractmethod
     @Metadata.opcode(0xAC)
     def i64_extend_i32_s(self):
         pass
@@ -355,6 +376,76 @@ class CodeSectionSpec(ABC):
     @abstractmethod
     @Metadata.opcode(0xAD)
     def i64_extend_i32(self):
+        pass
+
+    @abstractmethod
+    @Metadata.opcode(0xAE)
+    def i64_trunc_f32_s(self):
+        pass
+
+    @abstractmethod
+    @Metadata.opcode(0xAF)
+    def i64_trunc_f32(self):
+        pass
+
+    @abstractmethod
+    @Metadata.opcode(0xB0)
+    def i64_trunc_f64_s(self):
+        pass
+
+    @abstractmethod
+    @Metadata.opcode(0xB1)
+    def i64_trunc_f64(self):
+        pass
+
+    @abstractmethod
+    @Metadata.opcode(0xB2)
+    def f32_convert_i32_s(self):
+        pass
+
+    @abstractmethod
+    @Metadata.opcode(0xB3)
+    def f32_convert_i32(self):
+        pass
+
+    @abstractmethod
+    @Metadata.opcode(0xB4)
+    def f32_convert_i64_s(self):
+        pass
+
+    @abstractmethod
+    @Metadata.opcode(0xB5)
+    def f32_convert_i64(self):
+        pass
+
+    @abstractmethod
+    @Metadata.opcode(0xB6)
+    def f32_demote_f64(self):
+        pass
+
+    @abstractmethod
+    @Metadata.opcode(0xB7)
+    def f64_convert_i32_s(self):
+        pass
+
+    @abstractmethod
+    @Metadata.opcode(0xB8)
+    def f64_convert_i32(self):
+        pass
+
+    @abstractmethod
+    @Metadata.opcode(0xB9)
+    def f64_convert_i64_s(self):
+        pass
+
+    @abstractmethod
+    @Metadata.opcode(0xBA)
+    def f64_convert_i64(self):
+        pass
+
+    @abstractmethod
+    @Metadata.opcode(0xBB)
+    def f64_promote_f32(self):
         pass
 
     @abstractmethod
@@ -380,4 +471,94 @@ class CodeSectionSpec(ABC):
     @abstractmethod
     @Metadata.opcode(0xC4)
     def i64_extend32(self):
+        pass
+
+    @abstractmethod
+    @Metadata.opcode(0xFC00)
+    def i32_trunc_sat_f32_s(self):
+        pass
+
+    @abstractmethod
+    @Metadata.opcode(0xFC01)
+    def i32_trunc_sat_f32(self):
+        pass
+
+    @abstractmethod
+    @Metadata.opcode(0xFC02)
+    def i32_trunc_sat_f64_s(self):
+        pass
+
+    @abstractmethod
+    @Metadata.opcode(0xFC03)
+    def i32_trunc_sat_f64(self):
+        pass
+
+    @abstractmethod
+    @Metadata.opcode(0xFC04)
+    def i64_trunc_sat_f32_s(self):
+        pass
+
+    @abstractmethod
+    @Metadata.opcode(0xFC05)
+    def i64_trunc_sat_f32(self):
+        pass
+
+    @abstractmethod
+    @Metadata.opcode(0xFC06)
+    def i64_trunc_sat_f64_s(self):
+        pass
+
+    @abstractmethod
+    @Metadata.opcode(0xFC07)
+    def i64_trunc_sat_f64(self):
+        pass
+
+    @abstractmethod
+    @Metadata.opcode(0xFC08)
+    def memory_init(self):
+        pass
+
+    @abstractmethod
+    @Metadata.opcode(0xFC09)
+    def data_drop(self):
+        pass
+
+    @abstractmethod
+    @Metadata.opcode(0xFC0A)
+    def memory_copy(self):
+        pass
+
+    @abstractmethod
+    @Metadata.opcode(0xFC0B)
+    def memory_fill(self):
+        pass
+
+    @abstractmethod
+    @Metadata.opcode(0xFC0C)
+    def table_init(self):
+        pass
+
+    @abstractmethod
+    @Metadata.opcode(0xFC0D)
+    def elem_drop(self):
+        pass
+
+    @abstractmethod
+    @Metadata.opcode(0xFC0E)
+    def table_copy(self):
+        pass
+
+    @abstractmethod
+    @Metadata.opcode(0xFC0F)
+    def table_grow(self):
+        pass
+
+    @abstractmethod
+    @Metadata.opcode(0xFC10)
+    def table_size(self):
+        pass
+
+    @abstractmethod
+    @Metadata.opcode(0xFC11)
+    def table_fill(self):
         pass
