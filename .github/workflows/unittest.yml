@@ -35,20 +35,23 @@ jobs:
         id: tests
         env:
           OUTPUT_LOG: test_result_temp.log
+          RESULT_LOG: test_result.log
         run: |
           wast2json --version
           python3 -m unittest discover -p test_*.py -s tests > $OUTPUT_LOG 2>&1 || true
-          echo "TEST_RESULT=$(tail -n 1 $OUTPUT_LOG)" >> $GITHUB_ENV
+          tail -n 3 $OUTPUT_LOG > $RESULT_LOG
           cat $OUTPUT_LOG
 
       - name: Comment on commit
         if: always()
         uses: actions/github-script@v6
+        env:
+          RESULT_LOG: test_result.log
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
             const commit_sha = context.sha;
-            const test_result = process.env.TEST_RESULT;
+            const test_result = require('fs').readFileSync(process.env.RESULT_LOG, 'utf8');
             const message = `Test result: ${test_result}`;
             github.rest.repos.createCommitComment({
               owner: context.repo.owner,
