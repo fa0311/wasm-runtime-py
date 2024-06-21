@@ -123,11 +123,10 @@ class TestSuite(unittest.TestCase):
         p: list[NumericType] = [type_map[value["type"]](value["value"]) for value in args]
         ee: list[NumericType] = [type_map[value["type"]](value["value"]) for value in expect]
         assert data is not None
-        runtime = data.start(
+        res = data.start(
             field=field,
             param=p,
         )
-        res = runtime.run()
         for i, (r, e) in enumerate(zip(res, ee)):
             a, b = r.value, e.value
             if str(a) != str(b):
@@ -188,14 +187,11 @@ class TestSuite(unittest.TestCase):
     def test_fac(self):
         self.__test_file("fac")
 
-    def test_fac_0_5(self):
-        self.__test_index_case("fac", 0, 5)
-
     def test_call(self):
         self.__test_file("call")
 
-    def test_call_0_9(self):
-        self.__test_index_case("call", 0, 9)
+    def test_call_0_32(self):
+        self.__test_index_case("call", 0, 32)
 
 
 if __name__ == "__main__":

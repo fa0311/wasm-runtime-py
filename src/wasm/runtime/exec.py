@@ -5,7 +5,6 @@ from src.tools.logger import NestedLogger
 from src.wasm.loader.helper import CodeSectionSpecHelper
 from src.wasm.loader.spec import CodeSectionSpec
 from src.wasm.optimizer.struct import (
-    CodeInstructionOptimize,
     CodeSectionOptimize,
     TypeSectionOptimize,
     WasmSectionsOptimize,
@@ -41,21 +40,34 @@ class WasmExec:
 
         # エントリーポイントの関数を取得する
         start = [fn for fn in self.sections.export_section if fn.field_name == field][0]
-        fn, fn_type = self.get_function(start.index)
 
-        # ローカル変数を初期化して実行する
-        param = [self.get_number_type(x).from_value(param.pop(0).value) for x in fn_type.params]
+        return self.run(start.index, param)
+
+    def run(self, index: int, param: list[NumericType]):
+        if __debug__:
+            fn, fn_type = self.get_function(index)
+            if len(param) != len(fn_type.params):
+                raise Exception("invalid param length")
+            for a, b in zip(param, fn_type.params):
+                if a.__class__ != self.get_number_type(b):
+                    k = self.get_number_type(b)
+                    raise Exception("invalid param type")
+
         locals_param = [self.get_number_type(x).from_int(0) for x in fn.local]
         locals = [*param, *locals_param]
-        runner = CodeSectionExec(self, code=fn.data, locals=locals)
+        runner = CodeSectionExec(self, locals=locals, index=index)
 
-        # res = runner.run()
-        # returns = [self.get_number_type(x).from_int(res.pop(0)) for x in fn_type.returns]
+        res = runner.run()
 
-        # デバッグ用の変数を初期化
-        self.instruction_count = 0
+        if __debug__:
+            fn, fn_type = self.get_function(index)
+            if len(res) != len(fn_type.returns):
+                raise Exception("invalid return length")
+            for a, b in zip(res, fn_type.returns):
+                if a.__class__ != self.get_number_type(b):
+                    raise Exception("invalid return type")
 
-        return runner
+        return res
 
     def get_function(self, index: int) -> tuple[CodeSectionOptimize, TypeSectionOptimize]:
         """関数のインデックスからCode SectionとType Sectionを取得する"""
@@ -72,25 +84,25 @@ class CodeSectionExec(CodeSectionSpec):
     def __init__(
         self,
         env: WasmExec,
-        code: list[CodeInstructionOptimize],
+        index: int,
         locals: list[NumericType],
     ):
         self.env = env
-        self.code = code
         self.locals = locals
+        self.code, self.fn_type = self.env.get_function(index)
 
         self.stack: list[NumericType] = []
         self.pointer = 0
 
     @logger.logger
     def run(self) -> list[NumericType]:
-        while self.pointer < len(self.code):
+        while self.pointer < len(self.code.data):
             if __debug__:
                 self.env.instruction_count += 1
-                if self.env.instruction_count > 10000:
+                if self.env.instruction_count > 1000000:
                     raise Exception("infinite loop")
 
-            instruction = self.code[self.pointer]
+            instruction = self.code.data[self.pointer]
             opcode = instruction.opcode
             args = instruction.args
             self.logger.debug(f"run: {instruction}")
@@ -100,18 +112,20 @@ class CodeSectionExec(CodeSectionSpec):
                 return res
 
             self.pointer += 1
-        return self.stack
+
+        res = [self.stack.pop() for _ in self.fn_type.returns]
+        return res[::-1]
 
     def goto_start(self, index: int):
-        self.pointer = self.code[self.pointer].block_start[-(index + 1)]
+        self.pointer = self.code.data[self.pointer].block_start[-(index + 1)]
         self.logger.debug(f"goto: {self.pointer}")
 
     def goto_end(self, index: int):
-        self.pointer = self.code[self.pointer].block_end[-(index + 1)]
+        self.pointer = self.code.data[self.pointer].block_end[-(index + 1)]
         self.logger.debug(f"goto: {self.pointer}")
 
     def goto_start_or_end(self, index: int):
-        if self.code[self.pointer].loop:
+        if self.code.data[self.pointer].loop:
             self.goto_start(index)
         else:
             self.goto_end(index)
@@ -326,14 +340,13 @@ class CodeSectionExec(CodeSectionSpec):
         pass
 
     def call(self, index: int):
-        fn, fn_type = self.env.get_function(index)
-        param = [self.env.get_number_type(x).from_value(self.stack.pop().value) for x in fn_type.params]
-        locals_param = [self.env.get_number_type(x).from_int(0) for x in fn.local]
-        locals = [*param, *locals_param]
-        runner = CodeSectionExec(self.env, code=fn.data, locals=locals)
-        res = runner.run()
-        returns = [self.env.get_number_type(x).from_value(res.pop(0).value) for x in fn_type.returns]
-        self.stack.extend(returns)
+        _, fn_type = self.env.get_function(index)
+
+        res = [self.stack.pop() for _ in fn_type.params]
+        param = res[::-1]
+
+        res = self.env.run(index, param)
+        self.stack.extend(res)
 
     def drop(self):
         self.stack.pop()

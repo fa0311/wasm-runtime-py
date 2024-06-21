@@ -25,6 +25,5 @@ if __name__ == "__main__":
     # Wasmバイナリを読み込んで実行する
     data = WasmLoader(wasm).load()
     optimizer = WasmOptimizer(data).optimize()
-    runner = WasmExec(optimizer).start(field=b"_start", param=[])
-    res = runner.run()
+    res = WasmExec(optimizer).start(field=b"_start", param=[])
     logging.info(f"result: {res}")
