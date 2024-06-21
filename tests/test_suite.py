@@ -190,8 +190,8 @@ class TestSuite(unittest.TestCase):
     def test_call(self):
         self.__test_file("call")
 
-    def test_call_0_32(self):
-        self.__test_index_case("call", 0, 32)
+    def test_call_0_50(self):
+        self.__test_index_case("call", 0, 50)
 
 
 if __name__ == "__main__":

@@ -50,7 +50,6 @@ class WasmExec:
                 raise Exception("invalid param length")
             for a, b in zip(param, fn_type.params):
                 if a.__class__ != self.get_number_type(b):
-                    k = self.get_number_type(b)
                     raise Exception("invalid param type")
 
         locals_param = [self.get_number_type(x).from_int(0) for x in fn.local]
@@ -96,6 +95,7 @@ class CodeSectionExec(CodeSectionSpec):
 
     @logger.logger
     def run(self) -> list[NumericType]:
+        self.logger.debug(f"params: {self.stack}")
         while self.pointer < len(self.code.data):
             if __debug__:
                 self.env.instruction_count += 1
@@ -109,12 +109,14 @@ class CodeSectionExec(CodeSectionSpec):
             fn = CodeSectionSpecHelper.bind(self, opcode)
             res = fn(*args)
             if res:
+                self.logger.debug(f"res: {res}")
                 return res
 
             self.pointer += 1
 
-        res = [self.stack.pop() for _ in self.fn_type.returns]
-        return res[::-1]
+        res = [self.stack.pop() for _ in self.fn_type.returns][::-1]
+        self.logger.debug(f"res: {res}")
+        return res
 
     def goto_start(self, index: int):
         self.pointer = self.code.data[self.pointer].block_start[-(index + 1)]
@@ -327,8 +329,21 @@ class CodeSectionExec(CodeSectionSpec):
         if bool(a):
             self.goto_start_or_end(count)
 
+    def br_table(self, count: int):
+        a = self.stack.pop()
+        if a.value < 0 or a.value >= count:
+            self.goto_start_or_end(count)
+        else:
+            self.goto_start(a.value)
+
     def br(self, count: int):
         self.goto_start_or_end(count)
+
+    def unreachable(self):
+        raise Exception("unreachable")
+
+    def nop(self):
+        pass
 
     def block(self, block_type: int):
         pass
@@ -342,14 +357,28 @@ class CodeSectionExec(CodeSectionSpec):
     def call(self, index: int):
         _, fn_type = self.env.get_function(index)
 
-        res = [self.stack.pop() for _ in fn_type.params]
-        param = res[::-1]
+        param = [self.stack.pop() for _ in fn_type.params][::-1]
 
         res = self.env.run(index, param)
         self.stack.extend(res)
 
+    def call_indirect(self, index: int):
+        _, fn_type = self.env.get_function(index)
+
+        param = [self.stack.pop() for _ in fn_type.params][::-1]
+
+        _ = self.env.run(index, param)
+
+        res = [self.stack.pop() for _ in self.fn_type.returns][::-1]
+
+        return res
+
     def drop(self):
         self.stack.pop()
+
+    def select(self):
+        c, b, a = self.stack.pop(), self.stack.pop(), self.stack.pop()
+        self.stack.append(a if c else b)
 
     def return_(self):
         return [self.stack.pop()]

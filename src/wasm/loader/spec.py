@@ -280,8 +280,23 @@ class CodeSectionSpec(ABC):
         pass
 
     @abstractmethod
+    @Metadata.opcode(0x0E)
+    def br_table(self, count: int):
+        pass
+
+    @abstractmethod
     @Metadata.opcode(0x0C)
     def br(self, count: int):
+        pass
+
+    @abstractmethod
+    @Metadata.opcode(0x00)
+    def unreachable(self):
+        pass
+
+    @abstractmethod
+    @Metadata.opcode(0x01)
+    def nop(self):
         pass
 
     @abstractmethod
@@ -308,8 +323,18 @@ class CodeSectionSpec(ABC):
         pass
 
     @abstractmethod
+    @Metadata.opcode(0x11)
+    def call_indirect(self, index: int):
+        pass
+
+    @abstractmethod
     @Metadata.opcode(0x1A)
     def drop(self):
+        pass
+
+    @abstractmethod
+    @Metadata.opcode(0x1B)
+    def select(self):
         pass
 
     @abstractmethod
