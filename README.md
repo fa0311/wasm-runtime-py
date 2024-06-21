@@ -19,3 +19,5 @@ python -OO -m unittest discover -p test_*.py -s tests
 ```
 
 <https://pengowray.github.io/wasm-ops/>
+
+<https://zenn.dev/ri5255/articles/bac96cf74f82f0>

@@ -21,6 +21,39 @@ class FunctionSection:
 
 
 @dataclass
+class TableSection:
+    """Table Sectionのデータ構造"""
+
+    element_type: int = field(metadata={"description": "要素の型"})
+    limits: int = field(metadata={"description": "要素の制限"})
+
+
+@dataclass
+class MemorySection:
+    """Memory Sectionのデータ構造"""
+
+    limits: int = field(metadata={"description": "メモリの制限"})
+
+
+@dataclass
+class GlobalSection:
+    """Global Sectionのデータ構造"""
+
+    type: int = field(metadata={"description": "グローバル変数の型"})
+    mutable: int = field(metadata={"description": "グローバル変数の変更可能性"})
+    init: bytes = field(metadata={"description": "グローバル変数の初期値"})
+
+
+@dataclass
+class ElementSection:
+    """Element Sectionのデータ構造"""
+
+    table: int = field(metadata={"description": "テーブルのインデックス"})
+    type: bytes = field(metadata={"description": "要素の型"})
+    init: list[int] = field(metadata={"description": "初期化"})
+
+
+@dataclass
 class CodeInstruction:
     """Code Sectionの命令セット"""
 

@@ -44,8 +44,9 @@ class WasmExec:
         return self.run(start.index, param)
 
     def run(self, index: int, param: list[NumericType]):
+        fn, fn_type = self.get_function(index)
+
         if __debug__:
-            fn, fn_type = self.get_function(index)
             if len(param) != len(fn_type.params):
                 raise Exception("invalid param length")
             for a, b in zip(param, fn_type.params):
@@ -59,7 +60,6 @@ class WasmExec:
         res = runner.run()
 
         if __debug__:
-            fn, fn_type = self.get_function(index)
             if len(res) != len(fn_type.returns):
                 raise Exception("invalid return length")
             for a, b in zip(res, fn_type.returns):
@@ -363,15 +363,7 @@ class CodeSectionExec(CodeSectionSpec):
         self.stack.extend(res)
 
     def call_indirect(self, index: int):
-        _, fn_type = self.env.get_function(index)
-
-        param = [self.stack.pop() for _ in fn_type.params][::-1]
-
-        _ = self.env.run(index, param)
-
-        res = [self.stack.pop() for _ in self.fn_type.returns][::-1]
-
-        return res
+        pass
 
     def drop(self):
         self.stack.pop()

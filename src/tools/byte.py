@@ -16,6 +16,16 @@ class ByteReader:
             self.pointer += 1
         return byte
 
+    def read_expr(self, read_only=False) -> "ByteReader":
+        res = b""
+        while True:
+            byte = self.read_bytes(1, read_only=read_only)
+            if byte == b"\x0b":
+                break
+            res += byte.data
+
+        return ByteReader(res)
+
     def read_bytes(self, n: int, read_only=False) -> "ByteReader":
         """ポインタが指す位置からnバイトを読み取り、ポインタを進める"""
         bytes = self.data[self.pointer : self.pointer + n]

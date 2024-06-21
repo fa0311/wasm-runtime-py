@@ -7,8 +7,12 @@ from src.wasm.loader.helper import CodeSectionSpecHelper
 from src.wasm.loader.struct import (
     CodeInstruction,
     CodeSection,
+    ElementSection,
     ExportSection,
     FunctionSection,
+    GlobalSection,
+    MemorySection,
+    TableSection,
     TypeSection,
     WasmSections,
 )
@@ -47,6 +51,14 @@ class WasmLoader:
                 res.extend(self.type_section(data))
             elif id == 3:
                 res.extend(self.function_section(data))
+            elif id == 4:
+                res.extend(self.table_section(data))
+            elif id == 5:
+                res.extend(self.memory_section(data))
+            elif id == 6:
+                res.extend(self.global_section(data))
+            elif id == 9:
+                res.extend(self.element_section(data))
             elif id == 10:
                 res.extend(self.code_section(data))
             elif id == 7:
@@ -102,6 +114,93 @@ class WasmLoader:
             section = FunctionSection(type=type)
             self.logger.debug(section)
             res.append(section)
+
+        # 解析結果を返す
+        return res
+
+    @logger.logger
+    def table_section(self, data: ByteReader) -> list[TableSection]:
+        """Table Sectionを読み込む"""
+
+        # Table Sectionの数を読み込む
+        table_count = data.read_leb128()
+        self.logger.debug(f"table count: {table_count}")
+
+        # Table Sectionのデータを読み込む
+        res: list[TableSection] = []
+        for _ in range(table_count):
+            element_type = data.read_byte()
+            limits = data.read_byte()
+            section = TableSection(element_type=element_type, limits=limits)
+            self.logger.debug(section)
+            res.append(section)
+
+        # 解析結果を返す
+        return res
+
+    @logger.logger
+    def memory_section(self, data: ByteReader) -> list[MemorySection]:
+        """Memory Sectionを読み込む"""
+
+        # Memory Sectionの数を読み込む
+        memory_count = data.read_leb128()
+        self.logger.debug(f"memory count: {memory_count}")
+
+        # Memory Sectionのデータを読み込む
+        res: list[MemorySection] = []
+        for _ in range(memory_count):
+            limits = data.read_byte()
+            section = MemorySection(limits=limits)
+            self.logger.debug(section)
+            res.append(section)
+
+        # 解析結果を返す
+        return res
+
+    @logger.logger
+    def global_section(self, data: ByteReader) -> list[GlobalSection]:
+        """Global Sectionを読み込む"""
+
+        # Global Sectionの数を読み込む
+        global_count = data.read_leb128()
+        self.logger.debug(f"global count: {global_count}")
+
+        # Global Sectionのデータを読み込む
+        res: list[GlobalSection] = []
+        for _ in range(global_count):
+            content_type = data.read_byte()
+            mutable = data.read_byte()
+            init = data.read_expr()
+            section = GlobalSection(type=content_type, mutable=mutable, init=init.data)
+            self.logger.debug(section)
+            res.append(section)
+
+        # 解析結果を返す
+        return res
+
+    @logger.logger
+    def element_section(self, data: ByteReader) -> list[ElementSection]:
+        """Element Sectionを読み込む"""
+
+        # Element Sectionの数を読み込む
+        element_count = data.read_leb128()
+        self.logger.debug(f"element count: {element_count}")
+
+        # Element Sectionのデータを読み込む
+        res: list[ElementSection] = []
+
+        for _ in range(element_count):
+            elem_type = data.read_byte()  # Elementのモード
+
+            if elem_type == 0:  # Active
+                type = data.read_expr()
+                count = data.read_leb128()
+                init = [data.read_leb128() for _ in range(count)]
+
+            section = ElementSection(table=elem_type, type=type.data, init=init)
+            res.append(section)
+
+            self.logger.debug(section)
 
         # 解析結果を返す
         return res
