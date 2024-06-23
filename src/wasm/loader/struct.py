@@ -91,5 +91,9 @@ class ExportSection:
 class WasmSections:
     type_section: list[TypeSection]
     function_section: list[FunctionSection]
+    table_section: list[TableSection]
+    memory_section: list[MemorySection]
+    global_section: list[GlobalSection]
+    element_section: list[ElementSection]
     code_section: list[CodeSection]
     export_section: list[ExportSection]

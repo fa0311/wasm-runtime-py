@@ -1,10 +1,13 @@
 import logging
 from math import ceil, floor, trunc
+from typing import Callable, Optional, Union
 
 from src.tools.logger import NestedLogger
 from src.wasm.loader.helper import CodeSectionSpecHelper
 from src.wasm.loader.spec import CodeSectionSpec
+from src.wasm.optimizer.optimizer import WasmOptimizer
 from src.wasm.optimizer.struct import (
+    CodeInstructionOptimize,
     CodeSectionOptimize,
     TypeSectionOptimize,
     WasmSectionsOptimize,
@@ -12,6 +15,18 @@ from src.wasm.optimizer.struct import (
 from src.wasm.type.base import NumericType
 from src.wasm.type.numpy.float import F32, F64
 from src.wasm.type.numpy.int import I32, I64, SignedI8, SignedI16, SignedI32, SignedI64
+
+
+class WasmUnimplementedError(NotImplementedError):
+    @staticmethod
+    def throw():
+        def decorator(func: Callable):
+            def wrapper(*args, **kwargs):
+                raise WasmUnimplementedError(f"unimplemented: {func.__name__}")
+
+            return wrapper
+
+        return decorator
 
 
 class WasmExec:
@@ -23,16 +38,22 @@ class WasmExec:
         self.sections = sections
         self.instruction_count = 0
 
-    def get_number_type(self, type: int) -> type[NumericType]:
-        if type == 0x7F:
-            return I32
-        if type == 0x7E:
-            return I64
-        if type == 0x7D:
-            return F32
-        if type == 0x7C:
-            return F64
-        raise Exception(f"invalid type: {type}")
+    @staticmethod
+    def __type_check(param: list[NumericType], params_type: list[int]):
+        if len(param) != len(params_type):
+            raise Exception("invalid param length")
+        for a, b in zip(param, params_type):
+            if a.__class__ != WasmOptimizer.get_type(b):
+                raise Exception(f"invalid return type {a.__class__} != {WasmOptimizer.get_type(b)}")
+
+    @staticmethod
+    def __type_check_release(param: list[NumericType], params_type: list[int]):
+        return None
+
+    if __debug__:
+        type_check = __type_check
+    else:
+        type_check = __type_check_release
 
     @logger.logger
     def start(self, field: bytes, param: list[NumericType]):
@@ -46,25 +67,13 @@ class WasmExec:
     def run(self, index: int, param: list[NumericType]):
         fn, fn_type = self.get_function(index)
 
-        if __debug__:
-            if len(param) != len(fn_type.params):
-                raise Exception("invalid param length")
-            for a, b in zip(param, fn_type.params):
-                if a.__class__ != self.get_number_type(b):
-                    raise Exception(f"invalid return type {a.__class__} != {self.get_number_type(b)}")
-
-        locals_param = [self.get_number_type(x).from_int(0) for x in fn.local]
+        locals_param = [WasmOptimizer.get_type(x).from_int(0) for x in fn.local]
         locals = [*param, *locals_param]
         runner = CodeSectionExec(self, locals=locals, index=index)
 
+        WasmExec.type_check(param, fn_type.params)
         res = runner.run()
-
-        if __debug__:
-            if len(res) != len(fn_type.returns):
-                raise Exception("invalid return length")
-            for a, b in zip(res, fn_type.returns):
-                if a.__class__ != self.get_number_type(b):
-                    raise Exception(f"invalid return type {a.__class__} != {self.get_number_type(b)}")
+        WasmExec.type_check(res, fn_type.returns)
 
         return (runner, res)
 
@@ -76,61 +85,81 @@ class WasmExec:
         code = self.sections.code_section[index]
         return code, type
 
+    def get_type(self, index: int) -> tuple[list[int], list[int]]:
+        """関数のインデックスからCode SectionとType Sectionを取得する"""
 
-class CodeSectionExec(CodeSectionSpec):
+        if index < len(self.sections.type_section):
+            type = self.sections.type_section[index]
+            return type.params, type.returns
+        else:
+            type = WasmOptimizer.get_type_or_none(index)
+            returns = [] if type is None else [type]
+            return [], returns
+
+
+class CodeSectionExec:
+    logger = NestedLogger(logging.getLogger(__name__))
+
+    def __init__(self, env: WasmExec, locals: list[NumericType], index: int):
+        self.env = env
+        self.locals = locals
+        self.code, self.fn_type = self.env.get_function(index)
+        self.pointer = 0
+
+    def run(self):
+        block = CodeSectionBlock(
+            env=self.env,
+            code=self.code.data,
+            locals=self.locals,
+            stack=[],
+        )
+        res = block.run()
+        if isinstance(res, list):
+            returns = res
+        else:
+            returns = [block.stack.pop() for _ in self.fn_type.returns][::-1]
+
+        self.logger.debug(f"res: {returns}")
+        return returns
+
+
+class CodeSectionBlock(CodeSectionSpec):
     logger = NestedLogger(logging.getLogger(__name__))
 
     def __init__(
         self,
         env: WasmExec,
-        index: int,
+        code: list[CodeInstructionOptimize],
         locals: list[NumericType],
+        stack: list[NumericType],
     ):
         self.env = env
         self.locals = locals
-        self.code, self.fn_type = self.env.get_function(index)
+        self.code = code
+        # self.code, self.fn_type = self.env.get_function(index)
 
-        self.stack: list[NumericType] = []
+        self.stack = stack
         self.pointer = 0
+        self.instruction: CodeInstructionOptimize
 
     @logger.logger
-    def run(self) -> list[NumericType]:
+    def run(self) -> Optional[Union[int, list[NumericType]]]:
         self.logger.debug(f"params: {self.stack}")
-        while self.pointer < len(self.code.data):
+        while self.pointer < len(self.code):
             if __debug__:
                 self.env.instruction_count += 1
                 if self.env.instruction_count > 1000000:
                     raise Exception("infinite loop")
 
-            instruction = self.code.data[self.pointer]
-            opcode = instruction.opcode
-            args = instruction.args
-            self.logger.debug(f"run: {instruction}")
+            self.instruction = self.code[self.pointer]
+            opcode = self.instruction.opcode
+            args = self.instruction.args
+            self.logger.debug(f"run: {self.instruction}")
             fn = CodeSectionSpecHelper.bind(self, opcode)
-            res = fn(*args)
-            if res:
-                self.logger.debug(f"res: {res}")
-                return res
-
             self.pointer += 1
-
-        res = [self.stack.pop() for _ in self.fn_type.returns][::-1]
-        self.logger.debug(f"res: {res}")
-        return res
-
-    def goto_start(self, index: int):
-        self.pointer = self.code.data[self.pointer].block_start[-(index + 1)]
-        self.logger.debug(f"goto: {self.pointer}")
-
-    def goto_end(self, index: int):
-        self.pointer = self.code.data[self.pointer].block_end[-(index + 1)]
-        self.logger.debug(f"goto: {self.pointer}")
-
-    def goto_start_or_end(self, index: int):
-        if self.code.data[self.pointer].loop:
-            self.goto_start(index)
-        else:
-            self.goto_end(index)
+            res = fn(*args)
+            if res is not None:
+                return res
 
     def const_i32(self, value: I32):
         self.stack.append(value)
@@ -316,28 +345,45 @@ class CodeSectionExec(CodeSectionSpec):
         b, a = self.stack.pop(), self.stack.pop()
         self.stack.append(a.copysign(b))
 
-    def if_(self, type: int):
-        a = self.stack.pop()
-        if not bool(a):
-            self.goto_end(0)
+    def if_(self, block_type: int):
+        fn_type_params, fn_type_returns = self.env.get_type(block_type)
+        block_stack = [self.stack.pop() for _ in fn_type_params][::-1]
+        WasmExec.type_check(block_stack, fn_type_params)
+
+        code = self.instruction.child if bool(self.stack.pop()) else self.instruction.else_child
+        block = CodeSectionBlock(
+            env=self.env,
+            code=code,
+            locals=self.locals,
+            stack=block_stack,
+        )
+        br = block.run()
+
+        res_stack = [block.stack.pop() for _ in fn_type_returns][::-1]
+        WasmExec.type_check(res_stack, fn_type_returns)
+        self.stack.extend(res_stack)
+
+        if isinstance(br, int) and br > 0:
+            return br - 1
+        elif isinstance(br, list):
+            return br
 
     def else_(self):
-        self.goto_end(0)
+        Exception("else_")
 
     def br_if(self, count: int):
         a = self.stack.pop()
         if bool(a):
-            self.goto_start_or_end(count)
-
-    def br_table(self, count: int):
-        a = self.stack.pop()
-        if a.value < 0 or a.value >= count:
-            self.goto_start_or_end(count)
+            return count
         else:
-            self.goto_start(a.value)
+            pass
+
+    def br_table(self, count: list[int]):
+        a = self.stack.pop()
+        return count[a.value]
 
     def br(self, count: int):
-        self.goto_start_or_end(count)
+        return count
 
     def unreachable(self):
         raise Exception("unreachable")
@@ -346,13 +392,56 @@ class CodeSectionExec(CodeSectionSpec):
         pass
 
     def block(self, block_type: int):
-        pass
+        fn_type_params, fn_type_returns = self.env.get_type(block_type)
+        block_stack = [self.stack.pop() for _ in fn_type_params][::-1]
+        WasmExec.type_check(block_stack, fn_type_params)
+
+        block = CodeSectionBlock(
+            env=self.env,
+            code=self.instruction.child,
+            locals=self.locals,
+            stack=block_stack,
+        )
+        br = block.run()
+
+        res_stack = [block.stack.pop() for _ in fn_type_returns][::-1]
+        WasmExec.type_check(res_stack, fn_type_returns)
+        self.stack.extend(res_stack)
+
+        if isinstance(br, int) and br > 0:
+            return br - 1
+        elif isinstance(br, list):
+            return br
 
     def loop(self, block_type: int):
-        pass
+        fn_type_params, fn_type_returns = self.env.get_type(block_type)
+        block_stack = [self.stack.pop() for _ in fn_type_params][::-1]
+        WasmExec.type_check(block_stack, fn_type_params)
+        while True:
+            block = CodeSectionBlock(
+                env=self.env,
+                code=self.instruction.child,
+                locals=self.locals,
+                stack=block_stack,
+            )
+            br = block.run()
+
+            if br == 0:
+                block_stack = [block.stack.pop() for _ in fn_type_params][::-1]
+                WasmExec.type_check(block_stack, fn_type_params)
+            else:
+                res_stack = [block.stack.pop() for _ in fn_type_returns][::-1]
+                WasmExec.type_check(res_stack, fn_type_returns)
+                self.stack.extend(res_stack)
+                if isinstance(br, int) and br > 0:
+                    return br - 1
+                elif isinstance(br, list):
+                    return br
+                else:
+                    break
 
     def block_end(self):
-        pass
+        Exception("block_end")
 
     def call(self, index: int):
         _, fn_type = self.env.get_function(index)
@@ -360,8 +449,10 @@ class CodeSectionExec(CodeSectionSpec):
         param = [self.stack.pop() for _ in fn_type.params][::-1]
 
         runtime, res = self.env.run(index, param)
+
         self.stack.extend(res)
 
+    @WasmUnimplementedError.throw()
     def call_indirect(self, index: int):
         pass
 
@@ -373,7 +464,8 @@ class CodeSectionExec(CodeSectionSpec):
         self.stack.append(a if c else b)
 
     def return_(self):
-        return [self.stack.pop()]
+        a = self.stack.pop()
+        return [a]
 
     def wrap_i64(self):
         a = self.stack.pop()
@@ -495,61 +587,73 @@ class CodeSectionExec(CodeSectionSpec):
         i64 = I64.from_value(i32.value)
         self.stack.append(i64)
 
+    @WasmUnimplementedError.throw()
     def i64_trunc_f32_s(self):
         a = self.stack.pop()
         i64 = SignedI64.from_value(a.value)
         self.stack.append(i64.to_unsigned())
 
+    @WasmUnimplementedError.throw()
     def i64_trunc_f32(self):
         a = self.stack.pop()
         i64 = I64.from_value(a.value)
         self.stack.append(i64)
 
+    @WasmUnimplementedError.throw()
     def i64_trunc_f64_s(self):
         a = self.stack.pop()
         i64 = SignedI64.from_value(a.value)
         self.stack.append(i64.to_unsigned())
 
+    @WasmUnimplementedError.throw()
     def i64_trunc_f64(self):
         a = self.stack.pop()
         i64 = I64.from_value(a.value)
         self.stack.append(i64)
 
+    @WasmUnimplementedError.throw()
     def i32_trunc_sat_f32_s(self):
         a = self.stack.pop()
         i32 = SignedI32.from_value(trunc(a).value)
         self.stack.append(i32.to_unsigned())
 
+    @WasmUnimplementedError.throw()
     def i32_trunc_sat_f32(self):
         a = self.stack.pop()
         i32 = I32.from_value(a.value)
         self.stack.append(i32)
 
+    @WasmUnimplementedError.throw()
     def i32_trunc_sat_f64_s(self):
         a = self.stack.pop()
         i32 = SignedI32.from_value(trunc(a).value)
         self.stack.append(i32.to_unsigned())
 
+    @WasmUnimplementedError.throw()
     def i32_trunc_sat_f64(self):
         a = self.stack.pop()
         i32 = I32.from_value(trunc(a).value)
         self.stack.append(i32)
 
+    @WasmUnimplementedError.throw()
     def i64_trunc_sat_f32_s(self):
         a = self.stack.pop()
         i64 = SignedI64.from_value(trunc(a).value)
         self.stack.append(i64.to_unsigned())
 
+    @WasmUnimplementedError.throw()
     def i64_trunc_sat_f32(self):
         a = self.stack.pop()
         i64 = I64.from_value(trunc(a).value)
         self.stack.append(i64)
 
+    @WasmUnimplementedError.throw()
     def i64_trunc_sat_f64_s(self):
         a = self.stack.pop()
         i64 = SignedI64.from_value(trunc(a).value)
         self.stack.append(i64.to_unsigned())
 
+    @WasmUnimplementedError.throw()
     def i64_trunc_sat_f64(self):
         a = self.stack.pop()
         i64 = I64.from_value(trunc(a).value)

@@ -69,6 +69,10 @@ class WasmLoader:
         sections = WasmSections(
             type_section=[x for x in res if isinstance(x, TypeSection)],
             function_section=[x for x in res if isinstance(x, FunctionSection)],
+            table_section=[x for x in res if isinstance(x, TableSection)],
+            memory_section=[x for x in res if isinstance(x, MemorySection)],
+            global_section=[x for x in res if isinstance(x, GlobalSection)],
+            element_section=[x for x in res if isinstance(x, ElementSection)],
             code_section=[x for x in res if isinstance(x, CodeSection)],
             export_section=[x for x in res if isinstance(x, ExportSection)],
         )
@@ -253,6 +257,9 @@ class WasmLoader:
                     args.append(F32.from_int(data.read_f32()))
                 elif annotation == F64:
                     args.append(F64.from_int(data.read_f64()))
+                elif annotation == list[int]:
+                    count = data.read_byte()
+                    args.append([data.read_byte() for _ in range(count + 1)])
                 else:
                     raise Exception("invalid type")
             instruction = CodeInstruction(opcode=opcode, args=args)

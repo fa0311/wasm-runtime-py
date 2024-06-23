@@ -282,7 +282,7 @@ class CodeSectionSpec(ABC):
 
     @abstractmethod
     @Metadata.opcode(0x0E)
-    def br_table(self, count: int):
+    def br_table(self, count: list[int]):
         pass
 
     @abstractmethod

@@ -1,5 +1,4 @@
 from dataclasses import dataclass, field
-from typing import Optional
 
 from src.tools.byte import ByteReader
 from src.wasm.loader.helper import CodeSectionSpecHelper
@@ -23,14 +22,49 @@ class FunctionSectionOptimize:
 
 
 @dataclass
+class TableSectionOptimize:
+    """Table Sectionのデータ構造"""
+
+    element_type: int = field(metadata={"description": "要素の型"})
+    limits: int = field(metadata={"description": "要素の制限"})
+
+
+@dataclass
+class MemorySectionOptimize:
+    """Memory Sectionのデータ構造"""
+
+    limits: int = field(metadata={"description": "メモリの制限"})
+
+
+@dataclass
+class GlobalSectionOptimize:
+    """Global Sectionのデータ構造"""
+
+    type: int = field(metadata={"description": "グローバル変数の型"})
+    mutable: int = field(metadata={"description": "グローバル変数の変更可能性"})
+    init: bytes = field(metadata={"description": "グローバル変数の初期値"})
+
+
+@dataclass
+class ElementSectionOptimize:
+    """Element Sectionのデータ構造"""
+
+    table: int = field(metadata={"description": "テーブルのインデックス"})
+    type: bytes = field(metadata={"description": "要素の型"})
+    init: list[int] = field(metadata={"description": "初期化"})
+
+
+@dataclass
 class CodeInstructionOptimize:
     """Code Sectionの命令セット"""
 
     opcode: int = field(metadata={"description": "命令コード"})
     args: list[NumericType] = field(metadata={"description": "命令の引数"})
-    loop: Optional[int] = field(metadata={"description": "親の命令コード"})
-    block_start: list[int] = field(metadata={"description": "ブロックの開始位置"})
-    block_end: list[int] = field(metadata={"description": "ブロックの終了位置"})
+    child: list["CodeInstructionOptimize"] = field(metadata={"description": "子命令"})
+    else_child: list["CodeInstructionOptimize"] = field(metadata={"description": "子命令"})
+
+    def __str__(self):
+        return self.__repr__()
 
     def __repr__(self):
         cls_name = self.__class__.__name__
@@ -59,5 +93,9 @@ class ExportSectionOptimize:
 class WasmSectionsOptimize:
     type_section: list[TypeSectionOptimize]
     function_section: list[FunctionSectionOptimize]
+    table_section: list[TableSectionOptimize]
+    memory_section: list[MemorySectionOptimize]
+    global_section: list[GlobalSectionOptimize]
+    element_section: list[ElementSectionOptimize]
     code_section: list[CodeSectionOptimize]
     export_section: list[ExportSectionOptimize]
