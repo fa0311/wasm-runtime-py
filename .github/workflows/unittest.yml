@@ -4,7 +4,10 @@ on: [push]
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, macos-13, ubuntu-latest]
     permissions:
       contents: write
     steps:
@@ -18,13 +21,10 @@ jobs:
         with:
           python-version: "3.x"
 
-      - name: Install Wabt
-        env:
-          WABT_VERSION: 1.0.35
-        run: |
-          wget https://github.com/WebAssembly/wabt/releases/download/${WABT_VERSION}/wabt-${WABT_VERSION}-ubuntu-20.04.tar.gz
-          tar -xzf wabt-${WABT_VERSION}-ubuntu-20.04.tar.gz
-          echo "$(pwd)/wabt-${WABT_VERSION}/bin" >> $GITHUB_PATH
+      - name: Use wabt 1.0.20
+        uses: mwilliamson/setup-wabt-action@v3
+        with:
+          wabt-version: "1.0.35"
 
       - name: Install dependencies
         run: |
@@ -33,6 +33,7 @@ jobs:
 
       - name: Run tests
         id: tests
+        if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-13'
         env:
           OUTPUT_LOG: test_result_temp.log
           RESULT_LOG: test_result.log
@@ -42,17 +43,29 @@ jobs:
           tail -n 3 $OUTPUT_LOG > $RESULT_LOG
           cat $OUTPUT_LOG
 
+      - name: Run tests on Windows
+        if: matrix.os == 'windows-latest'
+        env:
+          OUTPUT_LOG: test_result_temp.log
+          RESULT_LOG: test_result.log
+        run: |
+          wast2json --version
+          python -m unittest discover -p test_*.py -s tests > %OUTPUT_LOG% 2>&1 || true
+          Get-Content -Path %OUTPUT_LOG% -Tail 3 | Set-Content -Path %RESULT_LOG% -Encoding UTF8
+          Get-Content -Path %OUTPUT_LOG% -Encoding UTF8
+
       - name: Comment on commit
         if: always()
         uses: actions/github-script@v6
         env:
           RESULT_LOG: test_result.log
+          OS: ${{ matrix.os }}
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
             const commit_sha = context.sha;
             const test_result = require('fs').readFileSync(process.env.RESULT_LOG, 'utf8');
-            const message = `Test result: ${test_result}`;
+            const message = `Test result on ${process.env.OS}:\n\`\`\`\n${test_result}\n\`\`\``;
             github.rest.repos.createCommitComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
