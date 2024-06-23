@@ -36,36 +36,34 @@ jobs:
         if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-13'
         env:
           OUTPUT_LOG: test_result_temp.log
-          RESULT_LOG: test_result.log
         run: |
           wast2json --version
           python3 -m unittest discover -p test_*.py -s tests > $OUTPUT_LOG 2>&1 || true
-          tail -n 3 $OUTPUT_LOG > $RESULT_LOG
           cat $OUTPUT_LOG
 
       - name: Run tests on Windows
         if: matrix.os == 'windows-latest'
         env:
           OUTPUT_LOG: test_result_temp.log
-          RESULT_LOG: test_result.log
         run: |
           wast2json --version
           python -m unittest discover -p test_*.py -s tests > %OUTPUT_LOG% 2>&1 || true
-          Get-Content -Path %OUTPUT_LOG% -Tail 3 | Set-Content -Path %RESULT_LOG% -Encoding UTF8
-          Get-Content -Path %OUTPUT_LOG% -Encoding UTF8
+          type %OUTPUT_LOG%
+        shell: cmd
 
       - name: Comment on commit
         if: always()
         uses: actions/github-script@v6
         env:
-          RESULT_LOG: test_result.log
+          OUTPUT_LOG: test_result_temp.log
           OS: ${{ matrix.os }}
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
             const commit_sha = context.sha;
-            const test_result = require('fs').readFileSync(process.env.RESULT_LOG, 'utf8');
-            const message = `Test result on ${process.env.OS}:\n\`\`\`\n${test_result}\n\`\`\``;
+            const test_result = require('fs').readFileSync(process.env.OUTPUT_LOG, 'utf8');
+            const last_lines = test_result.split('\n').slice(-4).join('\n');
+            const message = `Test result on ${process.env.OS}:\n\`\`\`\n${last_lines}\n\`\`\``;
             github.rest.repos.createCommitComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
