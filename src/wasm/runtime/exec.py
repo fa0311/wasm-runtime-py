@@ -1,6 +1,6 @@
 import logging
 from math import ceil, floor, trunc
-from typing import Callable, Optional, Union
+from typing import Optional, Union
 
 from src.tools.logger import NestedLogger
 from src.wasm.loader.helper import CodeSectionSpecHelper
@@ -12,21 +12,10 @@ from src.wasm.optimizer.struct import (
     TypeSectionOptimize,
     WasmSectionsOptimize,
 )
+from src.wasm.runtime.error import WasmUnimplementedError
 from src.wasm.type.base import NumericType
 from src.wasm.type.numpy.float import F32, F64
 from src.wasm.type.numpy.int import I32, I64, SignedI8, SignedI16, SignedI32, SignedI64
-
-
-class WasmUnimplementedError(NotImplementedError):
-    @staticmethod
-    def throw():
-        def decorator(func: Callable):
-            def wrapper(*args, **kwargs):
-                raise WasmUnimplementedError(f"unimplemented: {func.__name__}")
-
-            return wrapper
-
-        return decorator
 
 
 class WasmExec:

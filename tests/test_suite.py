@@ -15,7 +15,8 @@ sys.path.append(str(Path(__file__).parent.parent / "src"))
 
 from src.wasm.loader.loader import WasmLoader
 from src.wasm.optimizer.optimizer import WasmOptimizer
-from src.wasm.runtime.exec import WasmExec, WasmUnimplementedError
+from src.wasm.runtime.error import WasmInvalidError, WasmRuntimeError, WasmUnimplementedError
+from src.wasm.runtime.exec import WasmExec
 from src.wasm.type.base import NumericType
 from src.wasm.type.numpy.float import F32, F64
 from src.wasm.type.numpy.int import I32, I64
@@ -70,21 +71,31 @@ class TestSuite(unittest.TestCase):
                 ],
             )
 
+    def __read_module(self, name: str, filename: str):
+        with open(f".cache/{name}/{filename}", "rb") as f:
+            wasm = f.read()
+        return wasm
+
     def __get_test_suite_data(self, name: str):
         path = pathlib.Path(f".cache/{name}/{name}.json")
 
         with open(path, "rb") as f:
             source = json.load(f)
 
-        res: list[tuple[bytes, list[dict]]] = []
+        res: list[tuple[str, bytes, list[dict]]] = []
         for cmd in source["commands"]:
             if cmd["type"] == "module":
-                with open(f".cache/{name}/{cmd['filename']}", "rb") as f:
-                    wasm = f.read()
-                    res.append((wasm, []))
+                res.append((cmd["type"], self.__read_module(name, cmd["filename"]), []))
             elif cmd["type"] == "assert_return":
-                res[-1][1].append(cmd)
-
+                res[-1][2].append(cmd)
+            elif cmd["type"] == "assert_trap":
+                res[-1][2].append(cmd)
+            elif cmd["type"] == "assert_invalid":
+                res.append((cmd["type"], self.__read_module(name, cmd["filename"]), []))
+            elif cmd["type"] == "assert_malformed":
+                pass
+            else:
+                self.fail()
         return res
 
     def __test_file(self, name: str):
@@ -93,24 +104,47 @@ class TestSuite(unittest.TestCase):
             self.__test_index(name, i)
 
     def __test_index(self, name: str, index: int):
-        wasm, cmds = self.__get_test_suite_data(name)[index]
-        data = WasmLoader(wasm).load()
-        optimizer = WasmOptimizer(data).optimize()
-        data = WasmExec(optimizer)
+        t, wasm, cmds = self.__get_test_suite_data(name)[index]
+        if t == "assert_invalid":
+            try:
+                if len(cmds) > 1:
+                    self.fail(f"expect: 1, actual: {len(cmds)}")
+                data = WasmLoader(wasm).load()
+                optimizer = WasmOptimizer(data).optimize()
+                data = WasmExec(optimizer)
+                self.fail(f"expect: {cmds[0]['type']}, actual: {data}")
+            except WasmInvalidError as e:
+                a, b = e.message, cmds[0]["text"]
+                if a != b:
+                    self.fail(f"expect: {b}, actual: {a}")
+            except WasmUnimplementedError as e:
+                self.skipTest(str(e))
+        else:
+            data = WasmLoader(wasm).load()
+            optimizer = WasmOptimizer(data).optimize()
+            data = WasmExec(optimizer)
 
-        for case, cmd in enumerate(cmds):
-            param = {"name": name, "index": f"{index:04d}", "case": f"{case:04d}"}
-            with self.subTest(**param):
-                self.__test_run(data, cmd)
+            for case, cmd in enumerate(cmds):
+                param = {"name": name, "index": f"{index:04d}", "case": f"{case:04d}"}
+                with self.subTest(**param):
+                    try:
+                        if cmd["type"] == "assert_return":
+                            self.__test_run_assert_return(data, cmd)
+                        elif cmd["type"] == "assert_trap":
+                            self.__test_run_assert_trap(data, cmd)
+                        else:
+                            self.fail(f"expect: assert_return or assert_trap, actual: {cmd['type']}")
+                    except WasmUnimplementedError as e:
+                        self.skipTest(str(e))
 
     def __test_index_case(self, name: str, index: int, case: int):
-        wasm, cmds = self.__get_test_suite_data(name)[index]
+        t, wasm, cmds = self.__get_test_suite_data(name)[index]
         data = WasmLoader(wasm).load()
         optimizer = WasmOptimizer(data).optimize()
         data = WasmExec(optimizer)
-        self.__test_run(data, cmds[case])
+        self.__test_run_assert_return(data, cmds[case])
 
-    def __test_run(self, data: WasmExec, cmd: dict):
+    def __test_run_assert_return(self, data: WasmExec, cmd: dict):
         field = bytes(cmd["action"]["field"], "utf-8")
         type_map = {
             "i32": lambda x: I32.from_str(x),
@@ -120,20 +154,49 @@ class TestSuite(unittest.TestCase):
         }
         args = cmd["action"]["args"]
         expect = cmd["expected"]
-        p: list[NumericType] = [type_map[value["type"]](value["value"]) for value in args]
-        ee: list[NumericType] = [type_map[value["type"]](value["value"]) for value in expect]
+        numeric_args: list[NumericType] = [type_map[value["type"]](value["value"]) for value in args]
+        numeric_expect: list[NumericType] = [type_map[value["type"]](value["value"]) for value in expect]
         assert data is not None
+        runtime, res = data.start(
+            field=field,
+            param=numeric_args,
+        )
+        for i, (r, e) in enumerate(zip(res, numeric_expect)):
+            a, b = r.value, e.value
+            if str(a) != str(b):
+                self.fail(f"expect: {b}, actual: {a}")
+
+    def __test_run_assert_trap(self, data: WasmExec, cmd: dict):
+        field = bytes(cmd["action"]["field"], "utf-8")
+        type_map = {
+            "i32": lambda x: I32.from_str(x),
+            "i64": lambda x: I64.from_str(x),
+            "f32": lambda x: F32.from_str(x),
+            "f64": lambda x: F64.from_str(x),
+        }
+        args = cmd["action"]["args"]
+        expect = cmd["expected"]
+        text = cmd["text"]
+        numeric_args: list[NumericType] = [type_map[value["type"]](value["value"]) for value in args]
+
         try:
+            assert data is not None
             runtime, res = data.start(
                 field=field,
-                param=p,
+                param=numeric_args,
             )
-            for i, (r, e) in enumerate(zip(res, ee)):
-                a, b = r.value, e.value
-                if str(a) != str(b):
-                    self.fail(f"expect: {b}, actual: {a}")
-        except WasmUnimplementedError as e:
-            self.skipTest(str(e))
+            self.fail(f"expect: {text}, actual: {res}")
+        except WasmRuntimeError as e:
+            if text != e.message:
+                self.fail(f"expect: {cmd['text']}, actual: {e.message}")
+            for i, (r, e) in enumerate(zip(expect, e.expected)):
+                numeric = type_map[r["type"]](r["value"])
+                if r.get("value", None) is not None:
+                    a, b = numeric(r["value"]).value, e.value
+                    if str(a) != str(b):
+                        self.fail(f"expect: {b}, actual: {a}")
+                if numeric != e.__class__:
+                    self.fail(f"expect: {e.__class__}, actual: {numeric}")
 
     def subTest(self, **param):
         SUBTEST = True
