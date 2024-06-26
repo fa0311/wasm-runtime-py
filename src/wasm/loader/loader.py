@@ -250,9 +250,9 @@ class WasmLoader:
                 if annotation == int:
                     args.append(data.read_byte())
                 elif annotation == I32:
-                    args.append(SignedI32.from_int(data.read_sleb128()).to_unsigned())
+                    args.append(I32.astype(SignedI32.from_int(data.read_sleb128())))
                 elif annotation == I64:
-                    args.append(SignedI64.from_int(data.read_sleb128()).to_unsigned())
+                    args.append(I64.astype(SignedI64.from_int(data.read_sleb128())))
                 elif annotation == F32:
                     args.append(F32.from_int(data.read_f32()))
                 elif annotation == F64:

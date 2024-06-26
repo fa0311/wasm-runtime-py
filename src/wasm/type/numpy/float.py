@@ -3,7 +3,7 @@ from typing import Callable, Union
 
 import numpy as np
 
-from src.wasm.type.base import NumericType
+from src.wasm.type.numpy.base import NumpyNumericType
 from src.wasm.type.numpy.int import I32
 
 
@@ -11,7 +11,7 @@ def fallback_x87(fallback_func: Callable):
     x87 = np.signbit(np.minimum(np.float32(0.0), np.float32(-0.0)))
 
     def decorator(func: Callable):
-        def wrapper(self: NumericType, other: NumericType):
+        def wrapper(self: NumpyNumericType, other: NumpyNumericType):
             if x87:
                 return fallback_func(self, other)
             else:
@@ -22,8 +22,11 @@ def fallback_x87(fallback_func: Callable):
     return decorator
 
 
-class FloatFallbackType(NumericType):
-    def fallback_x87_min(self, other: NumericType):
+class FloatFallbackType(NumpyNumericType):
+    def __init__(self, value: np.float32):
+        self.value = value
+
+    def fallback_x87_min(self, other: "FloatFallbackType"):
         if np.isnan(self.value):
             return self
         elif np.isnan(other.value):
@@ -39,7 +42,7 @@ class FloatFallbackType(NumericType):
         else:
             return self
 
-    def fallback_x87_max(self, other: NumericType):
+    def fallback_x87_max(self, other: "FloatFallbackType"):
         if np.isnan(self.value):
             return self
         elif np.isnan(other.value):
@@ -56,13 +59,10 @@ class FloatFallbackType(NumericType):
             return self
 
 
-class FloatType(NumericType):
+class FloatType(NumpyNumericType):
     @classmethod
     def from_bool(cls, value: bool):
         return I32.from_int(1 if value else 0)
-
-    def to_signed(self):
-        raise NotImplementedError
 
     def __floor__(self):
         return self.__class__.from_value(np.floor(self.value))
@@ -76,18 +76,18 @@ class FloatType(NumericType):
     def __round__(self):
         return self.__class__.from_value(np.round(self.value))
 
-    def sqrt(self):
-        return self.__class__.from_value(np.sqrt(self.value))
+    # def sqrt(self):
+    #     return self.__class__.from_value(np.sqrt(self.value))
 
-    def copysign(self, other: "NumericType"):
-        return self.__class__.from_value(np.copysign(self.value, other.value))
+    # def copysign(self, other: "NumericType"):
+    #     return self.__class__.from_value(np.copysign(self.value, other.value))
 
     @fallback_x87(FloatFallbackType.fallback_x87_min)
-    def min(self, other: NumericType):
+    def min(self, other: "FloatType"):
         return self.__class__.from_value(np.minimum(self.value, other.value))
 
     @fallback_x87(FloatFallbackType.fallback_x87_max)
-    def max(self, other: NumericType):
+    def max(self, other: "FloatType"):
         return self.__class__.from_value(np.maximum(self.value, other.value))
 
 
@@ -96,8 +96,8 @@ class F32(FloatType):
         self.value = value
 
     @classmethod
-    def from_value(cls, value: np.generic):
-        return cls(value.astype(np.float32))
+    def astype(cls, value: NumpyNumericType):
+        return cls(value.value.astype(np.float32))
 
     @classmethod
     def from_int(cls, value: Union[int, float]):
@@ -124,8 +124,8 @@ class F64(FloatType):
         self.value = value
 
     @classmethod
-    def from_value(cls, value: np.generic):
-        return cls(value.astype(np.float64))
+    def astype(cls, value: NumpyNumericType):
+        return cls(value.value.astype(np.float64))
 
     @classmethod
     def from_int(cls, value: Union[int, float]):

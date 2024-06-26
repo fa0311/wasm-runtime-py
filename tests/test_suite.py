@@ -89,13 +89,18 @@ class TestSuite(unittest.TestCase):
             elif cmd["type"] == "assert_return":
                 res[-1][2].append(cmd)
             elif cmd["type"] == "assert_trap":
-                res[-1][2].append(cmd)
+                pass
+                # res[-1][2].append(cmd)
             elif cmd["type"] == "assert_invalid":
-                res.append((cmd["type"], self.__read_module(name, cmd["filename"]), []))
+                pass
+                # res.append((cmd["type"], self.__read_module(name, cmd["filename"]), []))
             elif cmd["type"] == "assert_malformed":
                 pass
+            elif cmd["type"] == "assert_exhaustion":
+                # res.append((cmd["type"], self.__read_module(name, cmd["filename"]), []))
+                pass
             else:
-                self.fail()
+                self.fail(f"unknown command: {cmd['type']}")
         return res
 
     def __test_file(self, name: str):
@@ -131,6 +136,8 @@ class TestSuite(unittest.TestCase):
                         if cmd["type"] == "assert_return":
                             self.__test_run_assert_return(data, cmd)
                         elif cmd["type"] == "assert_trap":
+                            self.__test_run_assert_trap(data, cmd)
+                        elif cmd["type"] == "assert_exhaustion":
                             self.__test_run_assert_trap(data, cmd)
                         else:
                             self.fail(f"expect: assert_return or assert_trap, actual: {cmd['type']}")

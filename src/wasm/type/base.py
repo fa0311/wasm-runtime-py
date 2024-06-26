@@ -10,6 +10,10 @@ class NumericType:
         return cls(value)
 
     @classmethod
+    def astype(cls, other: "NumericType"):
+        return cls(other.value)
+
+    @classmethod
     def from_int(cls, value: int):
         return cls(value)
 
@@ -127,19 +131,3 @@ class NumericType:
 
     def copysign(self, other: "NumericType"):
         return self.__class__.from_value(abs(self.value) * (1 if other.value >= 0 else -1))
-
-    def to_signed(self) -> "SignedNumericType":
-        raise NotImplementedError
-
-    def to_unsigned(self) -> "UnsignedNumericType":
-        raise NotImplementedError
-
-
-class UnsignedNumericType(NumericType):
-    def to_signed(self):
-        return SignedNumericType(self.value)
-
-
-class SignedNumericType(NumericType):
-    def to_unsigned(self):
-        return UnsignedNumericType(self.value)

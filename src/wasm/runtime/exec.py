@@ -1,6 +1,6 @@
 import logging
 from math import ceil, floor, trunc
-from typing import Optional, Union
+from typing import Optional, TypeVar, Union
 
 from src.tools.logger import NestedLogger
 from src.wasm.loader.helper import CodeSectionSpecHelper
@@ -100,16 +100,54 @@ class CodeSectionExec:
             env=self.env,
             code=self.code.data,
             locals=self.locals,
-            stack=[],
+            stack=NumericStack(value=[]),
         )
         res = block.run()
         if isinstance(res, list):
             returns = res
         else:
-            returns = [block.stack.pop() for _ in self.fn_type.returns][::-1]
+            returns = [block.stack.any() for _ in self.fn_type.returns][::-1]
 
         self.logger.debug(f"res: {returns}")
         return returns
+
+
+class NumericStack:
+    value: list[NumericType]
+    T = TypeVar("T", bound=NumericType)
+
+    def __init__(self, value: list[NumericType]):
+        self.value = value
+
+    def push(self, value: NumericType):
+        self.value.append(value)
+
+    def extend(self, value: list[NumericType]):
+        self.value.extend(value)
+
+    def any(self, read_only=False) -> NumericType:
+        return self.value[-1] if read_only else self.value.pop()
+
+    def __pop(self, value: type[T], read_only=False) -> T:
+        item = self.any(read_only)
+        if not isinstance(item, value):
+            raise Exception("invalid type")
+        return item
+
+    def bool(self, read_only=False) -> bool:
+        return bool(self.__pop(I32, read_only))
+
+    def i32(self, read_only=False) -> I32:
+        return self.__pop(I32, read_only)
+
+    def i64(self, read_only=False) -> I64:
+        return self.__pop(I64, read_only)
+
+    def f32(self, read_only=False) -> F32:
+        return self.__pop(F32, read_only)
+
+    def f64(self, read_only=False) -> F64:
+        return self.__pop(F64, read_only)
 
 
 class CodeSectionBlock(CodeSectionSpec):
@@ -120,7 +158,7 @@ class CodeSectionBlock(CodeSectionSpec):
         env: WasmExec,
         code: list[CodeInstructionOptimize],
         locals: list[NumericType],
-        stack: list[NumericType],
+        stack: NumericStack,
     ):
         self.env = env
         self.locals = locals
@@ -133,7 +171,7 @@ class CodeSectionBlock(CodeSectionSpec):
 
     @logger.logger
     def run(self) -> Optional[Union[int, list[NumericType]]]:
-        self.logger.debug(f"params: {self.stack}")
+        self.logger.debug(f"params: {self.stack.value}")
         while self.pointer < len(self.code):
             if __debug__:
                 self.env.instruction_count += 1
@@ -150,205 +188,78 @@ class CodeSectionBlock(CodeSectionSpec):
             if res is not None:
                 return res
 
-    def const_i32(self, value: I32):
-        self.stack.append(value)
+    # Control Instructions
 
-    def const_i64(self, value: I64):
-        self.stack.append(value)
+    def unreachable(self):
+        raise Exception("unreachable")
 
-    def const_f32(self, value: F32):
-        self.stack.append(value)
+    def nop(self):
+        pass
 
-    def const_f64(self, value: F64):
-        self.stack.append(value)
+    def block(self, block_type: int):
+        fn_type_params, fn_type_returns = self.env.get_type(block_type)
+        block_stack = [self.stack.any() for _ in fn_type_params][::-1]
+        WasmExec.type_check(block_stack, fn_type_params)
 
-    def local_get(self, index: int):
-        self.stack.append(self.locals[index])
+        block = CodeSectionBlock(
+            env=self.env,
+            code=self.instruction.child,
+            locals=self.locals,
+            stack=NumericStack(value=[]),
+        )
+        br = block.run()
 
-    def local_set(self, index: int):
-        self.locals[index] = self.stack.pop()
+        res_stack = [block.stack.any() for _ in fn_type_returns][::-1]
+        WasmExec.type_check(res_stack, fn_type_returns)
+        self.stack.extend(res_stack)
 
-    def local_tee(self, index: int):
-        self.locals[index] = self.stack[-1]
+        if isinstance(br, int) and br > 0:
+            return br - 1
+        elif isinstance(br, list):
+            return br
 
-    def add(self):
-        b, a = self.stack.pop(), self.stack.pop()
-        self.stack.append(a + b)
+    def loop(self, block_type: int):
+        fn_type_params, fn_type_returns = self.env.get_type(block_type)
+        block_stack = [self.stack.any() for _ in fn_type_params][::-1]
+        WasmExec.type_check(block_stack, fn_type_params)
+        while True:
+            block = CodeSectionBlock(
+                env=self.env,
+                code=self.instruction.child,
+                locals=self.locals,
+                stack=NumericStack(value=block_stack),
+            )
+            br = block.run()
 
-    def sub(self):
-        b, a = self.stack.pop(), self.stack.pop()
-        self.stack.append(a - b)
-
-    def mul(self):
-        b, a = self.stack.pop(), self.stack.pop()
-        self.stack.append(a * b)
-
-    def div(self):
-        b, a = self.stack.pop(), self.stack.pop()
-        self.stack.append(a / b)
-
-    def div_s(self):
-        b, a = self.stack.pop(), self.stack.pop()
-        sb, sa = b.to_signed(), a.to_signed()
-        self.stack.append((sa / sb).to_unsigned())
-
-    def rem(self):
-        b, a = self.stack.pop(), self.stack.pop()
-        self.stack.append(a % b)
-
-    def rem_s(self):
-        b, a = self.stack.pop(), self.stack.pop()
-        sb, sa = b.to_signed(), a.to_signed()
-        self.stack.append((sa % sb).to_unsigned())
-
-    def eq(self):
-        b, a = self.stack.pop(), self.stack.pop()
-        self.stack.append(a == b)
-
-    def ne(self):
-        b, a = self.stack.pop(), self.stack.pop()
-        self.stack.append(a != b)
-
-    def eqz(self):
-        a = self.stack.pop()
-        self.stack.append(a == I32.from_int(0))
-
-    def gt_s(self):
-        b, a = self.stack.pop(), self.stack.pop()
-        sb, sa = b.to_signed(), a.to_signed()
-        self.stack.append(sa > sb)
-
-    def gt_u(self):
-        b, a = self.stack.pop(), self.stack.pop()
-        self.stack.append(a > b)
-
-    def ge(self):
-        b, a = self.stack.pop(), self.stack.pop()
-        self.stack.append(a >= b)
-
-    def ge_s(self):
-        b, a = self.stack.pop(), self.stack.pop()
-        sb, sa = b.to_signed(), a.to_signed()
-        self.stack.append(sa >= sb)
-
-    def lt_s(self):
-        b, a = self.stack.pop(), self.stack.pop()
-        sb, sa = b.to_signed(), a.to_signed()
-        self.stack.append(sa < sb)
-
-    def lt_u(self):
-        b, a = self.stack.pop(), self.stack.pop()
-        self.stack.append(a < b)
-
-    def le(self):
-        b, a = self.stack.pop(), self.stack.pop()
-        self.stack.append(a <= b)
-
-    def le_s(self):
-        b, a = self.stack.pop(), self.stack.pop()
-        sb, sa = b.to_signed(), a.to_signed()
-        self.stack.append(sa <= sb)
-
-    def clz(self):
-        a = self.stack.pop()
-        self.stack.append(a.clz())
-
-    def ctz(self):
-        a = self.stack.pop()
-        self.stack.append(a.ctz())
-
-    def popcnt(self):
-        a = self.stack.pop()
-        self.stack.append(a.popcnt())
-
-    def and_(self):
-        b, a = self.stack.pop(), self.stack.pop()
-        self.stack.append(a & b)
-
-    def or_(self):
-        b, a = self.stack.pop(), self.stack.pop()
-        self.stack.append(a | b)
-
-    def xor(self):
-        b, a = self.stack.pop(), self.stack.pop()
-        self.stack.append(a ^ b)
-
-    def shl(self):
-        b, a = self.stack.pop(), self.stack.pop()
-        self.stack.append(a << b)
-
-    def shr_s(self):
-        b, a = self.stack.pop(), self.stack.pop()
-        sb, sa = b.to_signed(), a.to_signed()
-        self.stack.append((sa >> sb).to_unsigned())
-
-    def shr_u(self):
-        b, a = self.stack.pop(), self.stack.pop()
-        self.stack.append(a >> b)
-
-    def rotl(self):
-        b, a = self.stack.pop(), self.stack.pop()
-        self.stack.append(a.rotl(b))
-
-    def rotr(self):
-        b, a = self.stack.pop(), self.stack.pop()
-        self.stack.append(a.rotr(b))
-
-    def abs(self):
-        a = self.stack.pop()
-        self.stack.append(abs(a))
-
-    def neg(self):
-        a = self.stack.pop()
-        self.stack.append(-a)
-
-    def ceil(self):
-        a = self.stack.pop()
-        self.stack.append(ceil(a))
-
-    def floor(self):
-        a = self.stack.pop()
-        self.stack.append(floor(a))
-
-    def trunc(self):
-        a = self.stack.pop()
-        self.stack.append(trunc(a))
-
-    def nearest(self):
-        a = self.stack.pop()
-        self.stack.append(round(a))
-
-    def min(self):
-        b, a = self.stack.pop(), self.stack.pop()
-        self.stack.append(a.min(b))
-
-    def max(self):
-        b, a = self.stack.pop(), self.stack.pop()
-        self.stack.append(a.max(b))
-
-    def sqrt(self):
-        a = self.stack.pop()
-        self.stack.append(a.sqrt())
-
-    def copysign(self):
-        b, a = self.stack.pop(), self.stack.pop()
-        self.stack.append(a.copysign(b))
+            if br == 0:
+                block_stack = [block.stack.any() for _ in fn_type_params][::-1]
+                WasmExec.type_check(block_stack, fn_type_params)
+            else:
+                res_stack = [block.stack.any() for _ in fn_type_returns][::-1]
+                WasmExec.type_check(res_stack, fn_type_returns)
+                self.stack.extend(res_stack)
+                if isinstance(br, int) and br > 0:
+                    return br - 1
+                elif isinstance(br, list):
+                    return br
+                else:
+                    break
 
     def if_(self, block_type: int):
         fn_type_params, fn_type_returns = self.env.get_type(block_type)
-        block_stack = [self.stack.pop() for _ in fn_type_params][::-1]
+        block_stack = [self.stack.any() for _ in fn_type_params][::-1]
         WasmExec.type_check(block_stack, fn_type_params)
 
-        code = self.instruction.child if bool(self.stack.pop()) else self.instruction.else_child
+        code = self.instruction.child if bool(self.stack.any()) else self.instruction.else_child
         block = CodeSectionBlock(
             env=self.env,
             code=code,
             locals=self.locals,
-            stack=block_stack,
+            stack=NumericStack(value=block_stack),
         )
         br = block.run()
 
-        res_stack = [block.stack.pop() for _ in fn_type_returns][::-1]
+        res_stack = [block.stack.any() for _ in fn_type_returns][::-1]
         WasmExec.type_check(res_stack, fn_type_returns)
         self.stack.extend(res_stack)
 
@@ -360,82 +271,30 @@ class CodeSectionBlock(CodeSectionSpec):
     def else_(self):
         Exception("else_")
 
+    def block_end(self):
+        Exception("block_end")
+
+    def br(self, count: int):
+        return count
+
     def br_if(self, count: int):
-        a = self.stack.pop()
-        if bool(a):
+        if self.stack.bool():
             return count
         else:
             pass
 
     def br_table(self, count: list[int]):
-        a = self.stack.pop()
+        a = self.stack.i32()
         return count[a.value]
 
-    def br(self, count: int):
-        return count
-
-    def unreachable(self):
-        raise Exception("unreachable")
-
-    def nop(self):
-        pass
-
-    def block(self, block_type: int):
-        fn_type_params, fn_type_returns = self.env.get_type(block_type)
-        block_stack = [self.stack.pop() for _ in fn_type_params][::-1]
-        WasmExec.type_check(block_stack, fn_type_params)
-
-        block = CodeSectionBlock(
-            env=self.env,
-            code=self.instruction.child,
-            locals=self.locals,
-            stack=block_stack,
-        )
-        br = block.run()
-
-        res_stack = [block.stack.pop() for _ in fn_type_returns][::-1]
-        WasmExec.type_check(res_stack, fn_type_returns)
-        self.stack.extend(res_stack)
-
-        if isinstance(br, int) and br > 0:
-            return br - 1
-        elif isinstance(br, list):
-            return br
-
-    def loop(self, block_type: int):
-        fn_type_params, fn_type_returns = self.env.get_type(block_type)
-        block_stack = [self.stack.pop() for _ in fn_type_params][::-1]
-        WasmExec.type_check(block_stack, fn_type_params)
-        while True:
-            block = CodeSectionBlock(
-                env=self.env,
-                code=self.instruction.child,
-                locals=self.locals,
-                stack=block_stack,
-            )
-            br = block.run()
-
-            if br == 0:
-                block_stack = [block.stack.pop() for _ in fn_type_params][::-1]
-                WasmExec.type_check(block_stack, fn_type_params)
-            else:
-                res_stack = [block.stack.pop() for _ in fn_type_returns][::-1]
-                WasmExec.type_check(res_stack, fn_type_returns)
-                self.stack.extend(res_stack)
-                if isinstance(br, int) and br > 0:
-                    return br - 1
-                elif isinstance(br, list):
-                    return br
-                else:
-                    break
-
-    def block_end(self):
-        Exception("block_end")
+    def return_(self):
+        a = self.stack.any()
+        return [a]
 
     def call(self, index: int):
         _, fn_type = self.env.get_function(index)
 
-        param = [self.stack.pop() for _ in fn_type.params][::-1]
+        param = [self.stack.any() for _ in fn_type.params][::-1]
 
         runtime, res = self.env.run(index, param)
 
@@ -446,207 +305,590 @@ class CodeSectionBlock(CodeSectionSpec):
         pass
 
     def drop(self):
-        self.stack.pop()
+        self.stack.any()
 
     def select(self):
-        c, b, a = self.stack.pop(), self.stack.pop(), self.stack.pop()
-        self.stack.append(a if c else b)
+        c, b, a = self.stack.i32(), self.stack.any(), self.stack.any()
+        self.stack.push(a if c else b)
 
-    def return_(self):
-        a = self.stack.pop()
-        return [a]
+    # Variable Instructions
 
-    def wrap_i64(self):
-        a = self.stack.pop()
-        i32 = I32.from_value(a.value)
-        self.stack.append(i32)
+    def local_get(self, index: int):
+        self.stack.push(self.locals[index])
+
+    def local_set(self, index: int):
+        self.locals[index] = self.stack.any()
+
+    def local_tee(self, index: int):
+        self.locals[index] = self.stack.any(read_only=True)
+
+    def i32_const(self, value: I32):
+        self.stack.push(value)
+
+    def i64_const(self, value: I64):
+        self.stack.push(value)
+
+    def f32_const(self, value: F32):
+        self.stack.push(value)
+
+    def f64_const(self, value: F64):
+        self.stack.push(value)
+
+    def i32_eqz(self):
+        a = self.stack.i32()
+        self.stack.push(a == I32.from_int(0))
+
+    def i32_eq(self):
+        b, a = self.stack.i32(), self.stack.i32()
+        self.stack.push(a == b)
+
+    def i32_ne(self):
+        b, a = self.stack.i32(), self.stack.i32()
+        self.stack.push(a != b)
+
+    def i32_lt_s(self):
+        b, a = self.stack.i32(), self.stack.i32()
+        sb, sa = SignedI32.astype(b), SignedI32.astype(a)
+        self.stack.push(sa < sb)
+
+    def i32_lt_u(self):
+        b, a = self.stack.i32(), self.stack.i32()
+        self.stack.push(a < b)
+
+    def i32_gt_s(self):
+        b, a = self.stack.i32(), self.stack.i32()
+        sb, sa = SignedI32.astype(b), SignedI32.astype(a)
+        self.stack.push(sa > sb)
+
+    def i32_gt_u(self):
+        b, a = self.stack.i32(), self.stack.i32()
+        self.stack.push(a > b)
+
+    def i32_le_s(self):
+        b, a = self.stack.i32(), self.stack.i32()
+        sb, sa = SignedI32.astype(b), SignedI32.astype(a)
+        self.stack.push(sa <= sb)
+
+    def i32_le_u(self):
+        b, a = self.stack.i32(), self.stack.i32()
+        self.stack.push(a <= b)
+
+    def i32_ge_s(self):
+        b, a = self.stack.i32(), self.stack.i32()
+        sb, sa = SignedI32.astype(b), SignedI32.astype(a)
+        self.stack.push(sa >= sb)
+
+    def i32_ge_u(self):
+        b, a = self.stack.i32(), self.stack.i32()
+        self.stack.push(a >= b)
+
+    def i64_eqz(self):
+        a = self.stack.i64()
+        self.stack.push(a == I64.from_int(0))
+
+    def i64_eq(self):
+        b, a = self.stack.i64(), self.stack.i64()
+        self.stack.push(a == b)
+
+    def i64_ne(self):
+        b, a = self.stack.i64(), self.stack.i64()
+        self.stack.push(a != b)
+
+    def i64_lt_s(self):
+        b, a = self.stack.i64(), self.stack.i64()
+        sb, sa = SignedI64.astype(b), SignedI64.astype(a)
+        self.stack.push(sa < sb)
+
+    def i64_lt_u(self):
+        b, a = self.stack.i64(), self.stack.i64()
+        self.stack.push(a < b)
+
+    def i64_gt_s(self):
+        b, a = self.stack.i64(), self.stack.i64()
+        sb, sa = SignedI64.astype(b), SignedI64.astype(a)
+        self.stack.push(sa > sb)
+
+    def i64_gt_u(self):
+        b, a = self.stack.i64(), self.stack.i64()
+        self.stack.push(a > b)
+
+    def i64_le_s(self):
+        b, a = self.stack.i64(), self.stack.i64()
+        sb, sa = SignedI64.astype(b), SignedI64.astype(a)
+        self.stack.push(sa <= sb)
+
+    def i64_le_u(self):
+        b, a = self.stack.i64(), self.stack.i64()
+        self.stack.push(a <= b)
+
+    def i64_ge_s(self):
+        b, a = self.stack.i64(), self.stack.i64()
+        sb, sa = SignedI64.astype(b), SignedI64.astype(a)
+        self.stack.push(sa >= sb)
+
+    def i64_ge_u(self):
+        b, a = self.stack.i64(), self.stack.i64()
+        self.stack.push(a >= b)
+
+    def f32_eq(self):
+        b, a = self.stack.f32(), self.stack.f32()
+        self.stack.push(a == b)
+
+    def f32_ne(self):
+        b, a = self.stack.f32(), self.stack.f32()
+        self.stack.push(a != b)
+
+    def f32_lt(self):
+        b, a = self.stack.f32(), self.stack.f32()
+        self.stack.push(a < b)
+
+    def f32_gt(self):
+        b, a = self.stack.f32(), self.stack.f32()
+        self.stack.push(a > b)
+
+    def f32_le(self):
+        b, a = self.stack.f32(), self.stack.f32()
+        self.stack.push(a <= b)
+
+    def f32_ge(self):
+        b, a = self.stack.f32(), self.stack.f32()
+        self.stack.push(a >= b)
+
+    def f64_eq(self):
+        b, a = self.stack.f64(), self.stack.f64()
+        self.stack.push(a == b)
+
+    def f64_ne(self):
+        b, a = self.stack.f64(), self.stack.f64()
+        self.stack.push(a != b)
+
+    def f64_lt(self):
+        b, a = self.stack.f64(), self.stack.f64()
+        self.stack.push(a < b)
+
+    def f64_gt(self):
+        b, a = self.stack.f64(), self.stack.f64()
+        self.stack.push(a > b)
+
+    def f64_le(self):
+        b, a = self.stack.f64(), self.stack.f64()
+        self.stack.push(a <= b)
+
+    def f64_ge(self):
+        b, a = self.stack.f64(), self.stack.f64()
+        self.stack.push(a >= b)
+
+    def i32_clz(self):
+        a = self.stack.i32()
+        self.stack.push(a.clz())
+
+    def i32_ctz(self):
+        a = self.stack.i32()
+        self.stack.push(a.ctz())
+
+    def i32_popcnt(self):
+        a = self.stack.i32()
+        self.stack.push(a.popcnt())
+
+    def i32_add(self):
+        b, a = self.stack.i32(), self.stack.i32()
+        self.stack.push(a + b)
+
+    def i32_sub(self):
+        b, a = self.stack.i32(), self.stack.i32()
+        self.stack.push(a - b)
+
+    def i32_mul(self):
+        b, a = self.stack.i32(), self.stack.i32()
+        self.stack.push(a * b)
+
+    def i32_div_s(self):
+        b, a = self.stack.i32(), self.stack.i32()
+        sb, sa = SignedI32.astype(b), SignedI32.astype(a)
+        self.stack.push(I32.astype(sa / sb))
+
+    def i32_div_u(self):
+        b, a = self.stack.i32(), self.stack.i32()
+        self.stack.push(a / b)
+
+    def i32_rem_s(self):
+        b, a = self.stack.i32(), self.stack.i32()
+        sb, sa = SignedI32.astype(b), SignedI32.astype(a)
+        self.stack.push(I32.astype(sa % sb))
+
+    def i32_rem_u(self):
+        b, a = self.stack.i32(), self.stack.i32()
+        self.stack.push(a % b)
+
+    def i32_and(self):
+        b, a = self.stack.i32(), self.stack.i32()
+        self.stack.push(a & b)
+
+    def i32_or(self):
+        b, a = self.stack.i32(), self.stack.i32()
+        self.stack.push(a | b)
+
+    def i32_xor(self):
+        b, a = self.stack.i32(), self.stack.i32()
+        self.stack.push(a ^ b)
+
+    def i32_shl(self):
+        b, a = self.stack.i32(), self.stack.i32()
+        self.stack.push(a << b)
+
+    def i32_shr_s(self):
+        b, a = self.stack.i32(), self.stack.i32()
+        sb, sa = SignedI32.astype(b), SignedI32.astype(a)
+        self.stack.push(I32.astype(sa >> sb))
+
+    def i32_shr_u(self):
+        b, a = self.stack.i32(), self.stack.i32()
+        self.stack.push(a >> b)
+
+    def i32_rotl(self):
+        b, a = self.stack.i32(), self.stack.i32()
+        self.stack.push(a.rotl(b))
+
+    def i32_rotr(self):
+        b, a = self.stack.i32(), self.stack.i32()
+        self.stack.push(a.rotr(b))
+
+    def i64_clz(self):
+        a = self.stack.i64()
+        self.stack.push(a.clz())
+
+    def i64_ctz(self):
+        a = self.stack.i64()
+        self.stack.push(a.ctz())
+
+    def i64_popcnt(self):
+        a = self.stack.i64()
+        self.stack.push(a.popcnt())
+
+    def i64_add(self):
+        b, a = self.stack.i64(), self.stack.i64()
+        self.stack.push(a + b)
+
+    def i64_sub(self):
+        b, a = self.stack.i64(), self.stack.i64()
+        self.stack.push(a - b)
+
+    def i64_mul(self):
+        b, a = self.stack.i64(), self.stack.i64()
+        self.stack.push(a * b)
+
+    def i64_div_s(self):
+        b, a = self.stack.i64(), self.stack.i64()
+        sb, sa = SignedI64.astype(b), SignedI64.astype(a)
+        self.stack.push(I64.astype(sa / sb))
+
+    def i64_div_u(self):
+        b, a = self.stack.i64(), self.stack.i64()
+        self.stack.push(a / b)
+
+    def i64_rem_s(self):
+        b, a = self.stack.i64(), self.stack.i64()
+        sb, sa = SignedI64.astype(b), SignedI64.astype(a)
+        self.stack.push(I64.astype(sa % sb))
+
+    def i64_rem_u(self):
+        b, a = self.stack.i64(), self.stack.i64()
+        self.stack.push(a % b)
+
+    def i64_and(self):
+        b, a = self.stack.i64(), self.stack.i64()
+        self.stack.push(a & b)
+
+    def i64_or(self):
+        b, a = self.stack.i64(), self.stack.i64()
+        self.stack.push(a | b)
+
+    def i64_xor(self):
+        b, a = self.stack.i64(), self.stack.i64()
+        self.stack.push(a ^ b)
+
+    def i64_shl(self):
+        b, a = self.stack.i64(), self.stack.i64()
+        self.stack.push(a << b)
+
+    def i64_shr_s(self):
+        b, a = self.stack.i64(), self.stack.i64()
+        sb, sa = SignedI64.astype(b), SignedI64.astype(a)
+        self.stack.push(I64.astype(sa >> sb))
+
+    def i64_shr_u(self):
+        b, a = self.stack.i64(), self.stack.i64()
+        self.stack.push(a >> b)
+
+    def i64_rotl(self):
+        b, a = self.stack.i64(), self.stack.i64()
+        self.stack.push(a.rotl(b))
+
+    def i64_rotr(self):
+        b, a = self.stack.i64(), self.stack.i64()
+        self.stack.push(a.rotr(b))
+
+    def f32_abs(self):
+        a = self.stack.f32()
+        self.stack.push(abs(a))
+
+    def f32_neg(self):
+        a = self.stack.f32()
+        self.stack.push(-a)
+
+    def f32_ceil(self):
+        a = self.stack.f32()
+        self.stack.push(ceil(a))
+
+    def f32_floor(self):
+        a = self.stack.f32()
+        self.stack.push(floor(a))
+
+    def f32_trunc(self):
+        a = self.stack.f32()
+        self.stack.push(trunc(a))
+
+    def f32_nearest(self):
+        a = self.stack.f32()
+        self.stack.push(round(a))
+
+    def f32_sqrt(self):
+        a = self.stack.f32()
+        self.stack.push(a.sqrt())
+
+    def f32_add(self):
+        b, a = self.stack.f32(), self.stack.f32()
+        self.stack.push(a + b)
+
+    def f32_sub(self):
+        b, a = self.stack.f32(), self.stack.f32()
+        self.stack.push(a - b)
+
+    def f32_mul(self):
+        b, a = self.stack.f32(), self.stack.f32()
+        self.stack.push(a * b)
+
+    def f32_div(self):
+        b, a = self.stack.f32(), self.stack.f32()
+        self.stack.push(a / b)
+
+    def f32_min(self):
+        b, a = self.stack.f32(), self.stack.f32()
+        self.stack.push(a.min(b))
+
+    def f32_max(self):
+        b, a = self.stack.f32(), self.stack.f32()
+        self.stack.push(a.max(b))
+
+    def f32_copysign(self):
+        b, a = self.stack.f32(), self.stack.f32()
+        self.stack.push(a.copysign(b))
+
+    def f64_abs(self):
+        a = self.stack.f64()
+        self.stack.push(abs(a))
+
+    def f64_neg(self):
+        a = self.stack.f64()
+        self.stack.push(-a)
+
+    def f64_ceil(self):
+        a = self.stack.f64()
+        self.stack.push(ceil(a))
+
+    def f64_floor(self):
+        a = self.stack.f64()
+        self.stack.push(floor(a))
+
+    def f64_trunc(self):
+        a = self.stack.f64()
+        self.stack.push(trunc(a))
+
+    def f64_nearest(self):
+        a = self.stack.f64()
+        self.stack.push(round(a))
+
+    def f64_sqrt(self):
+        a = self.stack.f64()
+        self.stack.push(a.sqrt())
+
+    def f64_add(self):
+        b, a = self.stack.f64(), self.stack.f64()
+        self.stack.push(a + b)
+
+    def f64_sub(self):
+        b, a = self.stack.f64(), self.stack.f64()
+        self.stack.push(a - b)
+
+    def f64_mul(self):
+        b, a = self.stack.f64(), self.stack.f64()
+        self.stack.push(a * b)
+
+    def f64_div(self):
+        b, a = self.stack.f64(), self.stack.f64()
+        self.stack.push(a / b)
+
+    def f64_min(self):
+        b, a = self.stack.f64(), self.stack.f64()
+        self.stack.push(a.min(b))
+
+    def f64_max(self):
+        b, a = self.stack.f64(), self.stack.f64()
+        self.stack.push(a.max(b))
+
+    def f64_copysign(self):
+        b, a = self.stack.f64(), self.stack.f64()
+        self.stack.push(a.copysign(b))
+
+    def i32_wrap_i64(self):
+        a = self.stack.i64()
+        self.stack.push(I32.astype(a))
 
     def i32_trunc_f32_s(self):
-        a = self.stack.pop()
-        i32 = SignedI32.from_value(a.value)
-        self.stack.append(i32.to_unsigned())
+        a = self.stack.f32()
+        i32 = SignedI32.astype(trunc(a))
+        self.stack.push(i32)
 
-    def i32_trunc_f32(self):
-        a = self.stack.pop()
-        i32 = I32.from_value(a.value)
-        self.stack.append(i32)
+    def i32_trunc_f32_u(self):
+        a = self.stack.f32()
+        i32 = I32.astype(trunc(a))
+        self.stack.push(i32)
 
     def i32_trunc_f64_s(self):
-        a = self.stack.pop()
-        i32 = SignedI32.from_value(a.value)
-        self.stack.append(i32.to_unsigned())
+        a = self.stack.f64()
+        i32 = SignedI32.astype(trunc(a))
+        self.stack.push(i32)
 
-    def i32_trunc_f64(self):
-        a = self.stack.pop()
-        i32 = I32.from_value(a.value)
-        self.stack.append(i32)
-
-    def i64_extend_i32(self):
-        a = self.stack.pop()
-        i64 = I64.from_value(a.value)
-        self.stack.append(i64)
+    def i32_trunc_f64_u(self):
+        a = self.stack.f64()
+        i32 = I32.astype(trunc(a))
+        self.stack.push(i32)
 
     def i64_extend_i32_s(self):
-        a = self.stack.pop()
-        i32 = SignedI32.from_value(a.value)
-        i64 = I64.from_value(i32.value)
-        self.stack.append(i64)
+        a = self.stack.i32()
+        sa = SignedI32.astype(a)
+        self.stack.push(I64.astype(sa))
+
+    def i64_extend_i32_u(self):
+        a = self.stack.i32()
+        self.stack.push(I64.astype(a))
 
     def f32_convert_i32_s(self):
-        a = self.stack.pop()
-        i32 = SignedI32.from_value(a.value)
-        f32 = F32.from_value(i32.value)
-        self.stack.append(f32)
+        a = self.stack.i32()
+        sa = SignedI32.astype(a)
+        self.stack.push(F32.astype(sa))
 
-    def f32_convert_i32(self):
-        a = self.stack.pop()
-        f32 = F32.from_value(a.value)
-        self.stack.append(f32)
+    def f32_convert_i32_u(self):
+        a = self.stack.i32()
+        self.stack.push(F32.astype(a))
 
     def f32_convert_i64_s(self):
-        a = self.stack.pop()
-        i64 = SignedI64.from_value(a.value)
-        f32 = F32.from_value(i64.value)
-        self.stack.append(f32)
+        a = self.stack.i64()
+        sa = SignedI64.astype(a)
+        self.stack.push(F32.astype(sa))
 
-    def f32_convert_i64(self):
-        a = self.stack.pop()
-        f32 = F32.from_value(a.value)
-        self.stack.append(f32)
+    def f32_convert_i64_u(self):
+        a = self.stack.i64()
+        self.stack.push(F32.astype(a))
 
     def f32_demote_f64(self):
-        a = self.stack.pop()
-        f32 = F32.from_value(a.value)
-        self.stack.append(f32)
+        a = self.stack.f64()
+        self.stack.push(F32.astype(a))
 
     def f64_convert_i32_s(self):
-        a = self.stack.pop()
-        i32 = SignedI32.from_value(a.value)
-        f64 = F64.from_value(i32.value)
-        self.stack.append(f64)
+        a = self.stack.i32()
+        sa = SignedI32.astype(a)
+        self.stack.push(F64.astype(sa))
 
-    def f64_convert_i32(self):
-        a = self.stack.pop()
-        f64 = F64.from_value(a.value)
-        self.stack.append(f64)
+    def f64_convert_i32_u(self):
+        a = self.stack.i32()
+        self.stack.push(F64.astype(a))
 
     def f64_convert_i64_s(self):
-        a = self.stack.pop()
-        i64 = SignedI64.from_value(a.value)
-        f64 = F64.from_value(i64.value)
-        self.stack.append(f64)
+        a = self.stack.i64()
+        sa = SignedI64.astype(a)
+        self.stack.push(F64.astype(sa))
 
-    def f64_convert_i64(self):
-        a = self.stack.pop()
-        f64 = F64.from_value(a.value)
-        self.stack.append(f64)
+    def f64_convert_i64_u(self):
+        a = self.stack.i64()
+        self.stack.push(F64.astype(a))
 
     def f64_promote_f32(self):
-        a = self.stack.pop()
-        f64 = F64.from_value(a.value)
-        self.stack.append(f64)
+        a = self.stack.f32()
+        self.stack.push(F64.astype(a))
 
-    def i32_extend8(self):
-        a = self.stack.pop()
-        i8 = SignedI8.from_value(a.value)
-        i32 = I32.from_value(i8.value)
-        self.stack.append(i32)
+    def i32_extend8_s(self):
+        a = self.stack.i32()
+        sa = SignedI8.astype(a)
+        self.stack.push(I32.astype(sa))
 
-    def i32_extend16(self):
-        a = self.stack.pop()
-        i16 = SignedI16.from_value(a.value)
-        i32 = I32.from_value(i16.value)
-        self.stack.append(i32)
+    def i32_extend16_s(self):
+        a = self.stack.i32()
+        sa = SignedI16.astype(a)
+        self.stack.push(I32.astype(sa))
 
-    def i64_extend8(self):
-        a = self.stack.pop()
-        i8 = SignedI8.from_value(a.value)
-        i64 = I64.from_value(i8.value)
-        self.stack.append(i64)
+    def i64_extend8_s(self):
+        a = self.stack.i64()
+        sa = SignedI8.astype(a)
+        self.stack.push(I64.astype(sa))
 
-    def i64_extend16(self):
-        a = self.stack.pop()
-        i16 = SignedI16.from_value(a.value)
-        i64 = I64.from_value(i16.value)
-        self.stack.append(i64)
+    def i64_extend16_s(self):
+        a = self.stack.i64()
+        sa = SignedI16.astype(a)
+        self.stack.push(I64.astype(sa))
 
-    def i64_extend32(self):
-        a = self.stack.pop()
-        i32 = SignedI32.from_value(a.value)
-        i64 = I64.from_value(i32.value)
-        self.stack.append(i64)
+    def i64_extend32_s(self):
+        a = self.stack.i64()
+        sa = SignedI32.astype(a)
+        self.stack.push(I64.astype(sa))
 
     @WasmUnimplementedError.throw()
     def i64_trunc_f32_s(self):
-        a = self.stack.pop()
-        i64 = SignedI64.from_value(a.value)
-        self.stack.append(i64.to_unsigned())
+        pass
 
     @WasmUnimplementedError.throw()
-    def i64_trunc_f32(self):
-        a = self.stack.pop()
-        i64 = I64.from_value(a.value)
-        self.stack.append(i64)
+    def i64_trunc_f32_u(self):
+        pass
 
     @WasmUnimplementedError.throw()
     def i64_trunc_f64_s(self):
-        a = self.stack.pop()
-        i64 = SignedI64.from_value(a.value)
-        self.stack.append(i64.to_unsigned())
+        pass
 
     @WasmUnimplementedError.throw()
-    def i64_trunc_f64(self):
-        a = self.stack.pop()
-        i64 = I64.from_value(a.value)
-        self.stack.append(i64)
+    def i64_trunc_f64_u(self):
+        pass
 
     @WasmUnimplementedError.throw()
     def i32_trunc_sat_f32_s(self):
-        a = self.stack.pop()
-        i32 = SignedI32.from_value(trunc(a).value)
-        self.stack.append(i32.to_unsigned())
+        pass
 
     @WasmUnimplementedError.throw()
-    def i32_trunc_sat_f32(self):
-        a = self.stack.pop()
-        i32 = I32.from_value(a.value)
-        self.stack.append(i32)
+    def i32_trunc_sat_f32_u(self):
+        pass
 
     @WasmUnimplementedError.throw()
     def i32_trunc_sat_f64_s(self):
-        a = self.stack.pop()
-        i32 = SignedI32.from_value(trunc(a).value)
-        self.stack.append(i32.to_unsigned())
+        pass
 
     @WasmUnimplementedError.throw()
     def i32_trunc_sat_f64(self):
-        a = self.stack.pop()
-        i32 = I32.from_value(trunc(a).value)
-        self.stack.append(i32)
+        pass
 
     @WasmUnimplementedError.throw()
     def i64_trunc_sat_f32_s(self):
-        a = self.stack.pop()
-        i64 = SignedI64.from_value(trunc(a).value)
-        self.stack.append(i64.to_unsigned())
+        pass
 
     @WasmUnimplementedError.throw()
     def i64_trunc_sat_f32(self):
-        a = self.stack.pop()
-        i64 = I64.from_value(trunc(a).value)
-        self.stack.append(i64)
+        pass
 
     @WasmUnimplementedError.throw()
     def i64_trunc_sat_f64_s(self):
-        a = self.stack.pop()
-        i64 = SignedI64.from_value(trunc(a).value)
-        self.stack.append(i64.to_unsigned())
+        pass
 
     @WasmUnimplementedError.throw()
     def i64_trunc_sat_f64(self):
-        a = self.stack.pop()
-        i64 = I64.from_value(trunc(a).value)
-        self.stack.append(i64)
+        pass
 
     def memory_init(self):
         pass

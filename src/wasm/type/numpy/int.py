@@ -2,23 +2,23 @@ from typing import Union
 
 import numpy as np
 
-from src.wasm.type.base import NumericType, SignedNumericType, UnsignedNumericType
+from src.wasm.type.numpy.base import NumpyNumericType
 
 
-class UnsignedIntType(UnsignedNumericType):
+class UnsignedIntType(NumpyNumericType):
     """符号なし整数型の基底クラス"""
 
     @classmethod
     def from_bool(cls, value: bool):
         return I32.from_int(1 if value else 0)
 
-    def __truediv__(self, other: NumericType):
+    def __truediv__(self, other: "UnsignedIntType"):
         return self.__floordiv__(other)
 
     def __repr__(self):
         cls_name = self.__class__.__name__
-        cls_value = self.to_signed().value
-        return f"{cls_name}({cls_value})"
+        cls_value = SignedI64.from_value(self.value)
+        return f"{cls_name}({cls_value.value})"
 
 
 class I8(UnsignedIntType):
@@ -28,8 +28,8 @@ class I8(UnsignedIntType):
         self.value = value
 
     @classmethod
-    def from_value(cls, value: np.generic):
-        return cls(value.astype(np.uint8))
+    def astype(cls, value: NumpyNumericType):
+        return cls(value.value.astype(np.uint8))
 
     @classmethod
     def from_int(cls, value: int):
@@ -43,9 +43,6 @@ class I8(UnsignedIntType):
     def get_length(cls):
         return 8
 
-    def to_signed(self):
-        return SignedI8.from_value(self.value)
-
 
 class I16(UnsignedIntType):
     """16bit符号なし整数型"""
@@ -54,8 +51,8 @@ class I16(UnsignedIntType):
         self.value = value
 
     @classmethod
-    def from_value(cls, value: np.generic):
-        return cls(value.astype(np.uint16))
+    def astype(cls, value: NumpyNumericType):
+        return cls(value.value.astype(np.uint16))
 
     @classmethod
     def from_int(cls, value: int):
@@ -69,9 +66,6 @@ class I16(UnsignedIntType):
     def get_length(cls):
         return 16
 
-    def to_signed(self):
-        return SignedI16.from_value(self.value)
-
 
 class I32(UnsignedIntType):
     """32bit符号なし整数型"""
@@ -80,8 +74,8 @@ class I32(UnsignedIntType):
         self.value = value
 
     @classmethod
-    def from_value(cls, value: np.generic):
-        return cls(value.astype(np.uint32))
+    def astype(cls, value: NumpyNumericType):
+        return cls(value.value.astype(np.uint32))
 
     @classmethod
     def from_int(cls, value: int):
@@ -95,9 +89,6 @@ class I32(UnsignedIntType):
     def get_length(cls):
         return 32
 
-    def to_signed(self):
-        return SignedI32.from_value(self.value)
-
 
 class I64(UnsignedIntType):
     """64bit符号なし整数型"""
@@ -106,8 +97,8 @@ class I64(UnsignedIntType):
         self.value = value
 
     @classmethod
-    def from_value(cls, value: np.generic):
-        return cls(value.astype(np.uint64))
+    def astype(cls, value: NumpyNumericType):
+        return cls(value.value.astype(np.uint64))
 
     @classmethod
     def from_int(cls, value: int):
@@ -121,27 +112,26 @@ class I64(UnsignedIntType):
     def get_length(cls):
         return 64
 
-    def to_signed(self):
-        return SignedI64.from_value(self.value)
 
-
-class SignedIntType(SignedNumericType):
+class SignedIntType(NumpyNumericType):
     """符号付き整数型の基底クラス"""
 
     @classmethod
     def from_bool(cls, value: bool):
         return I32.from_int(1 if value else 0)
 
-    def __truediv__(self, other: NumericType):
+    def __truediv__(self, other: "SignedIntType"):
         return self.__floordiv__(other)
 
-    def __floordiv__(self, other: "NumericType"):
+    def __floordiv__(self, other: "SignedIntType"):
         a, b = np.divmod(self.value, other.value)
         c = self.__class__.from_bool(a < 0 and b != 0)
         return self.__class__.from_value(a + c.value)
 
-    def __mod__(self, other: "NumericType"):
-        result = self.value - other.value * (self // other).value
+    def __mod__(self, other: "SignedIntType"):
+        a, b = np.divmod(self.value, other.value)
+        c = self.__class__.from_bool(a < 0 and b != 0)
+        result = self.value - (other.value * (a + c.value))
         return self.__class__.from_value(result)
 
     def __repr__(self):
@@ -157,8 +147,8 @@ class SignedI8(SignedIntType):
         self.value = value
 
     @classmethod
-    def from_value(cls, value: np.generic):
-        return cls(value.astype(np.int8))
+    def astype(cls, value: NumpyNumericType):
+        return cls(value.value.astype(np.int8))
 
     @classmethod
     def from_int(cls, value: int):
@@ -172,9 +162,6 @@ class SignedI8(SignedIntType):
     def get_length(cls):
         return 8
 
-    def to_unsigned(self):
-        return I8.from_value(self.value)
-
 
 class SignedI16(SignedIntType):
     """16bit符号付き整数型"""
@@ -183,8 +170,8 @@ class SignedI16(SignedIntType):
         self.value = value
 
     @classmethod
-    def from_value(cls, value: np.generic):
-        return cls(value.astype(np.int16))
+    def astype(cls, value: NumpyNumericType):
+        return cls(value.value.astype(np.int16))
 
     @classmethod
     def from_int(cls, value: int):
@@ -198,9 +185,6 @@ class SignedI16(SignedIntType):
     def get_length(cls):
         return 16
 
-    def to_unsigned(self):
-        return I16.from_value(self.value)
-
 
 class SignedI32(SignedIntType):
     """32bit符号付き整数型"""
@@ -209,8 +193,8 @@ class SignedI32(SignedIntType):
         self.value = value
 
     @classmethod
-    def from_value(cls, value: np.generic):
-        return cls(value.astype(np.int32))
+    def astype(cls, value: NumpyNumericType):
+        return cls(value.value.astype(np.int32))
 
     @classmethod
     def from_int(cls, value: int):
@@ -224,9 +208,6 @@ class SignedI32(SignedIntType):
     def get_length(cls):
         return 32
 
-    def to_unsigned(self):
-        return I32.from_value(self.value)
-
 
 class SignedI64(SignedIntType):
     """64bit符号付き整数型"""
@@ -235,8 +216,8 @@ class SignedI64(SignedIntType):
         self.value = value
 
     @classmethod
-    def from_value(cls, value: np.generic):
-        return cls(value.astype(np.int64))
+    def astype(cls, value: NumpyNumericType):
+        return cls(value.value.astype(np.int64))
 
     @classmethod
     def from_int(cls, value: int):
@@ -250,10 +231,7 @@ class SignedI64(SignedIntType):
     def get_length(cls):
         return 64
 
-    def to_unsigned(self):
-        return I64.from_value(self.value)
 
-
-class LEB128(NumericType):
+class LEB128(NumpyNumericType):
     def __init__(self, value):
         self.value = value
