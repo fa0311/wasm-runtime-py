@@ -29,6 +29,14 @@ class NumericType:
     def get_length(cls):
         return 32
 
+    @classmethod
+    def get_min(cls):
+        return -(2 ** (cls.get_length() - 1))
+
+    @classmethod
+    def get_max(cls):
+        return (2 ** (cls.get_length() - 1)) - 1
+
     def __bool__(self):
         return bool(self.value)
 
@@ -131,3 +139,12 @@ class NumericType:
 
     def copysign(self, other: "NumericType"):
         return self.__class__.from_value(abs(self.value) * (1 if other.value >= 0 else -1))
+
+    def clamp(self, other: type["NumericType"]):
+        min_value = self.__class__.from_int(other.get_min())
+        max_value = self.__class__.from_int(other.get_max())
+        if self.value < min_value.value:
+            return min_value
+        if self.value > max_value.value:
+            return max_value
+        return self

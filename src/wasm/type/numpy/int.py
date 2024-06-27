@@ -12,13 +12,38 @@ class UnsignedIntType(NumpyNumericType):
     def from_bool(cls, value: bool):
         return I32.from_int(1 if value else 0)
 
+    @classmethod
+    def get_min(cls):
+        return 0
+
+    @classmethod
+    def get_max(cls):
+        return (2 ** cls.get_length()) - 1
+
     def __truediv__(self, other: "UnsignedIntType"):
         return self.__floordiv__(other)
 
-    def __repr__(self):
-        cls_name = self.__class__.__name__
-        cls_value = SignedI64.from_value(self.value)
-        return f"{cls_name}({cls_value.value})"
+
+class SignedIntType(NumpyNumericType):
+    """符号付き整数型の基底クラス"""
+
+    @classmethod
+    def from_bool(cls, value: bool):
+        return I32.from_int(1 if value else 0)
+
+    def __truediv__(self, other: "SignedIntType"):
+        return self.__floordiv__(other)
+
+    def __floordiv__(self, other: "SignedIntType"):
+        a, b = np.divmod(self.value, other.value)
+        c = self.__class__.from_bool(a < 0 and b != 0)
+        return self.__class__.from_value(a + c.value)
+
+    def __mod__(self, other: "SignedIntType"):
+        a, b = np.divmod(self.value, other.value)
+        c = self.__class__.from_bool(a < 0 and b != 0)
+        result = self.value - (other.value * (a + c.value))
+        return self.__class__.from_value(result)
 
 
 class I8(UnsignedIntType):
@@ -89,6 +114,11 @@ class I32(UnsignedIntType):
     def get_length(cls):
         return 32
 
+    def __repr__(self):
+        cls_name = self.__class__.__name__
+        cls_value = I32.astype(self)
+        return f"{cls_name}(value={cls_value.value})"
+
 
 class I64(UnsignedIntType):
     """64bit符号なし整数型"""
@@ -112,32 +142,10 @@ class I64(UnsignedIntType):
     def get_length(cls):
         return 64
 
-
-class SignedIntType(NumpyNumericType):
-    """符号付き整数型の基底クラス"""
-
-    @classmethod
-    def from_bool(cls, value: bool):
-        return I32.from_int(1 if value else 0)
-
-    def __truediv__(self, other: "SignedIntType"):
-        return self.__floordiv__(other)
-
-    def __floordiv__(self, other: "SignedIntType"):
-        a, b = np.divmod(self.value, other.value)
-        c = self.__class__.from_bool(a < 0 and b != 0)
-        return self.__class__.from_value(a + c.value)
-
-    def __mod__(self, other: "SignedIntType"):
-        a, b = np.divmod(self.value, other.value)
-        c = self.__class__.from_bool(a < 0 and b != 0)
-        result = self.value - (other.value * (a + c.value))
-        return self.__class__.from_value(result)
-
     def __repr__(self):
         cls_name = self.__class__.__name__
-        cls_value = self.value
-        return f"{cls_name}({cls_value})"
+        cls_value = I64.astype(self)
+        return f"{cls_name}(value={cls_value.value})"
 
 
 class SignedI8(SignedIntType):

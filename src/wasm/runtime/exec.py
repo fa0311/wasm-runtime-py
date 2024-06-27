@@ -747,7 +747,7 @@ class CodeSectionBlock(CodeSectionSpec):
     def i32_trunc_f32_s(self):
         a = self.stack.f32()
         i32 = SignedI32.astype(trunc(a))
-        self.stack.push(i32)
+        self.stack.push(I32.astype(i32))
 
     def i32_trunc_f32_u(self):
         a = self.stack.f32()
@@ -757,7 +757,7 @@ class CodeSectionBlock(CodeSectionSpec):
     def i32_trunc_f64_s(self):
         a = self.stack.f64()
         i32 = SignedI32.astype(trunc(a))
-        self.stack.push(i32)
+        self.stack.push(I32.astype(i32))
 
     def i32_trunc_f64_u(self):
         a = self.stack.f64()
@@ -842,53 +842,65 @@ class CodeSectionBlock(CodeSectionSpec):
         sa = SignedI32.astype(a)
         self.stack.push(I64.astype(sa))
 
-    @WasmUnimplementedError.throw()
     def i64_trunc_f32_s(self):
-        pass
+        a = self.stack.f32()
+        i64 = SignedI64.astype(trunc(a).clamp(SignedI64))
+        self.stack.push(I64.astype(i64))
 
-    @WasmUnimplementedError.throw()
     def i64_trunc_f32_u(self):
-        pass
+        a = self.stack.f32()
+        i64 = I64.astype(trunc(a).clamp(I64))
+        self.stack.push(i64)
 
-    @WasmUnimplementedError.throw()
     def i64_trunc_f64_s(self):
-        pass
+        a = self.stack.f64()
+        i64 = SignedI64.astype(trunc(a).clamp(SignedI64))
+        self.stack.push(I64.astype(i64))
 
-    @WasmUnimplementedError.throw()
     def i64_trunc_f64_u(self):
-        pass
+        a = self.stack.f64()
+        i64 = I64.astype(trunc(a).clamp(I64))
+        self.stack.push(i64)
 
-    @WasmUnimplementedError.throw()
     def i32_trunc_sat_f32_s(self):
-        pass
+        a = self.stack.f32()
+        i32 = trunc(a).clamp(SignedI32)
+        self.stack.push(I32.astype(i32))
 
-    @WasmUnimplementedError.throw()
     def i32_trunc_sat_f32_u(self):
-        pass
+        a = self.stack.f32()
+        i32 = I32.astype(trunc(a).clamp(I32))
+        self.stack.push(i32)
 
-    @WasmUnimplementedError.throw()
     def i32_trunc_sat_f64_s(self):
-        pass
+        a = self.stack.f64()
+        i32 = SignedI32.astype(trunc(a).clamp(SignedI32))
+        self.stack.push(I32.astype(i32))
 
-    @WasmUnimplementedError.throw()
     def i32_trunc_sat_f64(self):
-        pass
+        a = self.stack.f64()
+        i32 = I32.astype(trunc(a).clamp(I32))
+        self.stack.push(i32)
 
-    @WasmUnimplementedError.throw()
     def i64_trunc_sat_f32_s(self):
-        pass
+        a = self.stack.f32()
+        i64 = trunc(a).clamp(SignedI64)
+        self.stack.push(I64.astype(i64))
 
-    @WasmUnimplementedError.throw()
     def i64_trunc_sat_f32(self):
-        pass
+        a = self.stack.f32()
+        i64 = I64.astype(trunc(a).clamp(I64))
+        self.stack.push(i64)
 
-    @WasmUnimplementedError.throw()
     def i64_trunc_sat_f64_s(self):
-        pass
+        a = self.stack.f64()
+        i64 = SignedI64.astype(trunc(a).clamp(SignedI64))
+        self.stack.push(I64.astype(i64))
 
-    @WasmUnimplementedError.throw()
     def i64_trunc_sat_f64(self):
-        pass
+        a = self.stack.f64()
+        i64 = I64.astype(trunc(a).clamp(I64))
+        self.stack.push(i64)
 
     def memory_init(self):
         pass

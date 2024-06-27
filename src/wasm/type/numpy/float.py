@@ -7,12 +7,12 @@ from src.wasm.type.numpy.base import NumpyNumericType
 from src.wasm.type.numpy.int import I32
 
 
-def fallback_x87(fallback_func: Callable):
-    x87 = np.signbit(np.minimum(np.float32(0.0), np.float32(-0.0)))
+def fallback_glibc(fallback_func: Callable):
+    glibc = np.signbit(np.minimum(np.float32(-0.0), np.float32(0.0)))
 
     def decorator(func: Callable):
         def wrapper(self: NumpyNumericType, other: NumpyNumericType):
-            if x87:
+            if glibc:
                 return fallback_func(self, other)
             else:
                 return func(self, other)
@@ -26,7 +26,7 @@ class FloatFallbackType(NumpyNumericType):
     def __init__(self, value: np.float32):
         self.value = value
 
-    def fallback_x87_min(self, other: "FloatFallbackType"):
+    def fallback_glibc_min(self, other: "FloatFallbackType"):
         if np.isnan(self.value):
             return self
         elif np.isnan(other.value):
@@ -42,7 +42,7 @@ class FloatFallbackType(NumpyNumericType):
         else:
             return self
 
-    def fallback_x87_max(self, other: "FloatFallbackType"):
+    def fallback_glibc_max(self, other: "FloatFallbackType"):
         if np.isnan(self.value):
             return self
         elif np.isnan(other.value):
@@ -76,19 +76,29 @@ class FloatType(NumpyNumericType):
     def __round__(self):
         return self.__class__.from_value(np.round(self.value))
 
-    # def sqrt(self):
-    #     return self.__class__.from_value(np.sqrt(self.value))
-
-    # def copysign(self, other: "NumericType"):
-    #     return self.__class__.from_value(np.copysign(self.value, other.value))
-
-    @fallback_x87(FloatFallbackType.fallback_x87_min)
+    @fallback_glibc(FloatFallbackType.fallback_glibc_min)
     def min(self, other: "FloatType"):
-        return self.__class__.from_value(np.minimum(self.value, other.value))
+        return super().min(other)
 
-    @fallback_x87(FloatFallbackType.fallback_x87_max)
+    @fallback_glibc(FloatFallbackType.fallback_glibc_max)
     def max(self, other: "FloatType"):
-        return self.__class__.from_value(np.maximum(self.value, other.value))
+        return super().max(other)
+
+    def clamp(self, other: type["NumpyNumericType"]):
+        min_value = self.__class__.from_int(other.get_min())
+        max_value = self.__class__.from_int(other.get_max())
+        if np.isnan(self.value):
+            return self.__class__.from_int(0)
+        if np.isinf(self.value):
+            if np.signbit(self.value):
+                return min_value
+            else:
+                return max_value
+        if self.value <= min_value.value:
+            return min_value
+        if self.value >= max_value.value:
+            return max_value
+        return self
 
 
 class F32(FloatType):

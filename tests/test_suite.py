@@ -257,8 +257,29 @@ class TestSuite(unittest.TestCase):
     def test_fac(self):
         self.__test_file("fac")
 
-    # def test_conversions(self):
-    #     self.__test_file("conversions")
+    def test_conversions(self):
+        self.__test_file("conversions")
+
+    def test_conversions_0_161(self):
+        self.__test_index_case("conversions", 0, 161)
+
+    def test_conversions_0_163(self):
+        self.__test_index_case("conversions", 0, 163)
+
+    def test_conversions_0_165(self):
+        self.__test_index_case("conversions", 0, 165)
+
+    def test_conversions_0_253(self):
+        self.__test_index_case("conversions", 0, 253)
+
+    def test_conversions_0_279(self):
+        self.__test_index_case("conversions", 0, 279)
+
+    def test_conversions_0_321(self):
+        self.__test_index_case("conversions", 0, 321)
+
+    def test_conversions_0_322(self):
+        self.__test_index_case("conversions", 0, 322)
 
     # def test_float_literals(self):
     #     self.__test_file("float_literals")
