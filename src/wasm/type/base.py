@@ -49,7 +49,7 @@ class NumericType:
         raise NotImplementedError
 
     def __bool__(self):
-        return bool(self.value)
+        return self.value.__bool__()
 
     def __add__(self, other: "NumericType"):
         return self.__class__.from_value(self.value + other.value)

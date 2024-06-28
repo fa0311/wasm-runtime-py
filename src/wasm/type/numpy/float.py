@@ -1,62 +1,10 @@
 import struct
-from typing import Callable, Union
+from typing import Union
 
 import numpy as np
 
 from src.wasm.type.numpy.base import NumpyNumericType
 from src.wasm.type.numpy.int import I32
-
-
-def fallback_glibc(fallback_func: Callable):
-    glibc = np.signbit(np.minimum(np.float32(-0.0), np.float32(0.0)))
-
-    def decorator(func: Callable):
-        def wrapper(self: NumpyNumericType, other: NumpyNumericType):
-            if glibc:
-                return fallback_func(self, other)
-            else:
-                return func(self, other)
-
-        return wrapper
-
-    return decorator
-
-
-class FloatFallbackType(NumpyNumericType):
-    def __init__(self, value: np.float32):
-        self.value = value
-
-    def fallback_glibc_min(self, other: "FloatFallbackType"):
-        if np.isnan(self.value):
-            return self
-        elif np.isnan(other.value):
-            return other
-        elif self.value < other.value:
-            return self
-        elif self.value > other.value:
-            return other
-        elif np.signbit(self.value) and not np.signbit(other.value):
-            return self
-        elif not np.signbit(self.value) and np.signbit(other.value):
-            return other
-        else:
-            return self
-
-    def fallback_glibc_max(self, other: "FloatFallbackType"):
-        if np.isnan(self.value):
-            return self
-        elif np.isnan(other.value):
-            return other
-        elif self.value > other.value:
-            return self
-        elif self.value < other.value:
-            return other
-        elif not np.signbit(self.value) and np.signbit(other.value):
-            return self
-        elif np.signbit(self.value) and not np.signbit(other.value):
-            return other
-        else:
-            return self
 
 
 class FloatType(NumpyNumericType):
@@ -76,13 +24,37 @@ class FloatType(NumpyNumericType):
     def __round__(self):
         return self.__class__.from_value(np.round(self.value))
 
-    @fallback_glibc(FloatFallbackType.fallback_glibc_min)
     def min(self, other: "FloatType"):
-        return super().min(other)
+        if np.isnan(self.value):
+            return self
+        elif np.isnan(other.value):
+            return other
+        elif self.value < other.value:
+            return self
+        elif self.value > other.value:
+            return other
+        elif np.signbit(self.value) and not np.signbit(other.value):
+            return self
+        elif not np.signbit(self.value) and np.signbit(other.value):
+            return other
+        else:
+            return self
 
-    @fallback_glibc(FloatFallbackType.fallback_glibc_max)
     def max(self, other: "FloatType"):
-        return super().max(other)
+        if np.isnan(self.value):
+            return self
+        elif np.isnan(other.value):
+            return other
+        elif self.value > other.value:
+            return self
+        elif self.value < other.value:
+            return other
+        elif not np.signbit(self.value) and np.signbit(other.value):
+            return self
+        elif np.signbit(self.value) and not np.signbit(other.value):
+            return other
+        else:
+            return self
 
 
 class F32(FloatType):
