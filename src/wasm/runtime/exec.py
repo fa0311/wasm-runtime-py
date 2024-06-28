@@ -844,62 +844,62 @@ class CodeSectionBlock(CodeSectionSpec):
 
     def i64_trunc_f32_s(self):
         a = self.stack.f32()
-        i64 = SignedI64.astype(trunc(a).clamp(SignedI64))
-        self.stack.push(I64.astype(i64))
+        i64 = I64.from_value_with_clamp(trunc(a), SignedI64)
+        self.stack.push(i64)
 
     def i64_trunc_f32_u(self):
         a = self.stack.f32()
-        i64 = I64.astype(trunc(a).clamp(I64))
+        i64 = I64.from_value_with_clamp(trunc(a), I64)
         self.stack.push(i64)
 
     def i64_trunc_f64_s(self):
         a = self.stack.f64()
-        i64 = SignedI64.astype(trunc(a).clamp(SignedI64))
+        i64 = I64.from_value_with_clamp(trunc(a), SignedI64)
         self.stack.push(I64.astype(i64))
 
     def i64_trunc_f64_u(self):
         a = self.stack.f64()
-        i64 = I64.astype(trunc(a).clamp(I64))
+        i64 = I64.from_value_with_clamp(trunc(a), I64)
         self.stack.push(i64)
 
     def i32_trunc_sat_f32_s(self):
         a = self.stack.f32()
-        i32 = trunc(a).clamp(SignedI32)
-        self.stack.push(I32.astype(i32))
+        i32 = I32.from_value_with_clamp(trunc(a), SignedI32)
+        self.stack.push(i32)
 
     def i32_trunc_sat_f32_u(self):
         a = self.stack.f32()
-        i32 = I32.astype(trunc(a).clamp(I32))
+        i32 = I32.from_value_with_clamp(trunc(a), I32)
         self.stack.push(i32)
 
     def i32_trunc_sat_f64_s(self):
         a = self.stack.f64()
-        i32 = SignedI32.astype(trunc(a).clamp(SignedI32))
+        i32 = I32.from_value_with_clamp(trunc(a), SignedI32)
         self.stack.push(I32.astype(i32))
 
     def i32_trunc_sat_f64(self):
         a = self.stack.f64()
-        i32 = I32.astype(trunc(a).clamp(I32))
+        i32 = I32.from_value_with_clamp(trunc(a), I32)
         self.stack.push(i32)
 
     def i64_trunc_sat_f32_s(self):
         a = self.stack.f32()
-        i64 = trunc(a).clamp(SignedI64)
-        self.stack.push(I64.astype(i64))
+        i64 = I64.from_value_with_clamp(trunc(a), SignedI64)
+        self.stack.push(i64)
 
     def i64_trunc_sat_f32(self):
         a = self.stack.f32()
-        i64 = I64.astype(trunc(a).clamp(I64))
+        i64 = I64.from_value_with_clamp(trunc(a), I64)
         self.stack.push(i64)
 
     def i64_trunc_sat_f64_s(self):
         a = self.stack.f64()
-        i64 = SignedI64.astype(trunc(a).clamp(SignedI64))
+        i64 = I64.from_value_with_clamp(trunc(a), SignedI64)
         self.stack.push(I64.astype(i64))
 
     def i64_trunc_sat_f64(self):
         a = self.stack.f64()
-        i64 = I64.astype(trunc(a).clamp(I64))
+        i64 = I64.from_value_with_clamp(trunc(a), I64)
         self.stack.push(i64)
 
     def memory_init(self):

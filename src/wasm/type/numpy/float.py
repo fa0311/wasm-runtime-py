@@ -84,22 +84,6 @@ class FloatType(NumpyNumericType):
     def max(self, other: "FloatType"):
         return super().max(other)
 
-    def clamp(self, other: type["NumpyNumericType"]):
-        min_value = self.__class__.from_int(other.get_min())
-        max_value = self.__class__.from_int(other.get_max())
-        if np.isnan(self.value):
-            return self.__class__.from_int(0)
-        if np.isinf(self.value):
-            if np.signbit(self.value):
-                return min_value
-            else:
-                return max_value
-        if self.value <= min_value.value:
-            return min_value
-        if self.value >= max_value.value:
-            return max_value
-        return self
-
 
 class F32(FloatType):
     def __init__(self, value: np.float32):
