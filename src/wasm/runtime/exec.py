@@ -12,7 +12,13 @@ from src.wasm.optimizer.struct import (
     TypeSectionOptimize,
     WasmSectionsOptimize,
 )
-from src.wasm.runtime.error import WasmUnimplementedError
+from src.wasm.runtime.error import (
+    NumpyErrorHelper,
+    WasmIntegerDivideByZeroError,
+    WasmIntegerOverflowError,
+    WasmInvalidConversionError,
+    WasmUnimplementedError,
+)
 from src.wasm.type.base import NumericType
 from src.wasm.type.numpy.float import F32, F64
 from src.wasm.type.numpy.int import I32, I64, SignedI8, SignedI16, SignedI32, SignedI64
@@ -25,24 +31,16 @@ class WasmExec:
 
     def __init__(self, sections: WasmSectionsOptimize):
         self.sections = sections
-        self.instruction_count = 0
+        self.stack_cls = NumericStack
+        self.code_section_cls = CodeSectionExec
 
-    @staticmethod
-    def __type_check(param: list[NumericType], params_type: list[int]):
-        if len(param) != len(params_type):
-            raise Exception("invalid param length")
-        for a, b in zip(param, params_type):
-            if a.__class__ != WasmOptimizer.get_type(b):
-                raise Exception(f"invalid return type {a.__class__} != {WasmOptimizer.get_type(b)}")
+    def type_check(self, param: list[NumericType], params_type: list[int]):
+        """型のチェックを行うが、このクラスでは実装しない"""
+        pass
 
-    @staticmethod
-    def __type_check_release(param: list[NumericType], params_type: list[int]):
-        return None
-
-    if __debug__:
-        type_check = __type_check
-    else:
-        type_check = __type_check_release
+    def run_instruction(self):
+        """1行呼ばれる前に実行されるが、このクラスでは実装しない"""
+        pass
 
     @logger.logger
     def start(self, field: bytes, param: list[NumericType]):
@@ -56,13 +54,15 @@ class WasmExec:
     def run(self, index: int, param: list[NumericType]):
         fn, fn_type = self.get_function(index)
 
+        # ローカル変数とExecインスタンスを生成
         locals_param = [WasmOptimizer.get_type(x).from_int(0) for x in fn.local]
         locals = [*param, *locals_param]
         runner = CodeSectionExec(self, locals=locals, index=index)
 
-        WasmExec.type_check(param, fn_type.params)
+        # 型チェックと実行
+        self.type_check(param, fn_type.params)
         res = runner.run()
-        WasmExec.type_check(res, fn_type.returns)
+        self.type_check(res, fn_type.returns)
 
         return (runner, res)
 
@@ -100,7 +100,7 @@ class CodeSectionExec:
             env=self.env,
             code=self.code.data,
             locals=self.locals,
-            stack=NumericStack(value=[]),
+            stack=self.env.stack_cls(value=[]),
         )
         res = block.run()
         if isinstance(res, list):
@@ -163,7 +163,6 @@ class CodeSectionBlock(CodeSectionSpec):
         self.env = env
         self.locals = locals
         self.code = code
-        # self.code, self.fn_type = self.env.get_function(index)
 
         self.stack = stack
         self.pointer = 0
@@ -173,11 +172,7 @@ class CodeSectionBlock(CodeSectionSpec):
     def run(self) -> Optional[Union[int, list[NumericType]]]:
         self.logger.debug(f"params: {self.stack.value}")
         while self.pointer < len(self.code):
-            if __debug__:
-                self.env.instruction_count += 1
-                if self.env.instruction_count > 1000000:
-                    raise Exception("infinite loop")
-
+            self.env.run_instruction()
             self.instruction = self.code[self.pointer]
             opcode = self.instruction.opcode
             args = self.instruction.args
@@ -187,6 +182,25 @@ class CodeSectionBlock(CodeSectionSpec):
             res = fn(*args)
             if res is not None:
                 return res
+
+    def type_check(self, value: NumericType, clamp: type[NumericType], raise_cls: type[NumericType]):
+        """型チェックを行う"""
+        min_value = value.__class__.from_int(clamp.get_min())
+        max_value = value.__class__.from_int(clamp.get_max())
+
+        # if np.isnan(value.value):
+        #     return cls.from_int(0)
+        # if np.isinf(value.value):
+        #     if np.signbit(value.value):
+        #         return cls.from_int(clamp.get_min())
+        #     else:
+        #         return cls.from_int(clamp.get_max())
+
+        if value.value < min_value.value:
+            raise WasmIntegerOverflowError([raise_cls])
+
+        if value.value > max_value.value:
+            raise WasmIntegerOverflowError([raise_cls])
 
     # Control Instructions
 
@@ -199,7 +213,7 @@ class CodeSectionBlock(CodeSectionSpec):
     def block(self, block_type: int):
         fn_type_params, fn_type_returns = self.env.get_type(block_type)
         block_stack = [self.stack.any() for _ in fn_type_params][::-1]
-        WasmExec.type_check(block_stack, fn_type_params)
+        self.env.type_check(block_stack, fn_type_params)
 
         block = CodeSectionBlock(
             env=self.env,
@@ -210,7 +224,7 @@ class CodeSectionBlock(CodeSectionSpec):
         br = block.run()
 
         res_stack = [block.stack.any() for _ in fn_type_returns][::-1]
-        WasmExec.type_check(res_stack, fn_type_returns)
+        self.env.type_check(res_stack, fn_type_returns)
         self.stack.extend(res_stack)
 
         if isinstance(br, int) and br > 0:
@@ -221,7 +235,7 @@ class CodeSectionBlock(CodeSectionSpec):
     def loop(self, block_type: int):
         fn_type_params, fn_type_returns = self.env.get_type(block_type)
         block_stack = [self.stack.any() for _ in fn_type_params][::-1]
-        WasmExec.type_check(block_stack, fn_type_params)
+        self.env.type_check(block_stack, fn_type_params)
         while True:
             block = CodeSectionBlock(
                 env=self.env,
@@ -233,10 +247,10 @@ class CodeSectionBlock(CodeSectionSpec):
 
             if br == 0:
                 block_stack = [block.stack.any() for _ in fn_type_params][::-1]
-                WasmExec.type_check(block_stack, fn_type_params)
+                self.env.type_check(block_stack, fn_type_params)
             else:
                 res_stack = [block.stack.any() for _ in fn_type_returns][::-1]
-                WasmExec.type_check(res_stack, fn_type_returns)
+                self.env.type_check(res_stack, fn_type_returns)
                 self.stack.extend(res_stack)
                 if isinstance(br, int) and br > 0:
                     return br - 1
@@ -248,7 +262,7 @@ class CodeSectionBlock(CodeSectionSpec):
     def if_(self, block_type: int):
         fn_type_params, fn_type_returns = self.env.get_type(block_type)
         block_stack = [self.stack.any() for _ in fn_type_params][::-1]
-        WasmExec.type_check(block_stack, fn_type_params)
+        self.env.type_check(block_stack, fn_type_params)
 
         code = self.instruction.child if bool(self.stack.any()) else self.instruction.else_child
         block = CodeSectionBlock(
@@ -260,7 +274,7 @@ class CodeSectionBlock(CodeSectionSpec):
         br = block.run()
 
         res_stack = [block.stack.any() for _ in fn_type_returns][::-1]
-        WasmExec.type_check(res_stack, fn_type_returns)
+        self.env.type_check(res_stack, fn_type_returns)
         self.stack.extend(res_stack)
 
         if isinstance(br, int) and br > 0:
@@ -502,23 +516,51 @@ class CodeSectionBlock(CodeSectionSpec):
         b, a = self.stack.i32(), self.stack.i32()
         self.stack.push(a * b)
 
+    @NumpyErrorHelper.seterr("raise")
     def i32_div_s(self):
         b, a = self.stack.i32(), self.stack.i32()
         sb, sa = SignedI32.astype(b), SignedI32.astype(a)
-        self.stack.push(I32.astype(sa / sb))
+        try:
+            self.stack.push(I32.astype(sa / sb))
+        except FloatingPointError:
+            if b == I32.from_int(0):
+                raise WasmIntegerDivideByZeroError([I32])
+            else:
+                raise WasmIntegerOverflowError([I32])
 
+    @NumpyErrorHelper.seterr("raise")
     def i32_div_u(self):
         b, a = self.stack.i32(), self.stack.i32()
-        self.stack.push(a / b)
+        try:
+            self.stack.push(a / b)
+        except FloatingPointError:
+            if b == I32.from_int(0):
+                raise WasmIntegerDivideByZeroError([I32])
+            else:
+                raise WasmIntegerOverflowError([I32])
 
+    @NumpyErrorHelper.seterr("raise")
     def i32_rem_s(self):
         b, a = self.stack.i32(), self.stack.i32()
         sb, sa = SignedI32.astype(b), SignedI32.astype(a)
-        self.stack.push(I32.astype(sa % sb))
+        try:
+            self.stack.push(I32.astype(sa % sb))
+        except FloatingPointError:
+            if b == I32.from_int(0):
+                raise WasmIntegerDivideByZeroError([I32])
+            else:
+                self.stack.push(I32.from_int(0))
 
+    @NumpyErrorHelper.seterr("raise")
     def i32_rem_u(self):
         b, a = self.stack.i32(), self.stack.i32()
-        self.stack.push(a % b)
+        try:
+            self.stack.push(a % b)
+        except FloatingPointError:
+            if b == I32.from_int(0):
+                raise WasmIntegerDivideByZeroError([I32])
+            else:
+                self.stack.push(I32.from_int(0))
 
     def i32_and(self):
         b, a = self.stack.i32(), self.stack.i32()
@@ -577,23 +619,51 @@ class CodeSectionBlock(CodeSectionSpec):
         b, a = self.stack.i64(), self.stack.i64()
         self.stack.push(a * b)
 
+    @NumpyErrorHelper.seterr("raise")
     def i64_div_s(self):
         b, a = self.stack.i64(), self.stack.i64()
         sb, sa = SignedI64.astype(b), SignedI64.astype(a)
-        self.stack.push(I64.astype(sa / sb))
+        try:
+            self.stack.push(I64.astype(sa / sb))
+        except FloatingPointError:
+            if b == I64.from_int(0):
+                raise WasmIntegerDivideByZeroError([I64])
+            else:
+                raise WasmIntegerOverflowError([I64])
 
+    @NumpyErrorHelper.seterr("raise")
     def i64_div_u(self):
         b, a = self.stack.i64(), self.stack.i64()
-        self.stack.push(a / b)
+        try:
+            self.stack.push(a / b)
+        except FloatingPointError:
+            if b == I64.from_int(0):
+                raise WasmIntegerDivideByZeroError([I64])
+            else:
+                raise WasmIntegerOverflowError([I64])
 
+    @NumpyErrorHelper.seterr("raise")
     def i64_rem_s(self):
         b, a = self.stack.i64(), self.stack.i64()
         sb, sa = SignedI64.astype(b), SignedI64.astype(a)
-        self.stack.push(I64.astype(sa % sb))
+        try:
+            self.stack.push(I64.astype(sa % sb))
+        except FloatingPointError:
+            if b == I64.from_int(0):
+                raise WasmIntegerDivideByZeroError([I64])
+            else:
+                self.stack.push(I64.from_int(0))
 
+    @NumpyErrorHelper.seterr("raise")
     def i64_rem_u(self):
         b, a = self.stack.i64(), self.stack.i64()
-        self.stack.push(a % b)
+        try:
+            self.stack.push(a % b)
+        except FloatingPointError:
+            if b == I64.from_int(0):
+                raise WasmIntegerDivideByZeroError([I64])
+            else:
+                self.stack.push(I64.from_int(0))
 
     def i64_and(self):
         b, a = self.stack.i64(), self.stack.i64()
@@ -744,25 +814,61 @@ class CodeSectionBlock(CodeSectionSpec):
         a = self.stack.i64()
         self.stack.push(I32.astype(a))
 
+    @NumpyErrorHelper.seterr("raise")
     def i32_trunc_f32_s(self):
         a = self.stack.f32()
-        i32 = SignedI32.astype(trunc(a))
-        self.stack.push(I32.astype(i32))
+        try:
+            t = trunc(a)
+            self.type_check(t, SignedI32, I32)
+            i32 = SignedI32.astype(t)
+            self.stack.push(I32.astype(i32))
+        except FloatingPointError:
+            if a.is_nan():
+                raise WasmInvalidConversionError([I32])
+            else:
+                raise WasmIntegerOverflowError([I32])
 
+    @NumpyErrorHelper.seterr("raise")
     def i32_trunc_f32_u(self):
         a = self.stack.f32()
-        i32 = I32.astype(trunc(a))
-        self.stack.push(i32)
+        try:
+            t = trunc(a)
+            self.type_check(t, I32, I32)
+            i32 = I32.astype(t)
+            self.stack.push(i32)
+        except FloatingPointError:
+            if a.is_nan():
+                raise WasmInvalidConversionError([I32])
+            else:
+                raise WasmIntegerOverflowError([I32])
 
+    @NumpyErrorHelper.seterr("raise")
     def i32_trunc_f64_s(self):
         a = self.stack.f64()
-        i32 = SignedI32.astype(trunc(a))
-        self.stack.push(I32.astype(i32))
+        try:
+            t = trunc(a)
+            self.type_check(t, SignedI32, I32)
+            i32 = SignedI32.astype(t)
+            self.stack.push(I32.astype(i32))
+        except FloatingPointError:
+            if a.is_nan():
+                raise WasmInvalidConversionError([I32])
+            else:
+                raise WasmIntegerOverflowError([I32])
 
+    @NumpyErrorHelper.seterr("raise")
     def i32_trunc_f64_u(self):
         a = self.stack.f64()
-        i32 = I32.astype(trunc(a))
-        self.stack.push(i32)
+        try:
+            t = trunc(a)
+            self.type_check(t, I32, I32)
+            i32 = I32.astype(t)
+            self.stack.push(i32)
+        except FloatingPointError:
+            if a.is_nan():
+                raise WasmInvalidConversionError([I32])
+            else:
+                raise WasmIntegerOverflowError([I32])
 
     def i64_extend_i32_s(self):
         a = self.stack.i32()

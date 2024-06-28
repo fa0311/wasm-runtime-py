@@ -37,3 +37,6 @@ class NumpyNumericType(NumericType):
 
     def max(self, other: "NumpyNumericType"):
         return self.__class__.from_value(np.maximum(self.value, other.value))
+
+    def is_nan(self):
+        return np.isnan(self.value)

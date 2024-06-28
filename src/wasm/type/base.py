@@ -150,3 +150,6 @@ class NumericType:
 
     def copysign(self, other: "NumericType"):
         return self.__class__.from_value(abs(self.value) * (1 if other.value >= 0 else -1))
+
+    def is_nan(self):
+        return False

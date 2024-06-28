@@ -15,7 +15,7 @@ sys.path.append(str(Path(__file__).parent.parent / "src"))
 
 from src.wasm.loader.loader import WasmLoader
 from src.wasm.optimizer.optimizer import WasmOptimizer
-from src.wasm.runtime.error import WasmInvalidError, WasmRuntimeError, WasmUnimplementedError
+from src.wasm.runtime.error import WasmRuntimeError, WasmUnimplementedError
 from src.wasm.runtime.exec import WasmExec
 from src.wasm.type.base import NumericType
 from src.wasm.type.numpy.float import F32, F64
@@ -89,15 +89,13 @@ class TestSuite(unittest.TestCase):
             elif cmd["type"] == "assert_return":
                 res[-1][2].append(cmd)
             elif cmd["type"] == "assert_trap":
-                pass
-                # res[-1][2].append(cmd)
+                res[-1][2].append(cmd)
             elif cmd["type"] == "assert_invalid":
                 pass
                 # res.append((cmd["type"], self.__read_module(name, cmd["filename"]), []))
-            elif cmd["type"] == "assert_malformed":
-                pass
             elif cmd["type"] == "assert_exhaustion":
-                # res.append((cmd["type"], self.__read_module(name, cmd["filename"]), []))
+                res[-1][2].append(cmd)
+            elif cmd["type"] == "assert_malformed":
                 pass
             else:
                 self.fail(f"unknown command: {cmd['type']}")
@@ -111,19 +109,20 @@ class TestSuite(unittest.TestCase):
     def __test_index(self, name: str, index: int):
         t, wasm, cmds = self.__get_test_suite_data(name)[index]
         if t == "assert_invalid":
-            try:
-                if len(cmds) > 1:
-                    self.fail(f"expect: 1, actual: {len(cmds)}")
-                data = WasmLoader(wasm).load()
-                optimizer = WasmOptimizer(data).optimize()
-                data = WasmExec(optimizer)
-                self.fail(f"expect: {cmds[0]['type']}, actual: {data}")
-            except WasmInvalidError as e:
-                a, b = e.message, cmds[0]["text"]
-                if a != b:
-                    self.fail(f"expect: {b}, actual: {a}")
-            except WasmUnimplementedError as e:
-                self.skipTest(str(e))
+            pass
+            # try:
+            #     if len(cmds) > 1:
+            #         self.fail(f"expect: 1, actual: {len(cmds)}")
+            #     data = WasmLoader(wasm).load()
+            #     optimizer = WasmOptimizer(data).optimize()
+            #     data = WasmExec(optimizer)
+            #     self.fail(f"expect: {cmds[0]['type']}, actual: {data}")
+            # except WasmInvalidError as e:
+            #     a, b = e.message, cmds[0]["text"]
+            #     if a != b:
+            #         self.fail(f"expect: {b}, actual: {a}")
+            # except WasmUnimplementedError as e:
+            #     self.skipTest(str(e))
         else:
             data = WasmLoader(wasm).load()
             optimizer = WasmOptimizer(data).optimize()
@@ -132,24 +131,27 @@ class TestSuite(unittest.TestCase):
             for case, cmd in enumerate(cmds):
                 param = {"name": name, "index": f"{index:04d}", "case": f"{case:04d}"}
                 with self.subTest(**param):
-                    try:
-                        if cmd["type"] == "assert_return":
-                            self.__test_run_assert_return(data, cmd)
-                        elif cmd["type"] == "assert_trap":
-                            self.__test_run_assert_trap(data, cmd)
-                        elif cmd["type"] == "assert_exhaustion":
-                            self.__test_run_assert_trap(data, cmd)
-                        else:
-                            self.fail(f"expect: assert_return or assert_trap, actual: {cmd['type']}")
-                    except WasmUnimplementedError as e:
-                        self.skipTest(str(e))
+                    self.__test_run(data, cmd)
 
     def __test_index_case(self, name: str, index: int, case: int):
         t, wasm, cmds = self.__get_test_suite_data(name)[index]
         data = WasmLoader(wasm).load()
         optimizer = WasmOptimizer(data).optimize()
         data = WasmExec(optimizer)
-        self.__test_run_assert_return(data, cmds[case])
+        self.__test_run(data, cmds[case])
+
+    def __test_run(self, data: WasmExec, cmd: dict):
+        try:
+            if cmd["type"] == "assert_return":
+                self.__test_run_assert_return(data, cmd)
+            elif cmd["type"] == "assert_trap":
+                self.__test_run_assert_trap(data, cmd)
+            elif cmd["type"] == "assert_exhaustion":
+                self.__test_run_assert_trap(data, cmd)
+            else:
+                self.fail(f"expect: assert_return or assert_trap, actual: {cmd['type']}")
+        except WasmUnimplementedError as e:
+            self.skipTest(str(e))
 
     def __test_run_assert_return(self, data: WasmExec, cmd: dict):
         field = bytes(cmd["action"]["field"], "utf-8")
@@ -199,13 +201,10 @@ class TestSuite(unittest.TestCase):
             if text != e.message:
                 self.fail(f"expect: {cmd['text']}, actual: {e.message}")
             for i, (r, e) in enumerate(zip(expect, e.expected)):
-                numeric = type_map[r["type"]](r["value"])
-                if r.get("value", None) is not None:
-                    a, b = numeric(r["value"]).value, e.value
-                    if str(a) != str(b):
-                        self.fail(f"expect: {b}, actual: {a}")
-                if numeric != e.__class__:
-                    self.fail(f"expect: {e.__class__}, actual: {numeric}")
+                numeric_cls = type_map[r["type"]]
+                assert r.get("value", None) is None
+                if numeric_cls(0).__class__ != e:
+                    self.fail(f"expect: {e}, actual: {numeric_cls(0).__class__}")
 
     def subTest(self, **param):
         SUBTEST = True
@@ -261,6 +260,33 @@ class TestSuite(unittest.TestCase):
 
     def test_conversions(self):
         self.__test_file("conversions")
+
+    def test_conversions_0_37(self):
+        self.__test_index_case("conversions", 0, 37)
+
+    def test_conversions_0_38(self):
+        self.__test_index_case("conversions", 0, 38)
+
+    def test_conversions_0_42(self):
+        self.__test_index_case("conversions", 0, 42)
+
+    def test_conversions_0_43(self):
+        self.__test_index_case("conversions", 0, 43)
+
+    def test_conversions_0_59(self):
+        self.__test_index_case("conversions", 0, 59)
+
+    def test_conversions_0_46(self):
+        self.__test_index_case("conversions", 0, 46)
+
+    def test_conversions_0_49(self):
+        self.__test_index_case("conversions", 0, 49)
+
+    def test_conversions_0_60(self):
+        self.__test_index_case("conversions", 0, 60)
+
+    def test_conversions_0_79(self):
+        self.__test_index_case("conversions", 0, 79)
 
     # def test_float_literals(self):
     #     self.__test_file("float_literals")
