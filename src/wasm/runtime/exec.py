@@ -817,6 +817,26 @@ class CodeSectionBlock(CodeSectionSpec):
         a = self.stack.f32()
         self.stack.push(F64.astype(a))
 
+    def i32_reinterpret_f32(self):
+        a = self.stack.f32()
+        bit = a.to_bits()
+        self.stack.push(I32.from_bits(bit))
+
+    def i64_reinterpret_f64(self):
+        a = self.stack.f64()
+        bit = a.to_bits()
+        self.stack.push(I64.from_bits(bit))
+
+    def f32_reinterpret_i32(self):
+        a = self.stack.i32()
+        bit = a.to_bits()
+        self.stack.push(F32.from_bits(bit))
+
+    def f64_reinterpret_i64(self):
+        a = self.stack.i64()
+        bit = a.to_bits()
+        self.stack.push(F64.from_bits(bit))
+
     def i32_extend8_s(self):
         a = self.stack.i32()
         sa = SignedI8.astype(a)

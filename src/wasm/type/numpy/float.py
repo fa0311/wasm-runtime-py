@@ -105,8 +105,14 @@ class F32(FloatType):
             return cls(np.float32(np.nan))
         else:
             bytes_value = struct.pack("I", int(value))
-            float_value = struct.unpack("f", bytes_value)[0]
-            return cls.from_int(float_value)
+            return cls.from_bits(bytes_value)
+
+    @classmethod
+    def from_bits(cls, bytes_value: bytes):
+        return cls(np.frombuffer(bytes_value, dtype=np.float32)[0])
+
+    def to_bits(self) -> bytes:
+        return self.value.tobytes()
 
     @classmethod
     def get_length(cls):
@@ -133,8 +139,14 @@ class F64(FloatType):
             return cls(np.float64(np.nan))
         else:
             bytes_value = struct.pack("Q", int(value))
-            float_value = struct.unpack("d", bytes_value)[0]
-            return cls.from_int(float_value)
+            return cls.from_bits(bytes_value)
+
+    @classmethod
+    def from_bits(cls, bytes_value: bytes):
+        return cls(np.frombuffer(bytes_value, dtype=np.float64)[0])
+
+    def to_bits(self) -> bytes:
+        return self.value.tobytes()
 
     @classmethod
     def get_length(cls):

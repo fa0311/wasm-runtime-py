@@ -65,6 +65,13 @@ class I8(UnsignedIntType):
         return cls(np.uint8(int(value)))
 
     @classmethod
+    def from_bits(cls, bytes_value: bytes):
+        return cls(np.frombuffer(bytes_value, dtype=np.uint8)[0])
+
+    def to_bits(self) -> bytes:
+        return self.value.view("<u1")
+
+    @classmethod
     def get_length(cls):
         return 8
 
@@ -88,6 +95,13 @@ class I16(UnsignedIntType):
         return cls(np.uint16(int(value)))
 
     @classmethod
+    def from_bits(cls, bytes_value: bytes):
+        return cls(np.frombuffer(bytes_value, dtype=np.uint16)[0])
+
+    def to_bits(self) -> bytes:
+        return self.value.view("<u2")
+
+    @classmethod
     def get_length(cls):
         return 16
 
@@ -109,6 +123,13 @@ class I32(UnsignedIntType):
     @classmethod
     def from_str(cls, value: Union[str, bytes]):
         return cls(np.uint32(int(value)))
+
+    @classmethod
+    def from_bits(cls, bytes_value: bytes):
+        return cls(np.frombuffer(bytes_value, dtype=np.uint32)[0])
+
+    def to_bits(self) -> bytes:
+        return self.value.view("<u4")
 
     @classmethod
     def get_length(cls):
@@ -142,6 +163,13 @@ class I64(UnsignedIntType):
     def get_length(cls):
         return 64
 
+    @classmethod
+    def from_bits(cls, bytes_value: bytes):
+        return cls(np.frombuffer(bytes_value, dtype=np.uint64)[0])
+
+    def to_bits(self) -> bytes:
+        return self.value.view("<u8")
+
     def __repr__(self):
         cls_name = self.__class__.__name__
         cls_value = I64.astype(self)
@@ -170,6 +198,13 @@ class SignedI8(SignedIntType):
     def get_length(cls):
         return 8
 
+    @classmethod
+    def from_bits(cls, bytes_value: bytes):
+        return cls(np.frombuffer(bytes_value, dtype=np.int8)[0])
+
+    def to_bits(self) -> bytes:
+        return self.value.view("<i1")
+
 
 class SignedI16(SignedIntType):
     """16bit符号付き整数型"""
@@ -192,6 +227,13 @@ class SignedI16(SignedIntType):
     @classmethod
     def get_length(cls):
         return 16
+
+    @classmethod
+    def from_bits(cls, bytes_value: bytes):
+        return cls(np.frombuffer(bytes_value, dtype=np.int16)[0])
+
+    def to_bits(self) -> bytes:
+        return self.value.view("<i2")
 
 
 class SignedI32(SignedIntType):
@@ -216,6 +258,13 @@ class SignedI32(SignedIntType):
     def get_length(cls):
         return 32
 
+    @classmethod
+    def from_bits(cls, bytes_value: bytes):
+        return cls(np.frombuffer(bytes_value, dtype=np.int32)[0])
+
+    def to_bits(self) -> bytes:
+        return self.value.view("<i4")
+
 
 class SignedI64(SignedIntType):
     """64bit符号付き整数型"""
@@ -238,6 +287,13 @@ class SignedI64(SignedIntType):
     @classmethod
     def get_length(cls):
         return 64
+
+    @classmethod
+    def from_bits(cls, bytes_value: bytes):
+        return cls(np.frombuffer(bytes_value, dtype=np.int64)[0])
+
+    def to_bits(self) -> bytes:
+        return self.value.view("<i8")
 
 
 class LEB128(NumpyNumericType):

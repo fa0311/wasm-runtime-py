@@ -22,12 +22,19 @@ class NumericType:
         return cls(int(value))
 
     @classmethod
+    def from_bits(cls, value: bytes):
+        raise NotImplementedError
+
+    def to_bits(self) -> bytes:
+        raise NotImplementedError
+
+    @classmethod
     def from_bool(cls, value: bool):
         return cls(1 if value else 0)
 
     @classmethod
     def get_length(cls):
-        return 32
+        raise NotImplementedError
 
     @classmethod
     def get_min(cls):
@@ -39,14 +46,7 @@ class NumericType:
 
     @classmethod
     def from_value_with_clamp(cls, value: "NumericType", clamp: type["NumericType"]) -> "NumericType":
-        min_value = value.__class__.from_int(clamp.get_min())
-        max_value = value.__class__.from_int(clamp.get_max())
-
-        if value.value <= min_value.value:
-            return cls.from_int(clamp.get_min())
-        if value.value >= max_value.value:
-            return cls.from_int(clamp.get_max())
-        return cls.from_value(value.value)
+        raise NotImplementedError
 
     def __bool__(self):
         return bool(self.value)

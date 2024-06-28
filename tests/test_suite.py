@@ -292,29 +292,20 @@ class TestSuite(unittest.TestCase):
     # def test_br(self):
     #     self.__test_file("br")
 
-    # def test_br_0_70(self):
-    #     self.__test_index_case("br", 0, 70)
-
-    # def test_br_0_73(self):
-    #     self.__test_index_case("br", 0, 73)
-
-    # def test_br_0_75(self):
-    #     self.__test_index_case("br", 0, 75)
-
     # def test_br_if(self):
     #     self.__test_file("br_if")
 
     # def test_br_table(self):
     #     self.__test_file("br_table")
 
-    # def test_return(self):
-    #     self.__test_file("return")
+    # def test_call(self):
+    #     self.__test_file("call")
 
     # def test_call_indirect(self):
     #     self.__test_file("call_indirect")
 
-    # def test_call(self):
-    #     self.__test_file("call")
+    # def test_return(self):
+    #     self.__test_file("return")
 
 
 if __name__ == "__main__":

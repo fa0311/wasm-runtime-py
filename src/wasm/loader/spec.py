@@ -748,6 +748,26 @@ class CodeSectionSpec(ABC):
         pass
 
     @abstractmethod
+    @Metadata.opcode(0xBC)
+    def i32_reinterpret_f32(self):
+        pass
+
+    @abstractmethod
+    @Metadata.opcode(0xBD)
+    def i64_reinterpret_f64(self):
+        pass
+
+    @abstractmethod
+    @Metadata.opcode(0xBE)
+    def f32_reinterpret_i32(self):
+        pass
+
+    @abstractmethod
+    @Metadata.opcode(0xBF)
+    def f64_reinterpret_i64(self):
+        pass
+
+    @abstractmethod
     @Metadata.opcode(0xC0)
     def i32_extend8_s(self):
         pass
