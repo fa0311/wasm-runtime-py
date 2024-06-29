@@ -188,18 +188,34 @@ class CodeSectionBlock(CodeSectionSpec):
         min_value = value.__class__.from_int(clamp.get_min())
         max_value = value.__class__.from_int(clamp.get_max())
 
-        # if np.isnan(value.value):
-        #     return cls.from_int(0)
-        # if np.isinf(value.value):
-        #     if np.signbit(value.value):
-        #         return cls.from_int(clamp.get_min())
-        #     else:
-        #         return cls.from_int(clamp.get_max())
+        if value.value < min_value.value:
+            raise WasmIntegerOverflowError([raise_cls])
+
+        if value.value > max_value.value:
+            raise WasmIntegerOverflowError([raise_cls])
+
+    def type_check_(self, value: NumericType, clamp: type[NumericType], raise_cls: type[NumericType]):
+        """型チェックを行う"""
+        min_value = value.__class__.from_int(clamp.get_min())
+        max_value = value.__class__.from_int(clamp.get_max())
+
+        import numpy as np
+
+        if np.isnan(value.value):
+            raise WasmInvalidConversionError([raise_cls])
+        if np.isinf(value.value):
+            if np.signbit(value.value):
+                raise WasmIntegerOverflowError([raise_cls])
+            else:
+                raise WasmIntegerOverflowError([raise_cls])
 
         if value.value < min_value.value:
             raise WasmIntegerOverflowError([raise_cls])
 
         if value.value > max_value.value:
+            raise WasmIntegerOverflowError([raise_cls])
+
+        if value.value == max_value.value:
             raise WasmIntegerOverflowError([raise_cls])
 
     # Control Instructions
@@ -968,64 +984,80 @@ class CodeSectionBlock(CodeSectionSpec):
         sa = SignedI32.astype(a)
         self.stack.push(I64.astype(sa))
 
+    @NumpyErrorHelper.seterr("raise")
     def i64_trunc_f32_s(self):
         a = self.stack.f32()
+        self.type_check_(a, SignedI64, I64)
         i64 = I64.from_value_with_clamp(trunc(a), SignedI64)
         self.stack.push(i64)
 
     def i64_trunc_f32_u(self):
         a = self.stack.f32()
-        i64 = I64.from_value_with_clamp(trunc(a), I64)
+        t = trunc(a)
+        self.type_check_(t, I64, I64)
+        i64 = I64.from_value_with_clamp(t, I64)
         self.stack.push(i64)
 
     def i64_trunc_f64_s(self):
         a = self.stack.f64()
-        i64 = I64.from_value_with_clamp(trunc(a), SignedI64)
+        t = trunc(a)
+        self.type_check_(t, SignedI64, I64)
+        i64 = I64.from_value_with_clamp(t, SignedI64)
         self.stack.push(I64.astype(i64))
 
     def i64_trunc_f64_u(self):
         a = self.stack.f64()
-        i64 = I64.from_value_with_clamp(trunc(a), I64)
+        t = trunc(a)
+        self.type_check_(t, I64, I64)
+        i64 = I64.from_value_with_clamp(t, I64)
         self.stack.push(i64)
 
     def i32_trunc_sat_f32_s(self):
         a = self.stack.f32()
-        i32 = I32.from_value_with_clamp(trunc(a), SignedI32)
+        t = trunc(a)
+        i32 = I32.from_value_with_clamp(t, SignedI32)
         self.stack.push(i32)
 
     def i32_trunc_sat_f32_u(self):
         a = self.stack.f32()
-        i32 = I32.from_value_with_clamp(trunc(a), I32)
+        t = trunc(a)
+        i32 = I32.from_value_with_clamp(t, I32)
         self.stack.push(i32)
 
     def i32_trunc_sat_f64_s(self):
         a = self.stack.f64()
-        i32 = I32.from_value_with_clamp(trunc(a), SignedI32)
+        t = trunc(a)
+        i32 = I32.from_value_with_clamp(t, SignedI32)
         self.stack.push(I32.astype(i32))
 
     def i32_trunc_sat_f64(self):
         a = self.stack.f64()
-        i32 = I32.from_value_with_clamp(trunc(a), I32)
+        t = trunc(a)
+        i32 = I32.from_value_with_clamp(t, I32)
         self.stack.push(i32)
 
     def i64_trunc_sat_f32_s(self):
         a = self.stack.f32()
-        i64 = I64.from_value_with_clamp(trunc(a), SignedI64)
+        t = trunc(a)
+        i64 = I64.from_value_with_clamp(t, SignedI64)
         self.stack.push(i64)
 
     def i64_trunc_sat_f32(self):
         a = self.stack.f32()
-        i64 = I64.from_value_with_clamp(trunc(a), I64)
+        t = trunc(a)
+        i64 = I64.from_value_with_clamp(t, I64)
         self.stack.push(i64)
 
     def i64_trunc_sat_f64_s(self):
         a = self.stack.f64()
-        i64 = I64.from_value_with_clamp(trunc(a), SignedI64)
+        t = trunc(a)
+        i64 = I64.from_value_with_clamp(t, SignedI64)
         self.stack.push(I64.astype(i64))
 
     def i64_trunc_sat_f64(self):
         a = self.stack.f64()
-        i64 = I64.from_value_with_clamp(trunc(a), I64)
+        t = trunc(a)
+        i64 = I64.from_value_with_clamp(t, I64)
         self.stack.push(i64)
 
     def memory_init(self):
