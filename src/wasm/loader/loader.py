@@ -247,7 +247,7 @@ class WasmLoader:
             args: list = []
 
             for annotation in annotations:
-                if annotation == int:
+                if annotation == int:  # noqa: E721
                     args.append(data.read_byte())
                 elif annotation == I32:
                     args.append(I32.astype(SignedI32.from_int(data.read_sleb128())))

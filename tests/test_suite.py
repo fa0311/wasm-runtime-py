@@ -15,7 +15,7 @@ sys.path.append(str(Path(__file__).parent.parent / "src"))
 
 from src.wasm.loader.loader import WasmLoader
 from src.wasm.optimizer.optimizer import WasmOptimizer
-from src.wasm.runtime.error import WasmRuntimeError, WasmUnimplementedError
+from src.wasm.runtime.error.error import WasmRuntimeError, WasmUnimplementedError
 from src.wasm.runtime.exec import WasmExec
 from src.wasm.type.base import NumericType
 from src.wasm.type.numpy.float import F32, F64
@@ -260,6 +260,12 @@ class TestSuite(unittest.TestCase):
 
     def test_conversions(self):
         self.__test_file("conversions")
+
+    def test_conversions_0_46(self):
+        self.__test_index_case("conversions", 0, 46)
+
+    def test_conversions_0_59(self):
+        self.__test_index_case("conversions", 0, 59)
 
     # def test_float_literals(self):
     #     self.__test_file("float_literals")
