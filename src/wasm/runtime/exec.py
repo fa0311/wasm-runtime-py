@@ -38,9 +38,6 @@ class WasmExec:
         locals = [*param, *locals_param]
         block = self.get_block(code=fn.data, locals=locals, stack=[])
 
-        # 型チェック
-        # self.type_check(param, fn_type.params)
-
         # 実行
         res = block.run()
         if isinstance(res, list):
@@ -48,9 +45,6 @@ class WasmExec:
         else:
             returns = [block.stack.any() for _ in fn_type.returns][::-1]
         self.logger.debug(f"res: {returns}")
-
-        # 型チェック
-        # self.type_check(returns, fn_type.returns)
 
         return (block, returns)
 

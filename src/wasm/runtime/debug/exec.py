@@ -1,8 +1,11 @@
-from src.wasm.optimizer.struct import WasmSectionsOptimize
+from src.wasm.optimizer.struct import CodeInstructionOptimize, WasmSectionsOptimize
+from src.wasm.runtime.debug.check import TypeCheck
+from src.wasm.runtime.debug.code_exec import CodeSectionBlockDebug
 from src.wasm.runtime.error.error import (
     WasmCallStackExhaustedError,
 )
 from src.wasm.runtime.exec import WasmExec
+from src.wasm.runtime.stack import NumericStack
 from src.wasm.type.base import NumericType
 
 
@@ -17,7 +20,21 @@ class WasmExecDebug(WasmExec):
             raise Exception("infinite loop")
 
     def run(self, index: int, param: list[NumericType]):
+        fn, fn_type = self.get_function(index)
+        TypeCheck.type_check(param, fn_type.params)
+
         try:
-            super().run(index, param)
+            block, returns = super().run(index, param)
         except RecursionError:
             raise WasmCallStackExhaustedError()
+
+        TypeCheck.type_check(returns, fn_type.returns)
+        return block, returns
+
+    def get_block(self, code: list[CodeInstructionOptimize], locals: list[NumericType], stack: list[NumericType]):
+        return CodeSectionBlockDebug(
+            env=self,
+            code=code,
+            locals=locals,
+            stack=NumericStack(value=stack),
+        )

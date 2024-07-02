@@ -1,13 +1,10 @@
 from math import ceil, floor, trunc
 
+from src.wasm.runtime.debug.check import TypeCheck
 from src.wasm.runtime.error.error import (
-    WasmIntegerDivideByZeroError,
-    WasmIntegerOverflowError,
-    WasmInvalidConversionError,
     WasmUnimplementedError,
 )
-from src.wasm.runtime.error.helper import NumpyErrorHelper
-from src.wasm.runtime.run import CodeSectionRun, TypeCheck
+from src.wasm.runtime.run import CodeSectionRun
 from src.wasm.type.numpy.float import F32, F64
 from src.wasm.type.numpy.int import I32, I64, SignedI8, SignedI16, SignedI32, SignedI64
 
@@ -307,51 +304,23 @@ class CodeSectionBlock(CodeSectionRun):
         b, a = self.stack.i32(), self.stack.i32()
         self.stack.push(a * b)
 
-    @NumpyErrorHelper.seterr("raise")
     def i32_div_s(self):
         b, a = self.stack.i32(), self.stack.i32()
         sb, sa = SignedI32.astype(b), SignedI32.astype(a)
-        try:
-            self.stack.push(I32.astype(sa / sb))
-        except FloatingPointError:
-            if b == I32.from_int(0):
-                raise WasmIntegerDivideByZeroError([I32])
-            else:
-                raise WasmIntegerOverflowError([I32])
+        self.stack.push(I32.astype(sa / sb))
 
-    @NumpyErrorHelper.seterr("raise")
     def i32_div_u(self):
         b, a = self.stack.i32(), self.stack.i32()
-        try:
-            self.stack.push(a / b)
-        except FloatingPointError:
-            if b == I32.from_int(0):
-                raise WasmIntegerDivideByZeroError([I32])
-            else:
-                raise WasmIntegerOverflowError([I32])
+        self.stack.push(a / b)
 
-    @NumpyErrorHelper.seterr("raise")
     def i32_rem_s(self):
         b, a = self.stack.i32(), self.stack.i32()
         sb, sa = SignedI32.astype(b), SignedI32.astype(a)
-        try:
-            self.stack.push(I32.astype(sa % sb))
-        except FloatingPointError:
-            if b == I32.from_int(0):
-                raise WasmIntegerDivideByZeroError([I32])
-            else:
-                self.stack.push(I32.from_int(0))
+        self.stack.push(I32.astype(sa % sb))
 
-    @NumpyErrorHelper.seterr("raise")
     def i32_rem_u(self):
         b, a = self.stack.i32(), self.stack.i32()
-        try:
-            self.stack.push(a % b)
-        except FloatingPointError:
-            if b == I32.from_int(0):
-                raise WasmIntegerDivideByZeroError([I32])
-            else:
-                self.stack.push(I32.from_int(0))
+        self.stack.push(a % b)
 
     def i32_and(self):
         b, a = self.stack.i32(), self.stack.i32()
@@ -410,51 +379,23 @@ class CodeSectionBlock(CodeSectionRun):
         b, a = self.stack.i64(), self.stack.i64()
         self.stack.push(a * b)
 
-    @NumpyErrorHelper.seterr("raise")
     def i64_div_s(self):
         b, a = self.stack.i64(), self.stack.i64()
         sb, sa = SignedI64.astype(b), SignedI64.astype(a)
-        try:
-            self.stack.push(I64.astype(sa / sb))
-        except FloatingPointError:
-            if b == I64.from_int(0):
-                raise WasmIntegerDivideByZeroError([I64])
-            else:
-                raise WasmIntegerOverflowError([I64])
+        self.stack.push(I64.astype(sa / sb))
 
-    @NumpyErrorHelper.seterr("raise")
     def i64_div_u(self):
         b, a = self.stack.i64(), self.stack.i64()
-        try:
-            self.stack.push(a / b)
-        except FloatingPointError:
-            if b == I64.from_int(0):
-                raise WasmIntegerDivideByZeroError([I64])
-            else:
-                raise WasmIntegerOverflowError([I64])
+        self.stack.push(a / b)
 
-    @NumpyErrorHelper.seterr("raise")
     def i64_rem_s(self):
         b, a = self.stack.i64(), self.stack.i64()
         sb, sa = SignedI64.astype(b), SignedI64.astype(a)
-        try:
-            self.stack.push(I64.astype(sa % sb))
-        except FloatingPointError:
-            if b == I64.from_int(0):
-                raise WasmIntegerDivideByZeroError([I64])
-            else:
-                self.stack.push(I64.from_int(0))
+        self.stack.push(I64.astype(sa % sb))
 
-    @NumpyErrorHelper.seterr("raise")
     def i64_rem_u(self):
         b, a = self.stack.i64(), self.stack.i64()
-        try:
-            self.stack.push(a % b)
-        except FloatingPointError:
-            if b == I64.from_int(0):
-                raise WasmIntegerDivideByZeroError([I64])
-            else:
-                self.stack.push(I64.from_int(0))
+        self.stack.push(a % b)
 
     def i64_and(self):
         b, a = self.stack.i64(), self.stack.i64()
@@ -605,61 +546,25 @@ class CodeSectionBlock(CodeSectionRun):
         a = self.stack.i64()
         self.stack.push(I32.astype(a))
 
-    @NumpyErrorHelper.seterr("raise")
     def i32_trunc_f32_s(self):
         a = self.stack.f32()
-        try:
-            t = trunc(a)
-            TypeCheck.type_check_1(t, SignedI32, I32)
-            i32 = SignedI32.astype(t)
-            self.stack.push(I32.astype(i32))
-        except FloatingPointError:
-            if a.isnan():
-                raise WasmInvalidConversionError([I32])
-            else:
-                raise WasmIntegerOverflowError([I32])
+        i32 = SignedI32.astype(trunc(a))
+        self.stack.push(I32.astype(i32))
 
-    @NumpyErrorHelper.seterr("raise")
     def i32_trunc_f32_u(self):
         a = self.stack.f32()
-        try:
-            t = trunc(a)
-            TypeCheck.type_check_1(t, I32, I32)
-            i32 = I32.astype(t)
-            self.stack.push(i32)
-        except FloatingPointError:
-            if a.isnan():
-                raise WasmInvalidConversionError([I32])
-            else:
-                raise WasmIntegerOverflowError([I32])
+        i32 = I32.astype(trunc(a))
+        self.stack.push(i32)
 
-    @NumpyErrorHelper.seterr("raise")
     def i32_trunc_f64_s(self):
         a = self.stack.f64()
-        try:
-            t = trunc(a)
-            TypeCheck.type_check_1(t, SignedI32, I32)
-            i32 = SignedI32.astype(t)
-            self.stack.push(I32.astype(i32))
-        except FloatingPointError:
-            if a.isnan():
-                raise WasmInvalidConversionError([I32])
-            else:
-                raise WasmIntegerOverflowError([I32])
+        i32 = SignedI32.astype(trunc(a))
+        self.stack.push(I32.astype(i32))
 
-    @NumpyErrorHelper.seterr("raise")
     def i32_trunc_f64_u(self):
         a = self.stack.f64()
-        try:
-            t = trunc(a)
-            TypeCheck.type_check_1(t, I32, I32)
-            i32 = I32.astype(t)
-            self.stack.push(i32)
-        except FloatingPointError:
-            if a.isnan():
-                raise WasmInvalidConversionError([I32])
-            else:
-                raise WasmIntegerOverflowError([I32])
+        i32 = I32.astype(trunc(a))
+        self.stack.push(i32)
 
     def i64_extend_i32_s(self):
         a = self.stack.i32()
@@ -759,7 +664,6 @@ class CodeSectionBlock(CodeSectionRun):
         sa = SignedI32.astype(a)
         self.stack.push(I64.astype(sa))
 
-    @NumpyErrorHelper.seterr("raise")
     def i64_trunc_f32_s(self):
         a = self.stack.f32()
         TypeCheck.type_check_2(a, SignedI64, I64)
