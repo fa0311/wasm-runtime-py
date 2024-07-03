@@ -15,7 +15,10 @@ class TestDeice(unittest.TestCase):
         print(f"fmin: -0.0 {bb} 0.0")
 
     def test_cast(self):
-        a = np.float32(2**32)
-        b = a.astype(np.uint32)
+        a = np.float32(2**31).astype(np.uint32)
+        c = np.float32(2**32).astype(np.uint32)
+        e = np.float32(2**64).astype(np.uint32)
 
-        print(f"float32: {b}")
+        print(f"2**31: {a}")
+        print(f"2**32: {c}")
+        print(f"2**64: {e}")
