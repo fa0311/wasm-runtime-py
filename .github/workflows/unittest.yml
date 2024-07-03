@@ -7,7 +7,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-latest, macos-13, ubuntu-latest]
+        os: [windows-latest, macos-13, ubuntu-latest, macOS-14]
     permissions:
       contents: write
     steps:
@@ -21,10 +21,16 @@ jobs:
         with:
           python-version: "3.x"
 
-      - name: Use wabt 1.0.20
+      - name: Use wabt 1.0.35
         uses: mwilliamson/setup-wabt-action@v3
+        if: matrix.os == 'ubuntu-latest' || matrix.os == 'windows-latest'
         with:
           wabt-version: "1.0.35"
+
+      - name: Use wabt 1.0.35
+        if: matrix.os == 'macos-14' || matrix.os == 'macos-13'
+        run: |
+          brew install wabt
 
       - name: Install dependencies
         run: |
@@ -33,7 +39,7 @@ jobs:
 
       - name: Run tests
         id: tests
-        if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-13'
+        if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-13' || matrix.os == 'macos-14'
         env:
           OUTPUT_LOG: test_result_temp.log
         run: |
