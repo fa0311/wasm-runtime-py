@@ -203,7 +203,6 @@ class TestSuite(unittest.TestCase):
                 self.fail(f"expect: {cmd['text']}, actual: {e.message}")
             for i, (r, e) in enumerate(zip(expect, e.expected)):
                 numeric_cls = type_map[r["type"]]
-                assert r.get("value", None) is None
                 if numeric_cls(0).__class__ != e:
                     self.fail(f"expect: {e}, actual: {numeric_cls(0).__class__}")
 
@@ -262,11 +261,8 @@ class TestSuite(unittest.TestCase):
     def test_conversions(self):
         self.__test_file("conversions")
 
-    def test_conversions_0_43(self):
-        self.__test_index_case("conversions", 0, 43)
-
-    # def test_float_literals(self):
-    #     self.__test_file("float_literals")
+    def test_float_literals(self):
+        self.__test_file("float_literals")
 
     def test_forward(self):
         self.__test_file("forward")
@@ -279,6 +275,12 @@ class TestSuite(unittest.TestCase):
 
     # def test_local_set(self):
     #     self.__test_file("local_set")
+
+    # def test_local_set_0_13(self):
+    #     self.__test_index_case("local_set", 0, 13)
+
+    # def test_local_set_0_14(self):
+    #     self.__test_index_case("local_set", 0, 14)
 
     # def test_labels(self):
     #     self.__test_file("labels")

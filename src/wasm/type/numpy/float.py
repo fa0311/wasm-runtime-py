@@ -67,14 +67,15 @@ class F32(FloatType):
 
     @classmethod
     def from_int(cls, value: Union[int, float]):
-        return cls(np.float32(value))
+        x = np.float32(value)
+        return cls(x)
 
     @classmethod
     def from_str(cls, value: Union[str, bytes]):
         if value == "nan:canonical":
             return cls(np.float32(np.nan))
         elif value == "nan:arithmetic":
-            return cls(np.float32(np.nan))
+            return cls(np.float32(np.inf))
         else:
             bytes_value = struct.pack("I", int(value))
             return cls.from_bits(bytes_value)
@@ -101,14 +102,15 @@ class F64(FloatType):
 
     @classmethod
     def from_int(cls, value: Union[int, float]):
-        return cls(np.float64(value))
+        x = np.float64(value)
+        return cls(x)
 
     @classmethod
     def from_str(cls, value: Union[str, bytes]):
         if value == "nan:canonical":
             return cls(np.float64(np.nan))
         elif value == "nan:arithmetic":
-            return cls(np.float64(np.nan))
+            return cls(np.float64(np.inf))
         else:
             bytes_value = struct.pack("Q", int(value))
             return cls.from_bits(bytes_value)

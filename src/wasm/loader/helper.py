@@ -7,8 +7,8 @@ BindingType = Callable[[NumericType], Optional[Any]]
 
 
 class CodeSectionSpecHelper:
-    def naver(self):
-        raise Exception("naver calle")
+    def never(self):
+        raise Exception("never calle")
 
     @classmethod
     def mapped(cls, opcode: int) -> Callable:
@@ -18,7 +18,7 @@ class CodeSectionSpecHelper:
             if hasattr(v, "opcode"):
                 for m in v.opcode:
                     data[m] = v
-        return data.get(opcode, cls.naver)
+        return data.get(opcode, cls.never)
 
     @classmethod
     def is_prefix(cls, opcode: int) -> bool:
@@ -35,7 +35,7 @@ class CodeSectionSpecHelper:
     @classmethod
     def bind(cls, pearent: "CodeSectionSpec", opcode: int) -> BindingType:
         fn = cls.mapped(opcode)
-        if fn is cls.naver:
+        if fn is cls.never:
             raise Exception(f"opcode: {opcode:02X} is not defined")
         return getattr(pearent, fn.__name__)
 

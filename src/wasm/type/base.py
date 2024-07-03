@@ -156,3 +156,6 @@ class NumericType:
 
     def isinf(self):
         return False
+
+    def signbit(self):
+        return self.value < 0

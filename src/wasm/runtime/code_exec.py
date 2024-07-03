@@ -90,11 +90,12 @@ class CodeSectionBlock(CodeSectionRun):
 
     def br_table(self, count: list[int]):
         a = self.stack.i32()
-        return count[a.value]
+        return count[a.value] if a.value < len(count) else count[-1]
 
     def return_(self):
-        a = self.stack.any()
-        return [a]
+        if len(self.stack) > 0:
+            return [self.stack.any()]
+        return []
 
     def call(self, index: int):
         _, fn_type = self.env.get_function(index)

@@ -43,3 +43,6 @@ class NumpyNumericType(NumericType):
 
     def isinf(self):
         return np.isinf(self.value)
+
+    def signbit(self):
+        return np.signbit(self.value)
