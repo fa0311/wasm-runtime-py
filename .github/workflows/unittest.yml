@@ -53,7 +53,7 @@ jobs:
 
       - name: Comment on commit
         if: always()
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         env:
           OUTPUT_LOG: test_result_temp.log
           OS: ${{ matrix.os }}
@@ -62,11 +62,20 @@ jobs:
           script: |
             const commit_sha = context.sha;
             const test_result = require('fs').readFileSync(process.env.OUTPUT_LOG, 'utf8');
-            const last_lines = test_result.split('\n').slice(-4).join('\n');
-            const message = `Test result on ${process.env.OS}:\n\`\`\`\n${last_lines}\n\`\`\``;
+            const line = test_result.split('\n');
+
+            const separator = '-----';
+            const separator_index = line.findLastIndex(x => x.includes(separator));
+            const bottom = line.slice(separator_index + 1, separator_index + 4).join('\n');
+            const message = line.slice(separator_index + 4, line.length - 1).join('\n');
+
+            const indent = '\n';
+            const log = (x) =>`${indent}\`\`\`log${indent}${x}${indent}\`\`\`${indent}`;
+
+            const body = `Test result on ${process.env.OS}:${log(bottom)}${log(message)}`;
             github.rest.repos.createCommitComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              commit_sha: commit_sha,
-              body: message
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                commit_sha: commit_sha,
+                body: body
             });
