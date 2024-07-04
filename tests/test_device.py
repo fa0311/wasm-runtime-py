@@ -28,18 +28,11 @@ class TestDeice(unittest.TestCase):
         self.print(f"fmin(-0.0, 0.0): {b}")
 
     def test_cast(self):
-        a = np.float32(2**31).astype(np.uint32)
-        c = np.float32(2**32).astype(np.uint32)
-        e = np.float32(2**64).astype(np.uint32)
+        a = np.float32(2**32).astype(np.uint32)
 
-        self.print(f"f32(2**31).astype(u32): {a}")
-        self.print(f"f32(2**32).astype(u32): {c}")
-        self.print(f"f32(2**64).astype(u32): {e}")
-
-    def test_cast_error(self):
         with NumpyErrorHelper("raise"):
             try:
-                np.float32(2**32).astype(np.uint32)
-                self.print("f32(2**32).astype(u32): no error")
+                np.float32(2**31).astype(np.uint32)
+                self.print(f"f32(2**32) as u32: {a}")
             except FloatingPointError as e:
-                self.print(f"f32(2**32).astype(u32): {e}")
+                self.print(f"f32(2**32) as u32: {a}, {e}")

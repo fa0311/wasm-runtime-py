@@ -75,6 +75,11 @@ class I8(UnsignedIntType):
     def get_length(cls):
         return 8
 
+    def __repr__(self):
+        cls_name = self.__class__.__name__
+        cls_value = SignedI8.astype(self)
+        return f"{cls_name}(value={self.value}, signed={cls_value.value})"
+
 
 class I16(UnsignedIntType):
     """16bit符号なし整数型"""
@@ -104,6 +109,11 @@ class I16(UnsignedIntType):
     @classmethod
     def get_length(cls):
         return 16
+
+    def __repr__(self):
+        cls_name = self.__class__.__name__
+        cls_value = SignedI16.astype(self)
+        return f"{cls_name}(value={self.value}, signed={cls_value.value})"
 
 
 class I32(UnsignedIntType):
@@ -137,8 +147,8 @@ class I32(UnsignedIntType):
 
     def __repr__(self):
         cls_name = self.__class__.__name__
-        cls_value = I32.astype(self)
-        return f"{cls_name}(value={cls_value.value})"
+        cls_value = SignedI32.astype(self)
+        return f"{cls_name}(value={self.value}, signed={cls_value.value})"
 
 
 class I64(UnsignedIntType):
@@ -172,8 +182,8 @@ class I64(UnsignedIntType):
 
     def __repr__(self):
         cls_name = self.__class__.__name__
-        cls_value = I64.astype(self)
-        return f"{cls_name}(value={cls_value.value})"
+        cls_value = SignedI64.astype(self)
+        return f"{cls_name}(value={self.value}, signed={cls_value.value})"
 
 
 class SignedI8(SignedIntType):
