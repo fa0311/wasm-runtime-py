@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 
 from src.tools.byte import ByteReader
 from src.wasm.loader.helper import CodeSectionSpecHelper
-from src.wasm.type.base import NumericType
+from src.wasm.type.numeric.base import NumericType
 
 
 @dataclass

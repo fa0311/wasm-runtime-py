@@ -11,7 +11,8 @@ from src.wasm.optimizer.struct import (
 )
 from src.wasm.runtime.code_exec import CodeSectionBlock
 from src.wasm.runtime.stack import NumericStack
-from src.wasm.type.base import NumericType
+from src.wasm.type.bytes.numpy.base import NumpyBytesType
+from src.wasm.type.numeric.base import NumericType
 
 
 class WasmExec:
@@ -21,10 +22,17 @@ class WasmExec:
 
     def __init__(self, sections: WasmSectionsOptimize):
         self.sections = sections
+        self.reset()
+
+    def reset(self):
+        self.memory = NumpyBytesType.from_size(len(self.sections.memory_section) * 64 * 1024)
+        self.globals = [WasmOptimizer.get_numeric_type(x.type).from_int(0) for x in self.sections.global_section]
 
     @logger.logger
     def start(self, field: bytes, param: list[NumericType]):
         """エントリーポイントを実行する"""
+
+        self.logger.info(f"field: {field.decode()}")
 
         # エントリーポイントの関数を取得する
         start = [fn for fn in self.sections.export_section if fn.field_name == field][0]
@@ -35,7 +43,7 @@ class WasmExec:
         fn, fn_type = self.get_function(index)
 
         # ローカル変数とExecインスタンスを生成
-        locals_param = [WasmOptimizer.get_type(x).from_int(0) for x in fn.local]
+        locals_param = [WasmOptimizer.get_numeric_type(x).from_int(0) for x in fn.local]
         locals = [*param, *locals_param]
         block = self.get_block(code=fn.data, locals=locals, stack=[])
 

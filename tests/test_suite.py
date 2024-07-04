@@ -10,6 +10,8 @@ from pathlib import Path
 
 import numpy as np
 
+from src.wasm.type.externref.base import ExternRef
+
 sys.path.append(str(Path(__file__).parent.parent))
 sys.path.append(str(Path(__file__).parent.parent / "src"))
 
@@ -18,14 +20,15 @@ from src.wasm.optimizer.optimizer import WasmOptimizer
 from src.wasm.runtime.entry import WasmExecEntry
 from src.wasm.runtime.error.error import WasmRuntimeError, WasmUnimplementedError
 from src.wasm.runtime.exec import WasmExec
-from src.wasm.type.base import NumericType
-from src.wasm.type.numpy.float import F32, F64
-from src.wasm.type.numpy.int import I32, I64
+from src.wasm.type.numeric.base import NumericType
+from src.wasm.type.numeric.numpy.float import F32, F64
+from src.wasm.type.numeric.numpy.int import I32, I64
 
 
 class TestSuite(unittest.TestCase):
     def setUp(self):
         self.__set_logger()
+        sys.setrecursionlimit(10**6)
         if not os.path.exists(".cache"):
             self.__set_wasm2json()
 
@@ -92,12 +95,11 @@ class TestSuite(unittest.TestCase):
             elif cmd["type"] == "assert_trap":
                 res[-1][2].append(cmd)
             elif cmd["type"] == "assert_invalid":
-                pass
-                # res.append((cmd["type"], self.__read_module(name, cmd["filename"]), []))
+                res.append((cmd["type"], self.__read_module(name, cmd["filename"]), []))
             elif cmd["type"] == "assert_exhaustion":
                 res[-1][2].append(cmd)
             elif cmd["type"] == "assert_malformed":
-                pass
+                res.append((cmd["type"], self.__read_module(name, cmd["filename"]), []))
             else:
                 self.fail(f"unknown command: {cmd['type']}")
         return res
@@ -124,7 +126,9 @@ class TestSuite(unittest.TestCase):
             #         self.fail(f"expect: {b}, actual: {a}")
             # except WasmUnimplementedError as e:
             #     self.skipTest(str(e))
-        else:
+        elif t == "assert_malformed":
+            pass
+        elif t == "module":
             data = WasmLoader(wasm).load()
             optimizer = WasmOptimizer(data).optimize()
             data = WasmExecEntry.entry(optimizer)
@@ -133,6 +137,9 @@ class TestSuite(unittest.TestCase):
                 param = {"name": name, "index": f"{index:04d}", "case": f"{case:04d}"}
                 with self.subTest(**param):
                     self.__test_run(data, cmd)
+                    data.reset()
+        else:
+            self.fail(f"expect: module, actual: {t}")
 
     def __test_index_case(self, name: str, index: int, case: int):
         t, wasm, cmds = self.__get_test_suite_data(name)[index]
@@ -161,6 +168,7 @@ class TestSuite(unittest.TestCase):
             "i64": lambda x: I64.from_str(x),
             "f32": lambda x: F32.from_str(x),
             "f64": lambda x: F64.from_str(x),
+            "externref": lambda x: ExternRef(x),
         }
         args = cmd["action"]["args"]
         expect = cmd["expected"]
@@ -282,23 +290,32 @@ class TestSuite(unittest.TestCase):
     def test_switch(self):
         self.__test_file("switch")
 
-    # def test_store(self):
-    #     self.__test_file("store")
+    def test_store(self):
+        self.__test_file("store")
 
-    # def test_block(self):
-    #     self.__test_file("block")
+    def test_block(self):
+        self.__test_file("block")
 
-    # def test_br(self):
-    #     self.__test_file("br")
+    def test_br(self):
+        self.__test_file("br")
 
-    # def test_br_if(self):
-    #     self.__test_file("br_if")
+    def test_br_if(self):
+        self.__test_file("br_if")
 
-    # def test_br_table(self):
-    #     self.__test_file("br_table")
+    def test_br_table(self):
+        self.__test_file("br_table")
 
-    # def test_call(self):
-    #     self.__test_file("call")
+    def test_call(self):
+        self.__test_file("call")
+
+    # def test_call_35(self):
+    #     self.__test_index_case("call", 0, 35)
+
+    # def test_call_39(self):
+    #     self.__test_index_case("call", 0, 39)
+
+    # def test_call_42(self):
+    #     self.__test_index_case("call", 0, 42)
 
     # def test_call_indirect(self):
     #     self.__test_file("call_indirect")

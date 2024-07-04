@@ -16,8 +16,8 @@ from src.wasm.loader.struct import (
     TypeSection,
     WasmSections,
 )
-from src.wasm.type.numpy.float import F32, F64
-from src.wasm.type.numpy.int import I32, I64, SignedI32, SignedI64
+from src.wasm.type.numeric.numpy.float import F32, F64
+from src.wasm.type.numeric.numpy.int import I32, I64, SignedI32, SignedI64
 
 
 class WasmLoader:
@@ -258,7 +258,7 @@ class WasmLoader:
                 elif annotation == F64:
                     args.append(F64.from_bits(data.read_f64()))
                 elif annotation == list[int]:
-                    count = data.read_byte()
+                    count = data.read_leb128()
                     args.append([data.read_byte() for _ in range(count + 1)])
                 else:
                     raise Exception("invalid type")

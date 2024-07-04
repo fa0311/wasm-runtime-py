@@ -1,15 +1,12 @@
 import logging
-from typing import Optional
 
 
 class NestedLogger:
     """ネストされたログを出力するためのクラス"""
 
-    def __init__(self, logging: logging.Logger, child: Optional["type"] = None):
+    def __init__(self, logging: logging.Logger):
         self.logging = logging
         NestedLogger.nested = -1
-        if child is not None:
-            child.logger = self
 
     def logger(self: "NestedLogger", func):
         """関数をラップしてログを出力するデコレータ"""
@@ -36,7 +33,10 @@ class NestedLogger:
             NestedLogger.nested -= 1
             return result
 
-        return wrapper
+        if __debug__:
+            return wrapper
+        else:
+            return func
 
     def message(self, msg):
         """ログメッセージを整形して返す"""

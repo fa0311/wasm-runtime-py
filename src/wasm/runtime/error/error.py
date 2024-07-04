@@ -1,6 +1,6 @@
 from typing import Callable
 
-from src.wasm.type.base import NumericType
+from src.wasm.type.numeric.base import NumericType
 
 
 class WasmError(Exception):

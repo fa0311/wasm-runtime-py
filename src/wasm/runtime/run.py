@@ -8,7 +8,7 @@ from src.wasm.optimizer.struct import (
     CodeInstructionOptimize,
 )
 from src.wasm.runtime.stack import NumericStack
-from src.wasm.type.base import NumericType
+from src.wasm.type.numeric.base import NumericType
 
 if TYPE_CHECKING:
     from src.wasm.runtime.exec import WasmExec

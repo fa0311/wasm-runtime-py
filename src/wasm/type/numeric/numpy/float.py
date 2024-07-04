@@ -3,8 +3,8 @@ from typing import Union
 
 import numpy as np
 
-from src.wasm.type.numpy.base import NumpyNumericType
-from src.wasm.type.numpy.int import I32
+from src.wasm.type.numeric.numpy.base import NumpyNumericType
+from src.wasm.type.numeric.numpy.int import I32
 
 
 class FloatType(NumpyNumericType):
@@ -81,7 +81,7 @@ class F32(FloatType):
             return cls.from_bits(bytes_value)
 
     @classmethod
-    def from_bits(cls, bytes_value: bytes):
+    def from_bits(cls, bytes_value: Union[bytes, np.ndarray]):
         return cls(np.frombuffer(bytes_value, dtype=np.float32)[0])
 
     def to_bits(self) -> bytes:
@@ -116,7 +116,7 @@ class F64(FloatType):
             return cls.from_bits(bytes_value)
 
     @classmethod
-    def from_bits(cls, bytes_value: bytes):
+    def from_bits(cls, bytes_value: Union[bytes, np.ndarray]):
         return cls(np.frombuffer(bytes_value, dtype=np.float64)[0])
 
     def to_bits(self) -> bytes:

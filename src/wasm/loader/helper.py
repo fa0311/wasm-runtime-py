@@ -1,7 +1,7 @@
 from typing import Any, Callable, Optional
 
 from src.wasm.loader.spec import BlockType, CodeSectionSpec
-from src.wasm.type.base import NumericType
+from src.wasm.type.numeric.base import NumericType
 
 BindingType = Callable[[NumericType], Optional[Any]]
 

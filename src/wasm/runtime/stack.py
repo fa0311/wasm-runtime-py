@@ -1,8 +1,8 @@
 from typing import TypeVar
 
-from src.wasm.type.base import NumericType
-from src.wasm.type.numpy.float import F32, F64
-from src.wasm.type.numpy.int import I32, I64
+from src.wasm.type.numeric.base import NumericType
+from src.wasm.type.numeric.numpy.float import F32, F64
+from src.wasm.type.numeric.numpy.int import I32, I64
 
 
 class NumericStack:

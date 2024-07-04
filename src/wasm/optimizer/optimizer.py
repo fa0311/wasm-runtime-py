@@ -25,9 +25,10 @@ from src.wasm.optimizer.struct import (
     TypeSectionOptimize,
     WasmSectionsOptimize,
 )
-from src.wasm.type.base import NumericType
-from src.wasm.type.numpy.float import F32, F64
-from src.wasm.type.numpy.int import I32, I64
+from src.wasm.type.externref.base import ExternRef
+from src.wasm.type.numeric.base import NumericType
+from src.wasm.type.numeric.numpy.float import F32, F64
+from src.wasm.type.numeric.numpy.int import I32, I64
 
 
 class WasmOptimizer:
@@ -35,7 +36,7 @@ class WasmOptimizer:
         self.sections = sections
 
     @staticmethod
-    def get_type(type: int) -> type[NumericType]:
+    def get_type(type: int):
         if type == 0x7F:
             return I32
         if type == 0x7E:
@@ -44,6 +45,11 @@ class WasmOptimizer:
             return F32
         if type == 0x7C:
             return F64
+        if type == 0x40:
+            return None
+        if type == 0x6F:
+            return ExternRef
+
         raise Exception(f"invalid type: {type:02X}")
 
     @staticmethod
@@ -51,6 +57,19 @@ class WasmOptimizer:
         if type == 0x40:
             return None
         return type
+
+    @staticmethod
+    def get_numeric_type(type: int) -> type[NumericType]:
+        if type == 0x7F:
+            return I32
+        if type == 0x7E:
+            return I64
+        if type == 0x7D:
+            return F32
+        if type == 0x7C:
+            return F64
+
+        raise Exception(f"invalid type: {type:02X}")
 
     def optimize(self) -> "WasmSectionsOptimize":
         opt = WasmSectionsOptimize(

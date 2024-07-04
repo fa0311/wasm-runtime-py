@@ -8,7 +8,7 @@ from src.wasm.runtime.error.error import (
     WasmInvalidConversionError,
 )
 from src.wasm.runtime.error.helper import NumpyErrorHelper
-from src.wasm.type.numpy.int import I32, I64, SignedI32, SignedI64
+from src.wasm.type.numeric.numpy.int import I32, I64, SignedI32, SignedI64
 
 
 class CodeSectionBlockDebug(CodeSectionBlock):

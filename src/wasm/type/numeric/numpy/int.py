@@ -2,7 +2,7 @@ from typing import Union
 
 import numpy as np
 
-from src.wasm.type.numpy.base import NumpyNumericType
+from src.wasm.type.numeric.numpy.base import NumpyNumericType
 
 
 class UnsignedIntType(NumpyNumericType):
@@ -65,7 +65,7 @@ class I8(UnsignedIntType):
         return cls(np.uint8(int(value)))
 
     @classmethod
-    def from_bits(cls, bytes_value: bytes):
+    def from_bits(cls, bytes_value: Union[bytes, np.ndarray]):
         return cls(np.frombuffer(bytes_value, dtype=np.uint8)[0])
 
     def to_bits(self) -> bytes:
@@ -100,7 +100,7 @@ class I16(UnsignedIntType):
         return cls(np.uint16(int(value)))
 
     @classmethod
-    def from_bits(cls, bytes_value: bytes):
+    def from_bits(cls, bytes_value: Union[bytes, np.ndarray]):
         return cls(np.frombuffer(bytes_value, dtype=np.uint16)[0])
 
     def to_bits(self) -> bytes:
@@ -135,7 +135,7 @@ class I32(UnsignedIntType):
         return cls(np.uint32(int(value)))
 
     @classmethod
-    def from_bits(cls, bytes_value: bytes):
+    def from_bits(cls, bytes_value: Union[bytes, np.ndarray]):
         return cls(np.frombuffer(bytes_value, dtype=np.uint32)[0])
 
     def to_bits(self) -> bytes:
@@ -174,7 +174,7 @@ class I64(UnsignedIntType):
         return 64
 
     @classmethod
-    def from_bits(cls, bytes_value: bytes):
+    def from_bits(cls, bytes_value: Union[bytes, np.ndarray]):
         return cls(np.frombuffer(bytes_value, dtype=np.uint64)[0])
 
     def to_bits(self) -> bytes:
@@ -209,7 +209,7 @@ class SignedI8(SignedIntType):
         return 8
 
     @classmethod
-    def from_bits(cls, bytes_value: bytes):
+    def from_bits(cls, bytes_value: Union[bytes, np.ndarray]):
         return cls(np.frombuffer(bytes_value, dtype=np.int8)[0])
 
     def to_bits(self) -> bytes:
@@ -239,7 +239,7 @@ class SignedI16(SignedIntType):
         return 16
 
     @classmethod
-    def from_bits(cls, bytes_value: bytes):
+    def from_bits(cls, bytes_value: Union[bytes, np.ndarray]):
         return cls(np.frombuffer(bytes_value, dtype=np.int16)[0])
 
     def to_bits(self) -> bytes:
@@ -269,7 +269,7 @@ class SignedI32(SignedIntType):
         return 32
 
     @classmethod
-    def from_bits(cls, bytes_value: bytes):
+    def from_bits(cls, bytes_value: Union[bytes, np.ndarray]):
         return cls(np.frombuffer(bytes_value, dtype=np.int32)[0])
 
     def to_bits(self) -> bytes:
@@ -299,7 +299,7 @@ class SignedI64(SignedIntType):
         return 64
 
     @classmethod
-    def from_bits(cls, bytes_value: bytes):
+    def from_bits(cls, bytes_value: Union[bytes, np.generic]):
         return cls(np.frombuffer(bytes_value, dtype=np.int64)[0])
 
     def to_bits(self) -> bytes:

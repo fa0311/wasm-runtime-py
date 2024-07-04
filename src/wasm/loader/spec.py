@@ -2,8 +2,8 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Callable
 
-from src.wasm.type.numpy.float import F32, F64
-from src.wasm.type.numpy.int import I32, I64
+from src.wasm.type.numeric.numpy.float import F32, F64
+from src.wasm.type.numeric.numpy.int import I32, I64
 
 
 class BlockType(Enum):
@@ -130,6 +130,61 @@ class CodeSectionSpec(ABC):
     @abstractmethod
     @Metadata.opcode(0x22)
     def local_tee(self, index: int):
+        pass
+
+    @abstractmethod
+    @Metadata.opcode(0x23)
+    def global_get(self, index: int):
+        pass
+
+    @abstractmethod
+    @Metadata.opcode(0x24)
+    def global_set(self, index: int):
+        pass
+
+    @abstractmethod
+    @Metadata.opcode(0x28)
+    def i32_load(self, index: int, align: int):
+        pass
+
+    @abstractmethod
+    @Metadata.opcode(0x29)
+    def i64_load(self, index: int, align: int):
+        pass
+
+    @abstractmethod
+    @Metadata.opcode(0x2A)
+    def f32_load(self, index: int, align: int):
+        pass
+
+    @abstractmethod
+    @Metadata.opcode(0x2B)
+    def f64_load(self, index: int, align: int):
+        pass
+
+    @abstractmethod
+    @Metadata.opcode(0x36)
+    def i32_store(self, index: int, align: int):
+        pass
+
+    @abstractmethod
+    @Metadata.opcode(0x37)
+    def i64_store(self, index: int, align: int):
+        pass
+
+    @abstractmethod
+    @Metadata.opcode(0x38)
+    def f32_store(self, index: int, align: int):
+        pass
+
+    @abstractmethod
+    @Metadata.opcode(0x39)
+    def f64_store(self, index: int, align: int):
+        pass
+
+    @abstractmethod
+    @Metadata.opcode(0x40)
+    def memory_grow(self, index: int):
         pass
 
     @abstractmethod

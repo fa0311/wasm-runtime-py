@@ -5,8 +5,8 @@ from src.wasm.runtime.error.error import (
     WasmUnimplementedError,
 )
 from src.wasm.runtime.run import CodeSectionRun
-from src.wasm.type.numpy.float import F32, F64
-from src.wasm.type.numpy.int import I32, I64, SignedI8, SignedI16, SignedI32, SignedI64
+from src.wasm.type.numeric.numpy.float import F32, F64
+from src.wasm.type.numeric.numpy.int import I32, I64, SignedI8, SignedI16, SignedI32, SignedI64
 
 
 class CodeSectionBlock(CodeSectionRun):
@@ -21,7 +21,7 @@ class CodeSectionBlock(CodeSectionRun):
         block_stack = [self.stack.any() for _ in fn_type_params][::-1]
         TypeCheck.type_check(block_stack, fn_type_params)
 
-        block = self.env.get_block(code=self.instruction.child, locals=self.locals, stack=[])
+        block = self.env.get_block(code=self.instruction.child, locals=self.locals, stack=block_stack)
         br = block.run()
 
         if isinstance(br, list):
@@ -135,6 +135,50 @@ class CodeSectionBlock(CodeSectionRun):
 
     def local_tee(self, index: int):
         self.locals[index] = self.stack.any(read_only=True)
+
+    def global_get(self, index: int):
+        self.stack.push(self.env.globals[index])
+
+    def global_set(self, index: int):
+        self.env.globals[index] = self.stack.any()
+
+    def i32_load(self, index: int, align: int):
+        addr = self.stack.i32()
+        self.stack.push(I32.from_bits(self.env.memory[addr.value : addr.value + 4]))
+
+    def i64_load(self, index: int, align: int):
+        addr = self.stack.i32()
+        self.stack.push(I64.from_bits(self.env.memory[addr.value : addr.value + 8]))
+
+    def f32_load(self, index: int, align: int):
+        addr = self.stack.i32()
+        self.stack.push(F32.from_bits(self.env.memory[addr.value : addr.value + 4]))
+
+    def f64_load(self, index: int, align: int):
+        addr = self.stack.i32()
+        self.stack.push(F64.from_bits(self.env.memory[addr.value : addr.value + 8]))
+
+    def i32_store(self, index: int, align: int):
+        a, addr = self.stack.i32(), self.stack.i32()
+        self.env.memory[addr.value : addr.value + 4] = a.to_bits()
+
+    def i64_store(self, index: int, align: int):
+        a, addr = self.stack.i64(), self.stack.i32()
+        self.env.memory[addr.value : addr.value + 8] = a.to_bits()
+
+    def f32_store(self, index: int, align: int):
+        a, addr = self.stack.f32(), self.stack.i32()
+        self.env.memory[addr.value : addr.value + 4] = a.to_bits()
+
+    def f64_store(self, index: int, align: int):
+        a, addr = self.stack.f64(), self.stack.i32()
+        self.env.memory[addr.value : addr.value + 8] = a.to_bits()
+
+    def memory_grow(self, index: int):
+        a = self.stack.i32()
+        b = len(self.env.memory) // 64 // 1024
+        self.env.memory.grow(64 * 1024 * a.value)
+        self.stack.push(I32.from_int(b))
 
     def i32_const(self, value: I32):
         self.stack.push(value)

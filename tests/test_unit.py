@@ -7,8 +7,8 @@ import numpy as np
 sys.path.append(str(Path(__file__).parent.parent))
 sys.path.append(str(Path(__file__).parent.parent / "src"))
 
-from src.wasm.type.numpy.float import F64
-from src.wasm.type.numpy.int import I32, SignedI32
+from src.wasm.type.numeric.numpy.float import F64
+from src.wasm.type.numeric.numpy.int import I32, SignedI32
 
 
 class TestUnit(unittest.TestCase):

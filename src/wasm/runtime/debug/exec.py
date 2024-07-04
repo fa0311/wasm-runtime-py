@@ -6,7 +6,7 @@ from src.wasm.runtime.error.error import (
 )
 from src.wasm.runtime.exec import WasmExec
 from src.wasm.runtime.stack import NumericStack
-from src.wasm.type.base import NumericType
+from src.wasm.type.numeric.base import NumericType
 
 
 class WasmExecDebug(WasmExec):

@@ -1,6 +1,6 @@
 import numpy as np
 
-from src.wasm.type.base import NumericType
+from src.wasm.type.numeric.base import NumericType
 
 
 class NumpyNumericType(NumericType):
