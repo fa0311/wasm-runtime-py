@@ -32,14 +32,14 @@ class TestDeice(unittest.TestCase):
         c = np.float32(2**32).astype(np.uint32)
         e = np.float32(2**64).astype(np.uint32)
 
-        self.print(f"2**31: {a}")
-        self.print(f"2**32: {c}")
-        self.print(f"2**64: {e}")
+        self.print(f"f32(2**31).astype(u32): {a}")
+        self.print(f"f32(2**32).astype(u32): {c}")
+        self.print(f"f32(2**64).astype(u32): {e}")
 
     def test_cast_error(self):
         with NumpyErrorHelper("raise"):
             try:
                 np.float32(2**32).astype(np.uint32)
-                self.print("No error")
+                self.print("f32(2**32).astype(u32): no error")
             except FloatingPointError as e:
-                self.print(e)
+                self.print(f"f32(2**32).astype(u32): {e}")
