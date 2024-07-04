@@ -32,7 +32,7 @@ class TestDeice(unittest.TestCase):
 
         with NumpyErrorHelper("raise"):
             try:
-                np.float32(2**31).astype(np.uint32)
+                np.float32(2**32).astype(np.uint32)
                 self.print(f"f32(2**32) as u32: {a}")
             except FloatingPointError as e:
                 self.print(f"f32(2**32) as u32: {a}, {e}")
