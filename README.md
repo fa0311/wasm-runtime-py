@@ -20,15 +20,15 @@ Wasm を実行するためのランタイムを Python で実装する。
 
 ## 開発計画
 
-- [] テスト可能な実装にする
-- [] テストを通す
-  - [] Numeric Instructions の実装
-  - [] Control Instructions の実装
-    - [] call_indirect の実装
-  - [] Memory Instructions の実装
-  - [] FC extensions の実装
-  - [] SIMD instructions の実装
-- [] WASI の実装
+- [ ] テスト可能な実装にする
+- [ ] テストを通す
+  - [ ] Numeric Instructions の実装
+  - [ ] Control Instructions の実装
+    - [ ] call_indirect の実装
+  - [ ] Memory Instructions の実装
+  - [ ] FC extensions の実装
+  - [ ] SIMD instructions の実装
+- [ ] WASI の実装
 
 ## テスト
 
