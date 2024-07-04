@@ -100,7 +100,6 @@ class CodeSectionBlockDebug(CodeSectionBlock):
             else:
                 self.stack.push(I32.from_int(0))
 
-    @NumpyErrorHelper.seterr("raise")
     def i32_trunc_f32_s(self):
         a = self.stack.f32(read_only=True)
         try:
@@ -112,7 +111,6 @@ class CodeSectionBlockDebug(CodeSectionBlock):
             else:
                 raise WasmIntegerOverflowError([I32])
 
-    @NumpyErrorHelper.seterr("raise")
     def i32_trunc_f32_u(self):
         a = self.stack.f32(read_only=True)
         try:
@@ -124,7 +122,6 @@ class CodeSectionBlockDebug(CodeSectionBlock):
             else:
                 raise WasmIntegerOverflowError([I32])
 
-    @NumpyErrorHelper.seterr("raise")
     def i32_trunc_f64_s(self):
         a = self.stack.f64(read_only=True)
         try:
@@ -136,7 +133,6 @@ class CodeSectionBlockDebug(CodeSectionBlock):
             else:
                 raise WasmIntegerOverflowError([I32])
 
-    @NumpyErrorHelper.seterr("raise")
     def i32_trunc_f64_u(self):
         a = self.stack.f64(read_only=True)
         try:
@@ -148,7 +144,6 @@ class CodeSectionBlockDebug(CodeSectionBlock):
             else:
                 raise WasmIntegerOverflowError([I32])
 
-    @NumpyErrorHelper.seterr("raise")
     def i64_trunc_f32_s(self):
         a = self.stack.f32(read_only=True)
         try:
@@ -160,7 +155,6 @@ class CodeSectionBlockDebug(CodeSectionBlock):
             else:
                 raise WasmIntegerOverflowError([I64])
 
-    @NumpyErrorHelper.seterr("raise")
     def i64_trunc_f32_u(self):
         a = self.stack.f32(read_only=True)
         try:
@@ -172,7 +166,6 @@ class CodeSectionBlockDebug(CodeSectionBlock):
             else:
                 raise WasmIntegerOverflowError([I64])
 
-    @NumpyErrorHelper.seterr("raise")
     def i64_trunc_f64_s(self):
         a = self.stack.f64(read_only=True)
         try:
@@ -184,7 +177,6 @@ class CodeSectionBlockDebug(CodeSectionBlock):
             else:
                 raise WasmIntegerOverflowError([I64])
 
-    @NumpyErrorHelper.seterr("raise")
     def i64_trunc_f64_u(self):
         a = self.stack.f64(read_only=True)
         try:
