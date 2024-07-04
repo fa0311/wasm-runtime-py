@@ -273,20 +273,14 @@ class TestSuite(unittest.TestCase):
     def test_local_get(self):
         self.__test_file("local_get")
 
-    # def test_local_set(self):
-    #     self.__test_file("local_set")
+    def test_local_set(self):
+        self.__test_file("local_set")
 
-    # def test_local_set_0_13(self):
-    #     self.__test_index_case("local_set", 0, 13)
+    def test_labels(self):
+        self.__test_file("labels")
 
-    # def test_local_set_0_14(self):
-    #     self.__test_index_case("local_set", 0, 14)
-
-    # def test_labels(self):
-    #     self.__test_file("labels")
-
-    # def test_switch(self):
-    #     self.__test_file("switch")
+    def test_switch(self):
+        self.__test_file("switch")
 
     # def test_store(self):
     #     self.__test_file("store")

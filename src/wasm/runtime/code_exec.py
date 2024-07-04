@@ -24,14 +24,19 @@ class CodeSectionBlock(CodeSectionRun):
         block = self.env.get_block(code=self.instruction.child, locals=self.locals, stack=[])
         br = block.run()
 
-        res_stack = [block.stack.any() for _ in fn_type_returns][::-1]
-        TypeCheck.type_check(res_stack, fn_type_returns)
+        if isinstance(br, list):
+            return br
+
+        if fn_type_returns is None:
+            res_stack = block.stack.all()
+        else:
+            res_stack = [block.stack.any() for _ in fn_type_returns][::-1]
+            TypeCheck.type_check(res_stack, fn_type_returns)
+
         self.stack.extend(res_stack)
 
         if isinstance(br, int) and br > 0:
             return br - 1
-        elif isinstance(br, list):
-            return br
 
     def loop(self, block_type: int):
         fn_type_params, fn_type_returns = self.env.get_type(block_type)
@@ -40,18 +45,20 @@ class CodeSectionBlock(CodeSectionRun):
         while True:
             block = self.env.get_block(code=self.instruction.child, locals=self.locals, stack=block_stack)
             br = block.run()
-
-            if br == 0:
+            if isinstance(br, list):
+                return br
+            elif br == 0:
                 block_stack = [block.stack.any() for _ in fn_type_params][::-1]
                 TypeCheck.type_check(block_stack, fn_type_params)
             else:
-                res_stack = [block.stack.any() for _ in fn_type_returns][::-1]
-                TypeCheck.type_check(res_stack, fn_type_returns)
+                if fn_type_returns is None:
+                    res_stack = block.stack.all()
+                else:
+                    res_stack = [block.stack.any() for _ in fn_type_returns][::-1]
+                    TypeCheck.type_check(res_stack, fn_type_returns)
                 self.stack.extend(res_stack)
                 if isinstance(br, int) and br > 0:
                     return br - 1
-                elif isinstance(br, list):
-                    return br
                 else:
                     break
 
@@ -64,14 +71,18 @@ class CodeSectionBlock(CodeSectionRun):
         block = self.env.get_block(code=code, locals=self.locals, stack=block_stack)
         br = block.run()
 
-        res_stack = [block.stack.any() for _ in fn_type_returns][::-1]
-        TypeCheck.type_check(res_stack, fn_type_returns)
+        if isinstance(br, list):
+            return br
+
+        if fn_type_returns is None:
+            res_stack = block.stack.all()
+        else:
+            res_stack = [block.stack.any() for _ in fn_type_returns][::-1]
+            TypeCheck.type_check(res_stack, fn_type_returns)
         self.stack.extend(res_stack)
 
         if isinstance(br, int) and br > 0:
             return br - 1
-        elif isinstance(br, list):
-            return br
 
     def else_(self):
         Exception("else_")

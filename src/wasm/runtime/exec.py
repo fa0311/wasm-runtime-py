@@ -1,4 +1,5 @@
 import logging
+from typing import Optional
 
 from src.tools.logger import NestedLogger
 from src.wasm.optimizer.optimizer import WasmOptimizer
@@ -56,7 +57,7 @@ class WasmExec:
         code = self.sections.code_section[index]
         return code, type
 
-    def get_type(self, index: int) -> tuple[list[int], list[int]]:
+    def get_type(self, index: int) -> tuple[list[int], Optional[list[int]]]:
         """関数のインデックスからCode SectionとType Sectionを取得する"""
 
         if index < len(self.sections.type_section):
@@ -64,7 +65,7 @@ class WasmExec:
             return type.params, type.returns
         else:
             type = WasmOptimizer.get_type_or_none(index)
-            returns = [] if type is None else [type]
+            returns = None if type is None else [type]
             return [], returns
 
     def get_block(self, code: list[CodeInstructionOptimize], locals: list[NumericType], stack: list[NumericType]):

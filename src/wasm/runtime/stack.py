@@ -21,6 +21,9 @@ class NumericStack:
     def any(self, read_only=False, key=-1) -> NumericType:
         return self.value[key] if read_only else self.value.pop()
 
+    def all(self) -> list[NumericType]:
+        return self.value
+
     def __len__(self):
         return len(self.value)
 
