@@ -8,7 +8,7 @@ from src.wasm.runtime.error.error import (
     WasmInvalidConversionError,
 )
 from src.wasm.runtime.error.helper import NumpyErrorHelper
-from src.wasm.type.numpy.int import I32, I64, SignedI32, SignedI64
+from src.wasm.type.numpy.int import I32, I64, SignedI64
 
 
 class CodeSectionBlockDebug(CodeSectionBlock):
@@ -112,7 +112,6 @@ class CodeSectionBlockDebug(CodeSectionBlock):
     def i32_trunc_f32_s(self):
         a = self.stack.f32()
         try:
-            TypeCheck.type_check_1(trunc(a), SignedI32, I32)
             self.stack.push(a)
             super().i32_trunc_f32_s()
         except FloatingPointError:
@@ -125,7 +124,6 @@ class CodeSectionBlockDebug(CodeSectionBlock):
     def i32_trunc_f32_u(self):
         a = self.stack.f32()
         try:
-            TypeCheck.type_check_1(trunc(a), I32, I32)
             self.stack.push(a)
             super().i32_trunc_f32_u()
         except FloatingPointError:
@@ -138,7 +136,6 @@ class CodeSectionBlockDebug(CodeSectionBlock):
     def i32_trunc_f64_s(self):
         a = self.stack.f64()
         try:
-            TypeCheck.type_check_1(trunc(a), SignedI32, I32)
             self.stack.push(a)
             super().i32_trunc_f64_s()
         except FloatingPointError:
@@ -151,7 +148,6 @@ class CodeSectionBlockDebug(CodeSectionBlock):
     def i32_trunc_f64_u(self):
         a = self.stack.f64()
         try:
-            TypeCheck.type_check_1(trunc(a), I32, I32)
             self.stack.push(a)
             super().i32_trunc_f64_u()
         except FloatingPointError:

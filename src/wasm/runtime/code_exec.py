@@ -667,28 +667,24 @@ class CodeSectionBlock(CodeSectionRun):
 
     def i64_trunc_f32_s(self):
         a = self.stack.f32()
-        TypeCheck.type_check_2(a, SignedI64, I64)
         i64 = I64.from_value_with_clamp(trunc(a), SignedI64)
         self.stack.push(i64)
 
     def i64_trunc_f32_u(self):
         a = self.stack.f32()
         t = trunc(a)
-        TypeCheck.type_check_2(t, I64, I64)
         i64 = I64.from_value_with_clamp(t, I64)
         self.stack.push(i64)
 
     def i64_trunc_f64_s(self):
         a = self.stack.f64()
         t = trunc(a)
-        TypeCheck.type_check_2(t, SignedI64, I64)
         i64 = I64.from_value_with_clamp(t, SignedI64)
         self.stack.push(I64.astype(i64))
 
     def i64_trunc_f64_u(self):
         a = self.stack.f64()
         t = trunc(a)
-        TypeCheck.type_check_2(t, I64, I64)
         i64 = I64.from_value_with_clamp(t, I64)
         self.stack.push(i64)
 
