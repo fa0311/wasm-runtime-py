@@ -4,6 +4,7 @@ from tools.byte import ByteReader
 from tools.logger import NestedLogger
 
 from src.wasm.loader.helper import CodeSectionSpecHelper
+from src.wasm.loader.spec import BlockType
 from src.wasm.loader.struct import (
     CodeInstruction,
     CodeSection,
@@ -174,8 +175,8 @@ class WasmLoader:
         for _ in range(global_count):
             content_type = data.read_byte()
             mutable = data.read_byte()
-            init = data.read_expr()
-            section = GlobalSection(type=content_type, mutable=mutable, init=init.data)
+            init = data.read_expr()  # noqa: F841
+            section = GlobalSection(type=content_type, mutable=mutable, init=b"0")
             self.logger.debug(section)
             res.append(section)
 
@@ -197,11 +198,11 @@ class WasmLoader:
             elem_type = data.read_byte()  # Elementのモード
 
             if elem_type == 0:  # Active
-                type = data.read_expr()
+                expr = self.code_section_instructions(data)
                 count = data.read_leb128()
-                init = [data.read_leb128() for _ in range(count)]
+                funcidx = [data.read_leb128() for _ in range(count)]
 
-            section = ElementSection(table=elem_type, type=type.data, init=init)
+            section = ElementSection(table=elem_type, data=expr, funcidx=funcidx)
             res.append(section)
 
             self.logger.debug(section)
@@ -221,10 +222,9 @@ class WasmLoader:
         res: list[CodeSection] = []
         for _ in range(code_count):
             body_size = data.read_leb128()
-            code = data.read_bytes(body_size)
-            local = self.code_section_local(code)
-            instructions = self.code_section_instructions(code)
             self.logger.debug(f"body size: {body_size}")
+            local = self.code_section_local(data)
+            instructions = self.code_section_instructions(data)
             section = CodeSection(data=instructions, local=local)
             self.logger.debug(section)
             res.append(section)
@@ -234,13 +234,20 @@ class WasmLoader:
 
     @logger.logger
     def code_section_instructions(self, data: ByteReader) -> list[CodeInstruction]:
+        """expr を読み込む"""
         res: list[CodeInstruction] = []
-        while data.has_next():
+        stack = 0
+        while stack >= 0:
             opcode = data.read_byte()
             if CodeSectionSpecHelper.is_prefix(opcode):
                 opcode = (opcode << 8) | data.read_byte()
 
             fn = CodeSectionSpecHelper.mapped(opcode)
+            block_type = CodeSectionSpecHelper.get_block_type(opcode)
+            if block_type == BlockType.START:
+                stack += 1
+            elif block_type == BlockType.END:
+                stack -= 1
 
             annotations: list[type] = [e for e in fn.__annotations__.values()]
 
@@ -265,7 +272,7 @@ class WasmLoader:
             instruction = CodeInstruction(opcode=opcode, args=args)
             self.logger.debug(instruction)
             res.append(instruction)
-        return res
+        return res[:-1]
 
     @logger.logger
     def code_section_local(self, data: ByteReader) -> list[int]:

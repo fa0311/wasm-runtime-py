@@ -3,6 +3,7 @@ from typing import Optional
 from src.wasm.loader.helper import CodeSectionSpecHelper
 from src.wasm.loader.spec import BlockType
 from src.wasm.loader.struct import (
+    CodeInstruction,
     CodeSection,
     ElementSection,
     ExportSection,
@@ -117,25 +118,32 @@ class WasmOptimizer:
     def element_section(self, section: "ElementSection") -> "ElementSectionOptimize":
         return ElementSectionOptimize(
             table=section.table,
-            type=section.type,
-            init=section.init,
+            data=self.expr(section.data),
+            funcidx=section.funcidx,
         )
 
     def code_section(self, section: "CodeSection") -> "CodeSectionOptimize":
+        res = CodeSectionOptimize(
+            data=self.expr(section.data),
+            local=section.local,
+        )
+        return res
+
+    def expr(self, data: list[CodeInstruction]) -> list[CodeInstructionOptimize]:
         pointer = 0
 
         def child_fn():
             nonlocal pointer
             res: list[list[CodeInstructionOptimize]] = [[]]
-            while True:
-                data = section.data[pointer]
+            while len(data) > pointer:
+                o = data[pointer]
                 pointer += 1
-                block_type = CodeSectionSpecHelper.get_block_type(data.opcode)
+                block_type = CodeSectionSpecHelper.get_block_type(o.opcode)
                 if block_type == BlockType.START:
                     child = child_fn()
                     instruction = CodeInstructionOptimize(
-                        opcode=data.opcode,
-                        args=data.args,
+                        opcode=o.opcode,
+                        args=o.args,
                         child=child[0],
                         else_child=child[1] if len(child) > 1 else [],
                     )
@@ -146,19 +154,15 @@ class WasmOptimizer:
                     res.append([])
                 else:
                     instruction = CodeInstructionOptimize(
-                        opcode=data.opcode,
-                        args=data.args,
+                        opcode=o.opcode,
+                        args=o.args,
                         child=[],
                         else_child=[],
                     )
                     res[-1].append(instruction)
+            return res
 
-        child = child_fn()
-        res = CodeSectionOptimize(
-            data=child[0],
-            local=section.local,
-        )
-        return res
+        return child_fn()[0]
 
     def export_section(self, section: "ExportSection") -> "ExportSectionOptimize":
         return ExportSectionOptimize(

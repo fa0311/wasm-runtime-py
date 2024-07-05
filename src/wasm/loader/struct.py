@@ -49,8 +49,8 @@ class ElementSection:
     """Element Sectionのデータ構造"""
 
     table: int = field(metadata={"description": "テーブルのインデックス"})
-    type: bytes = field(metadata={"description": "要素の型"})
-    init: list[int] = field(metadata={"description": "初期化"})
+    data: list["CodeInstruction"] = field(metadata={"description": "命令セット"})
+    funcidx: list[int] = field(metadata={"description": "関数のインデックス"})
 
 
 @dataclass

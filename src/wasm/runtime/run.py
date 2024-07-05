@@ -20,31 +20,27 @@ class CodeSectionRun(CodeSectionSpec):
     def __init__(
         self,
         env: "WasmExec",
-        code: list[CodeInstructionOptimize],
         locals: list[NumericType],
         stack: NumericStack,
     ):
         self.env = env
         self.locals = locals
-        self.code = code
 
         self.stack = stack
-        self.pointer = 0
         self.instruction: CodeInstructionOptimize
 
     @logger.logger
-    def run(self) -> Optional[Union[int, list[NumericType]]]:
+    def run(self, code: list[CodeInstructionOptimize]) -> Optional[Union[int, list[NumericType]]]:
         self.logger.debug(f"params: {self.stack.value}")
-        while self.pointer < len(self.code):
-            res = self.run_instruction()
+        for data in code:
+            res = self.run_instruction(data)
             if res is not None:
                 return res
 
-    def run_instruction(self):
-        self.instruction = self.code[self.pointer]
+    def run_instruction(self, data: CodeInstructionOptimize):
+        self.instruction = data
         opcode = self.instruction.opcode
         args = self.instruction.args
         self.logger.debug(f"run: {self.instruction}")
         fn = CodeSectionSpecHelper.bind(self, opcode)
-        self.pointer += 1
         return fn(*args)

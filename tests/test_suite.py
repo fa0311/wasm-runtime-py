@@ -183,7 +183,7 @@ class TestSuite(unittest.TestCase):
             a, b = r.value, e.value
             if type(r) != type(e):
                 self.fail(f"expect: {e.__class__}, actual: {r.__class__}")
-            if a > b and b < a:
+            if a != b:
                 self.fail(f"expect: {b}, actual: {a}")
 
     def __test_run_assert_trap(self, data: WasmExec, cmd: dict):
@@ -308,20 +308,14 @@ class TestSuite(unittest.TestCase):
     def test_call(self):
         self.__test_file("call")
 
-    # def test_call_35(self):
-    #     self.__test_index_case("call", 0, 35)
+    def test_call_indirect(self):
+        self.__test_file("call_indirect")
 
-    # def test_call_39(self):
-    #     self.__test_index_case("call", 0, 39)
+    def test_call_indirect_0_0(self):
+        self.__test_index_case("call_indirect", 0, 0)
 
-    # def test_call_42(self):
-    #     self.__test_index_case("call", 0, 42)
-
-    # def test_call_indirect(self):
-    #     self.__test_file("call_indirect")
-
-    # def test_return(self):
-    #     self.__test_file("return")
+    def test_return(self):
+        self.__test_file("return")
 
 
 if __name__ == "__main__":

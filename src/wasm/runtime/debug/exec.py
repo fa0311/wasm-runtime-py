@@ -1,4 +1,4 @@
-from src.wasm.optimizer.struct import CodeInstructionOptimize, WasmSectionsOptimize
+from src.wasm.optimizer.struct import WasmSectionsOptimize
 from src.wasm.runtime.debug.check import TypeCheck
 from src.wasm.runtime.debug.code_exec import CodeSectionBlockDebug
 from src.wasm.runtime.error.error import (
@@ -31,10 +31,9 @@ class WasmExecDebug(WasmExec):
         TypeCheck.type_check(returns, fn_type.returns)
         return block, returns
 
-    def get_block(self, code: list[CodeInstructionOptimize], locals: list[NumericType], stack: list[NumericType]):
+    def get_block(self, locals: list[NumericType], stack: list[NumericType]):
         return CodeSectionBlockDebug(
             env=self,
-            code=code,
             locals=locals,
             stack=NumericStack(value=stack),
         )

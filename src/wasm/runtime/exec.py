@@ -4,7 +4,6 @@ from typing import Optional
 from src.tools.logger import NestedLogger
 from src.wasm.optimizer.optimizer import WasmOptimizer
 from src.wasm.optimizer.struct import (
-    CodeInstructionOptimize,
     CodeSectionOptimize,
     TypeSectionOptimize,
     WasmSectionsOptimize,
@@ -45,10 +44,10 @@ class WasmExec:
         # ローカル変数とExecインスタンスを生成
         locals_param = [WasmOptimizer.get_numeric_type(x).from_int(0) for x in fn.local]
         locals = [*param, *locals_param]
-        block = self.get_block(code=fn.data, locals=locals, stack=[])
+        block = self.get_block(locals=locals, stack=[])
 
         # 実行
-        res = block.run()
+        res = block.run(fn.data)
         if isinstance(res, list):
             returns = res
         else:
@@ -76,10 +75,9 @@ class WasmExec:
             returns = None if type is None else [type]
             return [], returns
 
-    def get_block(self, code: list[CodeInstructionOptimize], locals: list[NumericType], stack: list[NumericType]):
+    def get_block(self, locals: list[NumericType], stack: list[NumericType]):
         return CodeSectionBlock(
             env=self,
-            code=code,
             locals=locals,
             stack=NumericStack(value=stack),
         )

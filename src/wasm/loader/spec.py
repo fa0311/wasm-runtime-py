@@ -102,7 +102,7 @@ class CodeSectionSpec(ABC):
 
     @abstractmethod
     @Metadata.opcode(0x11)
-    def call_indirect(self, index: int):
+    def call_indirect(self, index: int, _: int):
         pass
 
     @abstractmethod

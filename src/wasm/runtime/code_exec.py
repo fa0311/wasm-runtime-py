@@ -1,9 +1,6 @@
 from math import ceil, floor, trunc
 
 from src.wasm.runtime.debug.check import TypeCheck
-from src.wasm.runtime.error.error import (
-    WasmUnimplementedError,
-)
 from src.wasm.runtime.run import CodeSectionRun
 from src.wasm.type.numeric.numpy.float import F32, F64
 from src.wasm.type.numeric.numpy.int import I32, I64, SignedI8, SignedI16, SignedI32, SignedI64
@@ -21,8 +18,8 @@ class CodeSectionBlock(CodeSectionRun):
         block_stack = [self.stack.any() for _ in fn_type_params][::-1]
         TypeCheck.type_check(block_stack, fn_type_params)
 
-        block = self.env.get_block(code=self.instruction.child, locals=self.locals, stack=block_stack)
-        br = block.run()
+        block = self.env.get_block(locals=self.locals, stack=block_stack)
+        br = block.run(self.instruction.child)
 
         if isinstance(br, list):
             return br
@@ -43,8 +40,8 @@ class CodeSectionBlock(CodeSectionRun):
         block_stack = [self.stack.any() for _ in fn_type_params][::-1]
         TypeCheck.type_check(block_stack, fn_type_params)
         while True:
-            block = self.env.get_block(code=self.instruction.child, locals=self.locals, stack=block_stack)
-            br = block.run()
+            block = self.env.get_block(locals=self.locals, stack=block_stack)
+            br = block.run(self.instruction.child)
             if isinstance(br, list):
                 return br
             elif br == 0:
@@ -68,8 +65,8 @@ class CodeSectionBlock(CodeSectionRun):
         TypeCheck.type_check(block_stack, fn_type_params)
 
         code = self.instruction.child if bool(self.stack.any()) else self.instruction.else_child
-        block = self.env.get_block(code=code, locals=self.locals, stack=block_stack)
-        br = block.run()
+        block = self.env.get_block(locals=self.locals, stack=block_stack)
+        br = block.run(code)
 
         if isinstance(br, list):
             return br
@@ -114,9 +111,12 @@ class CodeSectionBlock(CodeSectionRun):
         runtime, res = self.env.run(index, param)
         self.stack.extend(res)
 
-    @WasmUnimplementedError.throw()
-    def call_indirect(self, index: int):
-        pass
+    def call_indirect(self, index: int, _: int):
+        fn_type_params, fn_type_returns = self.env.get_type(index)
+        a = self.stack.i32()
+
+        idx = self.env.sections.element_section[0].funcidx[a.value]
+        self.call(idx)
 
     def drop(self):
         self.stack.any()
