@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from typing import Optional
 
 from src.tools.byte import ByteReader
 from src.wasm.type.numeric.base import NumericType
@@ -48,7 +49,8 @@ class GlobalSection:
 class ElementSection:
     """Element Sectionのデータ構造"""
 
-    table: int = field(metadata={"description": "テーブルのインデックス"})
+    type: int = field(metadata={"description": "このエレメントの種類"})
+    table: Optional[int] = field(metadata={"description": "テーブルのインデックス"})
     data: list["CodeInstruction"] = field(metadata={"description": "命令セット"})
     funcidx: list[int] = field(metadata={"description": "関数のインデックス"})
 

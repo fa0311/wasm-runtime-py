@@ -117,6 +117,7 @@ class WasmOptimizer:
 
     def element_section(self, section: "ElementSection") -> "ElementSectionOptimize":
         return ElementSectionOptimize(
+            type=section.type,
             table=section.table,
             data=self.expr(section.data),
             funcidx=section.funcidx,

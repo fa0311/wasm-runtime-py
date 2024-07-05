@@ -50,6 +50,10 @@ class WasmUndefinedElementError(WasmRuntimeError):
     MESSAGE = "undefined element"
 
 
+class WasmUninitializedElementError(WasmRuntimeError):
+    MESSAGE = "uninitialized element"
+
+
 class WasmIndirectCallTypeMismatchError(WasmRuntimeError):
     MESSAGE = "indirect call type mismatch"
 

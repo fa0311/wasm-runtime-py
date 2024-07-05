@@ -111,9 +111,9 @@ class CodeSectionBlock(CodeSectionRun):
         runtime, res = self.env.run(index, param)
         self.stack.extend(res)
 
-    def call_indirect(self, index: int, _: int):
+    def call_indirect(self, index: int, elm_index: int):
         a = self.stack.i32()
-        element = self.env.sections.element_section[0]
+        element = self.env.sections.element_section[elm_index]
         self.call(element.funcidx[a.value])
 
     def drop(self):

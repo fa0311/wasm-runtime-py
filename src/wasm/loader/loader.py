@@ -198,11 +198,24 @@ class WasmLoader:
             elem_type = data.read_byte()  # Elementのモード
 
             if elem_type == 0:  # Active
+                table = None
                 expr = self.code_section_instructions(data)
                 count = data.read_leb128()
                 funcidx = [data.read_leb128() for _ in range(count)]
+            # elif elem_type == 1:  # Passive
+            #     expr = data.read_byte()
+            #     count = data.read_leb128()
+            #     funcidx = [data.read_leb128() for _ in range(count)]
+            elif elem_type == 2:  # Active
+                table = data.read_leb128()
+                expr = self.code_section_instructions(data)
+                _ = data.read_byte()
+                count = data.read_leb128()
+                funcidx = [data.read_leb128() for _ in range(count)]
+            else:
+                raise Exception("invalid elem_type")
 
-            section = ElementSection(table=elem_type, data=expr, funcidx=funcidx)
+            section = ElementSection(type=elem_type, table=table, data=expr, funcidx=funcidx)
             res.append(section)
 
             self.logger.debug(section)
