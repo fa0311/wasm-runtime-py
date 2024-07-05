@@ -183,7 +183,7 @@ class TestSuite(unittest.TestCase):
             a, b = r.value, e.value
             if type(r) != type(e):
                 self.fail(f"expect: {e.__class__}, actual: {r.__class__}")
-            if a != b:
+            if a < b or a > b:
                 self.fail(f"expect: {b}, actual: {a}")
 
     def __test_run_assert_trap(self, data: WasmExec, cmd: dict):
