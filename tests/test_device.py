@@ -27,12 +27,14 @@ class TestDeice(unittest.TestCase):
         self.print(f"minimum(-0.0, 0.0): {a}")
         self.print(f"fmin(-0.0, 0.0): {b}")
 
-    def test_cast(self):
-        a = np.float32(2**32).astype(np.uint32)
+    def test_cast_overflow(self):
+        with NumpyErrorHelper("call") as err:
+            a = np.float32(2**32).astype(np.uint32)
+            msg = "" if len(err) == 0 else f", {err[-1][0]}"
+            self.print(f"f32(2**32) as u32: {a}{msg}")
 
-        with NumpyErrorHelper("raise"):
-            try:
-                np.float32(2**32).astype(np.uint32)
-                self.print(f"f32(2**32) as u32: {a}")
-            except FloatingPointError as e:
-                self.print(f"f32(2**32) as u32: {a}, {e}")
+    def test_cast_negative(self):
+        with NumpyErrorHelper("call") as err:
+            a = np.float32(-1).astype(np.uint32)
+            msg = "" if len(err) == 0 else f", {err[-1][0]}"
+            self.print(f"f32(-1) as u32: {a}{msg}")

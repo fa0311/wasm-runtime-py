@@ -24,7 +24,7 @@ class NumpyNumericType(NumericType):
             return cls.from_int(clamp.get_min())
         if value.value >= max_value.value:
             return cls.from_int(clamp.get_max())
-        return cls.astype(value)
+        return cls.astype(clamp.astype(value))
 
     def sqrt(self):
         return self.__class__.from_value(np.sqrt(self.value))
