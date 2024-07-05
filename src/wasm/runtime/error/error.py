@@ -50,6 +50,10 @@ class WasmUndefinedElementError(WasmRuntimeError):
     MESSAGE = "undefined element"
 
 
+class WasmIndirectCallTypeMismatchError(WasmRuntimeError):
+    MESSAGE = "indirect call type mismatch"
+
+
 class WasmUnimplementedError(WasmError):
     @staticmethod
     def throw():

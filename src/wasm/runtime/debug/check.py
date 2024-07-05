@@ -27,7 +27,20 @@ class TypeCheck:
     @staticmethod
     def type_check(param: list[NumericType], params_type: list[int]):
         if len(param) != len(params_type):
-            raise Exception("invalid param length")
+            raise TypeError("invalid param length")
         for a, b in zip(param, params_type):
-            if a.__class__ != WasmOptimizer.get_type(b):
-                raise Exception(f"invalid return type {a.__class__} != {WasmOptimizer.get_type(b)}")
+            aa, bb = a.__class__, WasmOptimizer.get_type(b)
+            if aa != bb:
+                raise TypeError(f"invalid return type {aa} != {bb}")
+
+    @staticmethod
+    def list_check(a: list, b: list):
+        if len(a) != len(b):
+            raise TypeError("invalid length")
+        for a, b in zip(a, b):
+            if a != b:
+                raise TypeError(f"invalid value {a} != {b}")
+
+    if not __debug__:
+        type_check = lambda *args, **kwargs: None  # noqa: E731
+        list_check = lambda *args, **kwargs: None  # noqa: E731

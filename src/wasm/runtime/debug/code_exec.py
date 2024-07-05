@@ -3,6 +3,7 @@ from math import trunc
 from src.wasm.runtime.code_exec import CodeSectionBlock
 from src.wasm.runtime.debug.check import TypeCheck
 from src.wasm.runtime.error.error import (
+    WasmIndirectCallTypeMismatchError,
     WasmIntegerDivideByZeroError,
     WasmIntegerOverflowError,
     WasmInvalidConversionError,
@@ -14,10 +15,19 @@ from src.wasm.type.numeric.numpy.int import I32, I64, SignedI32, SignedI64
 
 class CodeSectionBlockDebug(CodeSectionBlock):
     def call_indirect(self, index: int, _: int):
+        fn_type_params, fn_type_returns = self.env.get_type(index)
+        a = self.stack.i32(read_only=True)
+        element = self.env.sections.element_section[0]
+        __, fn_type = self.env.get_function(element.funcidx[a.value])
+
         try:
+            TypeCheck.list_check(fn_type.params, fn_type_params)
+            TypeCheck.list_check(fn_type.returns, fn_type_returns or [])
             return super().call_indirect(index, _)
         except IndexError:
             raise WasmUndefinedElementError([I32])
+        except TypeError:
+            raise WasmIndirectCallTypeMismatchError([I64])
 
     @NumpyErrorHelper.seterr("raise")
     def i64_div_s(self):
