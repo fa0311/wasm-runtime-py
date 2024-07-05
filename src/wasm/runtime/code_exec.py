@@ -114,9 +114,8 @@ class CodeSectionBlock(CodeSectionRun):
     def call_indirect(self, index: int, _: int):
         fn_type_params, fn_type_returns = self.env.get_type(index)
         a = self.stack.i32()
-
-        idx = self.env.sections.element_section[0].funcidx[a.value]
-        self.call(idx)
+        element = self.env.sections.element_section[0]
+        self.call(element.funcidx[a.value])
 
     def drop(self):
         self.stack.any()

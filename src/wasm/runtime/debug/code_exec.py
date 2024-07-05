@@ -6,12 +6,19 @@ from src.wasm.runtime.error.error import (
     WasmIntegerDivideByZeroError,
     WasmIntegerOverflowError,
     WasmInvalidConversionError,
+    WasmUndefinedElementError,
 )
 from src.wasm.runtime.error.helper import NumpyErrorHelper
 from src.wasm.type.numeric.numpy.int import I32, I64, SignedI32, SignedI64
 
 
 class CodeSectionBlockDebug(CodeSectionBlock):
+    def call_indirect(self, index: int, _: int):
+        try:
+            return super().call_indirect(index, _)
+        except IndexError:
+            raise WasmUndefinedElementError()
+
     @NumpyErrorHelper.seterr("raise")
     def i64_div_s(self):
         b = self.stack.i64(read_only=True, key=-2)

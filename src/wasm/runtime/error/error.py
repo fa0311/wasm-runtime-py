@@ -46,6 +46,10 @@ class WasmInvalidConversionError(WasmRuntimeError):
     MESSAGE = "invalid conversion to integer"
 
 
+class WasmUndefinedElementError(WasmRuntimeError):
+    MESSAGE = "undefined element"
+
+
 class WasmUnimplementedError(WasmError):
     @staticmethod
     def throw():
