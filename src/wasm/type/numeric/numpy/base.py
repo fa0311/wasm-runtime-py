@@ -50,3 +50,6 @@ class NumpyNumericType(NumericType):
     def __repr__(self):
         cls_name = self.__class__.__name__
         return f"{cls_name}(value={self.value})"
+
+    def to_bytes(self) -> np.ndarray:
+        return np.frombuffer(self.to_bits(), dtype=np.uint8)

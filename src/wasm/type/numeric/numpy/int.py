@@ -69,7 +69,7 @@ class I8(UnsignedIntType):
         return cls(np.frombuffer(bytes_value, dtype=np.uint8)[0])
 
     def to_bits(self) -> bytes:
-        return self.value.view("<u1")
+        return self.value.astype("<u1")
 
     @classmethod
     def get_length(cls):
@@ -104,7 +104,7 @@ class I16(UnsignedIntType):
         return cls(np.frombuffer(bytes_value, dtype=np.uint16)[0])
 
     def to_bits(self) -> bytes:
-        return self.value.view("<u2")
+        return self.value.astype("<u2")
 
     @classmethod
     def get_length(cls):
@@ -139,7 +139,7 @@ class I32(UnsignedIntType):
         return cls(np.frombuffer(bytes_value, dtype=np.uint32)[0])
 
     def to_bits(self) -> bytes:
-        return self.value.view("<u4")
+        return self.value.astype("<u4")
 
     @classmethod
     def get_length(cls):
@@ -178,7 +178,7 @@ class I64(UnsignedIntType):
         return cls(np.frombuffer(bytes_value, dtype=np.uint64)[0])
 
     def to_bits(self) -> bytes:
-        return self.value.view("<u8")
+        return self.value.astype("<u8")
 
     def __repr__(self):
         cls_name = self.__class__.__name__
@@ -213,7 +213,7 @@ class SignedI8(SignedIntType):
         return cls(np.frombuffer(bytes_value, dtype=np.int8)[0])
 
     def to_bits(self) -> bytes:
-        return self.value.view("<i1")
+        return self.value.astype("<i1")
 
 
 class SignedI16(SignedIntType):
@@ -243,7 +243,7 @@ class SignedI16(SignedIntType):
         return cls(np.frombuffer(bytes_value, dtype=np.int16)[0])
 
     def to_bits(self) -> bytes:
-        return self.value.view("<i2")
+        return self.value.astype("<i2")
 
 
 class SignedI32(SignedIntType):
@@ -273,7 +273,7 @@ class SignedI32(SignedIntType):
         return cls(np.frombuffer(bytes_value, dtype=np.int32)[0])
 
     def to_bits(self) -> bytes:
-        return self.value.view("<i4")
+        return self.value.astype("<i4")
 
 
 class SignedI64(SignedIntType):
@@ -303,7 +303,7 @@ class SignedI64(SignedIntType):
         return cls(np.frombuffer(bytes_value, dtype=np.int64)[0])
 
     def to_bits(self) -> bytes:
-        return self.value.view("<i8")
+        return self.value.astype("<i8")
 
 
 class LEB128(NumpyNumericType):

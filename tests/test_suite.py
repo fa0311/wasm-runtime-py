@@ -137,7 +137,6 @@ class TestSuite(unittest.TestCase):
                 param = {"name": name, "index": f"{index:04d}", "case": f"{case:04d}"}
                 with self.subTest(**param):
                     self.__test_run(data, cmd)
-                    data.reset()
         else:
             self.fail(f"expect: module, actual: {t}")
 

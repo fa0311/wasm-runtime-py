@@ -160,19 +160,19 @@ class CodeSectionBlock(CodeSectionRun):
 
     def i32_store(self, index: int, align: int):
         a, addr = self.stack.i32(), self.stack.i32()
-        self.env.memory[addr.value : addr.value + 4] = a.to_bits()
+        self.env.memory[addr.value : addr.value + 4] = a.to_bytes()
 
     def i64_store(self, index: int, align: int):
         a, addr = self.stack.i64(), self.stack.i32()
-        self.env.memory[addr.value : addr.value + 8] = a.to_bits()
+        self.env.memory[addr.value : addr.value + 8] = a.to_bytes()
 
     def f32_store(self, index: int, align: int):
         a, addr = self.stack.f32(), self.stack.i32()
-        self.env.memory[addr.value : addr.value + 4] = a.to_bits()
+        self.env.memory[addr.value : addr.value + 4] = a.to_bytes()
 
     def f64_store(self, index: int, align: int):
         a, addr = self.stack.f64(), self.stack.i32()
-        self.env.memory[addr.value : addr.value + 8] = a.to_bits()
+        self.env.memory[addr.value : addr.value + 8] = a.to_bytes()
 
     def memory_grow(self, index: int):
         a = self.stack.i32()

@@ -28,6 +28,9 @@ class NumericType:
     def to_bits(self) -> bytes:
         raise NotImplementedError
 
+    def to_bytes(self) -> bytearray:
+        raise NotImplementedError
+
     @classmethod
     def from_bool(cls, value: bool):
         return cls(1 if value else 0)
