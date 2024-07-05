@@ -17,7 +17,7 @@ class CodeSectionBlockDebug(CodeSectionBlock):
         try:
             return super().call_indirect(index, _)
         except IndexError:
-            raise WasmUndefinedElementError()
+            raise WasmUndefinedElementError([I32])
 
     @NumpyErrorHelper.seterr("raise")
     def i64_div_s(self):

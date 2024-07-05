@@ -178,6 +178,8 @@ class TestSuite(unittest.TestCase):
             field=field,
             param=numeric_args,
         )
+        if len(res) != len(numeric_expect):
+            self.fail(f"expect: {len(numeric_expect)}, actual: {len(res)}")
         for i, (r, e) in enumerate(zip(res, numeric_expect)):
             a, b = r.value, e.value
             if type(r) != type(e):
@@ -208,6 +210,8 @@ class TestSuite(unittest.TestCase):
         except WasmRuntimeError as e:
             if text != e.message:
                 self.fail(f"expect: {cmd['text']}, actual: {e.message}")
+            if len(expect) != len(e.expected):
+                self.fail(f"expect: {len(expect)}, actual: {len(e.expected)}")
             for i, (r, e) in enumerate(zip(expect, e.expected)):
                 numeric_cls = type_map[r["type"]]
                 if numeric_cls(0).__class__ != e:
