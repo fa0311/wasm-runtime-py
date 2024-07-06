@@ -49,14 +49,16 @@ jobs:
         if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-13' || matrix.os == 'macos-14'
         env:
           OUTPUT_LOG: test_result_temp.log
+          CI: "true"
         run: |
-          python3 -m unittest discover -p test_*.py -s tests > $OUTPUT_LOG 2>&1 || true
+          python -m unittest discover -p test_*.py -s tests > $OUTPUT_LOG 2>&1 || true
           cat $OUTPUT_LOG
 
       - name: Run tests on Windows
         if: matrix.os == 'windows-latest'
         env:
           OUTPUT_LOG: test_result_temp.log
+          CI: "true"
         run: |
           wast2json --version
           python -m unittest discover -p test_*.py -s tests > %OUTPUT_LOG% 2>&1 || true

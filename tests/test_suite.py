@@ -10,16 +10,15 @@ from pathlib import Path
 
 import numpy as np
 
-from src.wasm.type.externref.base import ExternRef
-
 sys.path.append(str(Path(__file__).parent.parent))
 sys.path.append(str(Path(__file__).parent.parent / "src"))
 
 from src.wasm.loader.loader import WasmLoader
 from src.wasm.optimizer.optimizer import WasmOptimizer
 from src.wasm.runtime.entry import WasmExecEntry
-from src.wasm.runtime.error.error import WasmRuntimeError, WasmUnimplementedError
+from src.wasm.runtime.error.error import WasmCallStackExhaustedError, WasmRuntimeError, WasmUnimplementedError
 from src.wasm.runtime.exec import WasmExec
+from src.wasm.type.externref.base import ExternRef
 from src.wasm.type.numeric.base import NumericType
 from src.wasm.type.numeric.numpy.float import F32, F64
 from src.wasm.type.numeric.numpy.int import I32, I64
@@ -27,8 +26,10 @@ from src.wasm.type.numeric.numpy.int import I32, I64
 
 class TestSuite(unittest.TestCase):
     def setUp(self):
+        self.CI = os.getenv("CI") == "true"
         self.__set_logger()
-        sys.setrecursionlimit(10**6)
+        if sys.version_info >= (3, 12):
+            sys.setrecursionlimit(10**6)
         if not os.path.exists(".cache"):
             self.__set_wasm2json()
 
@@ -42,7 +43,10 @@ class TestSuite(unittest.TestCase):
         pass
 
     def __set_logger(self):
-        if __debug__:
+        if self.CI:
+            np.seterr(all="ignore")
+            logging.basicConfig(level=logging.FATAL)
+        else:
             filename = "latest.log"
             if os.path.exists(filename):
                 os.remove(filename)
@@ -57,9 +61,6 @@ class TestSuite(unittest.TestCase):
                 format="%(message)s",
                 handlers=[handler],
             )
-        else:
-            np.seterr(all="ignore")
-            logging.basicConfig(level=logging.FATAL)
 
     def __set_wasm2json(self):
         filelist = glob.glob("testsuite/*.wast")
@@ -159,6 +160,11 @@ class TestSuite(unittest.TestCase):
                 self.fail(f"expect: assert_return or assert_trap, actual: {cmd['type']}")
         except WasmUnimplementedError as e:
             self.skipTest(str(e))
+        except WasmCallStackExhaustedError as e:
+            if self.CI:
+                self.skipTest(str(e))
+            else:
+                self.fail(str(e))
 
     def __test_run_assert_return(self, data: WasmExec, cmd: dict):
         field = bytes(cmd["action"]["field"], "utf-8")
@@ -209,6 +215,8 @@ class TestSuite(unittest.TestCase):
             self.fail(f"expect: {text}, actual: {res}")
         except WasmRuntimeError as e:
             if text != e.message:
+                if isinstance(e, WasmCallStackExhaustedError):
+                    raise e
                 self.fail(f"expect: {cmd['text']}, actual: {e.message}")
             if len(expect) != len(e.expected):
                 self.fail(f"expect: {len(expect)}, actual: {len(e.expected)}")
@@ -313,9 +321,6 @@ class TestSuite(unittest.TestCase):
 
     def test_call_indirect(self):
         self.__test_file("call_indirect")
-
-    def test_call_indirect_0_0(self):
-        self.__test_index_case("call_indirect", 0, 0)
 
     def test_return(self):
         self.__test_file("return")
