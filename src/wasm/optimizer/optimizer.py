@@ -100,7 +100,8 @@ class WasmOptimizer:
     def table_section(self, section: "TableSection") -> "TableSectionOptimize":
         return TableSectionOptimize(
             element_type=section.element_type,
-            limits=section.limits,
+            limits_min=section.limits_min,
+            limits_max=section.limits_max,
         )
 
     def memory_section(self, section: "MemorySection") -> "MemorySectionOptimize":

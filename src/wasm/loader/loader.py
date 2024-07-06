@@ -135,8 +135,17 @@ class WasmLoader:
         res: list[TableSection] = []
         for _ in range(table_count):
             element_type = data.read_byte()
-            limits = data.read_byte()
-            section = TableSection(element_type=element_type, limits=limits)
+            limit_type = data.read_byte()
+
+            if limit_type == 0:
+                min = data.read_leb128()
+                max = None
+            elif limit_type == 1:
+                min = data.read_leb128()
+                max = data.read_leb128()
+            else:
+                raise Exception("invalid limit type")
+            section = TableSection(element_type=element_type, limits_min=min, limits_max=max)
             self.logger.debug(section)
             res.append(section)
 

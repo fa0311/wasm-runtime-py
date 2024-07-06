@@ -16,14 +16,14 @@ class NumpyNumericType(NumericType):
             return cls.from_int(0)
         if np.isinf(value.value):
             if np.signbit(value.value):
-                return cls.from_int(clamp.get_min())
+                return cls.astype(clamp.from_int(clamp.get_min()))
             else:
-                return cls.from_int(clamp.get_max())
+                return cls.astype(clamp.from_int(clamp.get_max()))
 
         if value.value <= min_value.value:
-            return cls.from_int(clamp.get_min())
+            return cls.astype(clamp.from_int(clamp.get_min()))
         if value.value >= max_value.value:
-            return cls.from_int(clamp.get_max())
+            return cls.astype(clamp.from_int(clamp.get_max()))
         return cls.astype(clamp.astype(value))
 
     def sqrt(self):

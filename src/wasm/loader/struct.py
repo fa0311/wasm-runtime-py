@@ -26,7 +26,8 @@ class TableSection:
     """Table Sectionのデータ構造"""
 
     element_type: int = field(metadata={"description": "要素の型"})
-    limits: int = field(metadata={"description": "要素の制限"})
+    limits_min: int = field(metadata={"description": "テーブルの最小値"})
+    limits_max: Optional[int] = field(metadata={"description": "テーブルの最大値"})
 
 
 @dataclass
