@@ -9,7 +9,6 @@ from src.wasm.runtime.error.error import (
     WasmIntegerOverflowError,
     WasmInvalidConversionError,
     WasmUndefinedElementError,
-    WasmUninitializedElementError,
 )
 from src.wasm.runtime.error.helper import NumpyErrorHelper
 from src.wasm.type.numeric.numpy.int import I32, I64, SignedI32, SignedI64
@@ -21,19 +20,13 @@ class CodeSectionBlockDebug(CodeSectionBlock):
         a = self.stack.i32(read_only=True)
         element = self.env.sections.element_section[elm_index]
 
-        if element.table is not None:
-            table = self.env.sections.table_section[element.table]
-            if table.limits_max is None:
-                if len(element.funcidx) <= a.value:
-                    raise WasmUninitializedElementError([I32])
-
         try:
             __, fn_type = self.env.get_function(element.funcidx[a.value])
             TypeCheck.list_check(fn_type.params, fn_type_params)
             TypeCheck.list_check(fn_type.returns, fn_type_returns or [])
             return super().call_indirect(index, elm_index)
         except IndexError:
-            raise WasmUndefinedElementError([I32])
+            raise WasmUndefinedElementError([WasmOptimizer.get_numeric_type(fn_type_params[0])])
         except TypeError:
             raise WasmIndirectCallTypeMismatchError([WasmOptimizer.get_numeric_type(fn_type_params[0])])
 
