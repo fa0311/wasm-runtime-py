@@ -8,6 +8,8 @@ jobs:
     strategy:
       matrix:
         os: [windows-latest, macos-13, ubuntu-latest, macOS-14]
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
+        numpy-version: ["2.0", "1.26"]
     permissions:
       contents: write
     steps:
@@ -19,23 +21,28 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.x"
+          python-version: ${{ matrix.python-version }}
 
-      - name: Use wabt 1.0.35
+      - name: Set up wabt
         uses: mwilliamson/setup-wabt-action@v3
         if: matrix.os == 'ubuntu-latest' || matrix.os == 'windows-latest'
         with:
           wabt-version: "1.0.35"
 
-      - name: Use wabt 1.0.35
+      - name: Set up wabt on macOS
         if: matrix.os == 'macos-14' || matrix.os == 'macos-13'
         run: |
           brew install wabt
 
-      - name: Install dependencies
+      - name: Install python dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install numpy==${{ matrix.numpy-version }}
+
+      - name: Check environment
+        run: |
+          wast2json --version
+          python -V
+          pip freeze
 
       - name: Run tests
         id: tests
@@ -43,7 +50,6 @@ jobs:
         env:
           OUTPUT_LOG: test_result_temp.log
         run: |
-          wast2json --version
           python3 -m unittest discover -p test_*.py -s tests > $OUTPUT_LOG 2>&1 || true
           cat $OUTPUT_LOG
 
@@ -58,11 +64,10 @@ jobs:
         shell: cmd
 
       - name: Comment on commit
-        if: always()
         uses: actions/github-script@v7
         env:
           OUTPUT_LOG: test_result_temp.log
-          OS: ${{ matrix.os }}
+          ON: ${{ matrix.os }} ${{ matrix.python-version }} ${{ matrix.numpy-version }}
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
@@ -78,7 +83,7 @@ jobs:
             const indent = '\n';
             const log = (x) =>`${indent}\`\`\`log${indent}${x}${indent}\`\`\`${indent}`;
 
-            const body = `Test result on ${process.env.OS}:${log(bottom)}${log(message)}`;
+            const body = `Test result on ${process.env.ON}:${log(bottom)}${log(message)}`;
             github.rest.repos.createCommitComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
