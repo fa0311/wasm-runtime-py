@@ -337,6 +337,21 @@ class TestSuite(unittest.TestCase):
     def test_local_tee(self):
         self.__test_file("local_tee")
 
+    def test_func(self):
+        self.__test_file("func")
+
+    def test_endianness(self):
+        self.__test_file("endianness")
+
+    def test_align(self):
+        self.__test_file("align")
+
+    def test_left_to_right(self):
+        self.__test_file("left-to-right")
+
+    def test_memory(self):
+        self.__test_file("memory")
+
 
 if __name__ == "__main__":
     unittest.main()

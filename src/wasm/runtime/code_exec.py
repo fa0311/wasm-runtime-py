@@ -3,7 +3,7 @@ from math import ceil, floor, trunc
 from src.wasm.runtime.debug.check import TypeCheck
 from src.wasm.runtime.run import CodeSectionRun
 from src.wasm.type.numeric.numpy.float import F32, F64
-from src.wasm.type.numeric.numpy.int import I32, I64, SignedI8, SignedI16, SignedI32, SignedI64
+from src.wasm.type.numeric.numpy.int import I8, I16, I32, I64, SignedI8, SignedI16, SignedI32, SignedI64
 
 
 class CodeSectionBlock(CodeSectionRun):
@@ -162,7 +162,8 @@ class CodeSectionBlock(CodeSectionRun):
 
     def i32_load8_u(self, index: int, align: int):
         addr = self.stack.i32()
-        self.stack.push(I32.from_bits(self.env.memory[addr.value : addr.value + 1]))
+        i8 = I8.from_bits(self.env.memory[addr.value : addr.value + 1])
+        self.stack.push(I32.astype(i8))
 
     def i32_load16_s(self, index: int, align: int):
         addr = self.stack.i32()
@@ -171,7 +172,8 @@ class CodeSectionBlock(CodeSectionRun):
 
     def i32_load16_u(self, index: int, align: int):
         addr = self.stack.i32()
-        self.stack.push(I32.from_bits(self.env.memory[addr.value : addr.value + 2]))
+        i16 = I16.from_bits(self.env.memory[addr.value : addr.value + 2])
+        self.stack.push(I32.astype(i16))
 
     def i64_load8_s(self, index: int, align: int):
         addr = self.stack.i32()
@@ -180,7 +182,8 @@ class CodeSectionBlock(CodeSectionRun):
 
     def i64_load8_u(self, index: int, align: int):
         addr = self.stack.i32()
-        self.stack.push(I64.from_bits(self.env.memory[addr.value : addr.value + 1]))
+        i8 = I8.from_bits(self.env.memory[addr.value : addr.value + 1])
+        self.stack.push(I64.astype(i8))
 
     def i64_load16_s(self, index: int, align: int):
         addr = self.stack.i32()
@@ -189,7 +192,8 @@ class CodeSectionBlock(CodeSectionRun):
 
     def i64_load16_u(self, index: int, align: int):
         addr = self.stack.i32()
-        self.stack.push(I64.from_bits(self.env.memory[addr.value : addr.value + 2]))
+        i16 = I16.from_bits(self.env.memory[addr.value : addr.value + 2])
+        self.stack.push(I64.astype(i16))
 
     def i64_load32_s(self, index: int, align: int):
         addr = self.stack.i32()
@@ -198,7 +202,8 @@ class CodeSectionBlock(CodeSectionRun):
 
     def i64_load32_u(self, index: int, align: int):
         addr = self.stack.i32()
-        self.stack.push(I64.from_bits(self.env.memory[addr.value : addr.value + 4]))
+        i32 = I32.from_bits(self.env.memory[addr.value : addr.value + 4])
+        self.stack.push(I64.astype(i32))
 
     def i32_store(self, index: int, align: int):
         a, addr = self.stack.i32(), self.stack.i32()
@@ -238,7 +243,7 @@ class CodeSectionBlock(CodeSectionRun):
 
     def memory_size(self, index: int):
         a = len(self.env.memory) // 64 // 1024
-        self.stack.push(I32.from_int(a))
+        self.stack.push(I32.from_int(a - 1))
 
     def memory_grow(self, index: int):
         a = self.stack.i32()

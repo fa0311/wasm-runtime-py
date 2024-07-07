@@ -58,6 +58,10 @@ class WasmIndirectCallTypeMismatchError(WasmRuntimeError):
     MESSAGE = "indirect call type mismatch"
 
 
+class WasmOutOfBoundsMemoryAccessError(WasmRuntimeError):
+    MESSAGE = "out of bounds memory access"
+
+
 class WasmUnimplementedError(WasmError):
     @staticmethod
     def throw():

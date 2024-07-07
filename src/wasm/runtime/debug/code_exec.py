@@ -8,6 +8,7 @@ from src.wasm.runtime.error.error import (
     WasmIntegerDivideByZeroError,
     WasmIntegerOverflowError,
     WasmInvalidConversionError,
+    WasmOutOfBoundsMemoryAccessError,
     WasmUndefinedElementError,
 )
 from src.wasm.runtime.error.helper import NumpyErrorHelper
@@ -29,6 +30,18 @@ class CodeSectionBlockDebug(CodeSectionBlock):
             raise WasmUndefinedElementError([WasmOptimizer.get_numeric_type(fn_type_params[0])])
         except TypeError:
             raise WasmIndirectCallTypeMismatchError([WasmOptimizer.get_numeric_type(fn_type_params[0])])
+
+    def i32_store(self, align: int, offset: int):
+        try:
+            return super().i32_store(align, offset)
+        except ValueError:
+            raise WasmOutOfBoundsMemoryAccessError()
+
+    def i64_store(self, align: int, offset: int):
+        try:
+            return super().i64_store(align, offset)
+        except ValueError:
+            raise WasmOutOfBoundsMemoryAccessError()
 
     @NumpyErrorHelper.seterr("raise")
     def i64_div_s(self):
