@@ -48,7 +48,7 @@ class CodeSectionBlock(CodeSectionRun):
                 block_stack = [block.stack.any() for _ in fn_type_params][::-1]
                 TypeCheck.type_check(block_stack, fn_type_params)
             else:
-                if fn_type_returns is None:
+                if fn_type_returns is None or len(fn_type_returns) == 0:
                     res_stack = block.stack.all()
                 else:
                     res_stack = [block.stack.any() for _ in fn_type_returns][::-1]
@@ -60,11 +60,12 @@ class CodeSectionBlock(CodeSectionRun):
                     break
 
     def if_(self, block_type: int):
+        a = self.stack.bool()
         fn_type_params, fn_type_returns = self.env.get_type(block_type)
         block_stack = [self.stack.any() for _ in fn_type_params][::-1]
         TypeCheck.type_check(block_stack, fn_type_params)
 
-        code = self.instruction.child if bool(self.stack.any()) else self.instruction.else_child
+        code = self.instruction.child if a else self.instruction.else_child
         block = self.env.get_block(locals=self.locals, stack=block_stack)
         br = block.run(code)
 
@@ -101,9 +102,7 @@ class CodeSectionBlock(CodeSectionRun):
         return count[a.value] if a.value < len(count) else count[-1]
 
     def return_(self):
-        if len(self.stack) > 0:
-            return [self.stack.any()]
-        return []
+        return self.stack.all()
 
     def call(self, index: int):
         _, fn_type = self.env.get_function(index)

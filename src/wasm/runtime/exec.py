@@ -49,7 +49,7 @@ class WasmExec:
         # 実行
         res = block.run(fn.data)
         if isinstance(res, list):
-            returns = res
+            returns = [res.pop() for _ in fn_type.returns][::-1]
         else:
             returns = [block.stack.any() for _ in fn_type.returns][::-1]
         self.logger.debug(f"res: {returns}")

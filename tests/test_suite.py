@@ -325,6 +325,12 @@ class TestSuite(unittest.TestCase):
     def test_return(self):
         self.__test_file("return")
 
+    def test_if(self):
+        self.__test_file("if")
+
+    def test_loop(self):
+        self.__test_file("loop")
+
 
 if __name__ == "__main__":
     unittest.main()
