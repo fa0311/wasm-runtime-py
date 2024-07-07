@@ -331,6 +331,12 @@ class TestSuite(unittest.TestCase):
     def test_loop(self):
         self.__test_file("loop")
 
+    def test_load(self):
+        self.__test_file("load")
+
+    def test_local_tee(self):
+        self.__test_file("local_tee")
+
 
 if __name__ == "__main__":
     unittest.main()
