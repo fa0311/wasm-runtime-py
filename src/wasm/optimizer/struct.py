@@ -35,7 +35,8 @@ class TableSectionOptimize:
 class MemorySectionOptimize:
     """Memory Sectionのデータ構造"""
 
-    limits: int = field(metadata={"description": "メモリの制限"})
+    limits_min: int = field(metadata={"description": "メモリの最小値"})
+    limits_max: Optional[int] = field(metadata={"description": "メモリの最大値"})
 
 
 @dataclass
@@ -66,6 +67,9 @@ class CodeInstructionOptimize:
     child: list["CodeInstructionOptimize"] = field(metadata={"description": "子命令"})
     else_child: list["CodeInstructionOptimize"] = field(metadata={"description": "子命令"})
 
+    def get_numeric(self, index: int) -> NumericType:
+        return self.args[index]
+
     def __str__(self):
         return self.__repr__()
 
@@ -93,6 +97,15 @@ class ExportSectionOptimize:
 
 
 @dataclass
+class DataSectionOptimize:
+    """Data Sectionのデータ構造"""
+
+    index: int = field(metadata={"description": "データのインデックス"})
+    offset: list["CodeInstructionOptimize"] = field(metadata={"description": "オフセット"})
+    init: bytes = field(metadata={"description": "初期値"})
+
+
+@dataclass
 class WasmSectionsOptimize:
     type_section: list[TypeSectionOptimize]
     function_section: list[FunctionSectionOptimize]
@@ -102,3 +115,4 @@ class WasmSectionsOptimize:
     element_section: list[ElementSectionOptimize]
     code_section: list[CodeSectionOptimize]
     export_section: list[ExportSectionOptimize]
+    data_section: list["DataSectionOptimize"]

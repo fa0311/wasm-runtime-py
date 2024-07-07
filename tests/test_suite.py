@@ -218,12 +218,6 @@ class TestSuite(unittest.TestCase):
                 if isinstance(e, WasmCallStackExhaustedError):
                     raise e
                 self.fail(f"expect: {cmd['text']}, actual: {e.message}")
-            if len(expect) != len(e.expected):
-                self.fail(f"expect: {len(expect)}, actual: {len(e.expected)}")
-            for i, (r, e) in enumerate(zip(expect, e.expected)):
-                numeric_cls = type_map[r["type"]]
-                if numeric_cls(0).__class__ != e:
-                    self.fail(f"expect: {e}, actual: {numeric_cls(0).__class__}")
 
     def subTest(self, **param):
         SUBTEST = True
@@ -351,6 +345,9 @@ class TestSuite(unittest.TestCase):
 
     def test_memory(self):
         self.__test_file("memory")
+
+    def test_unreachable(self):
+        self.__test_file("unreachable")
 
 
 if __name__ == "__main__":

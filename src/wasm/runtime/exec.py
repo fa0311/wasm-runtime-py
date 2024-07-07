@@ -24,8 +24,13 @@ class WasmExec:
         self.reset()
 
     def reset(self):
-        self.memory = NumpyBytesType.from_size(len(self.sections.memory_section) * 64 * 1024)
+        memory_size = self.sections.memory_section[0].limits_min
+        self.memory = NumpyBytesType.from_size(len(self.sections.memory_section) * 64 * 1024 * memory_size)
         self.globals = [WasmOptimizer.get_numeric_type(x.type).from_int(0) for x in self.sections.global_section]
+
+        for data_section in self.sections.data_section:
+            for offset in data_section.offset:
+                self.memory.store(offset=offset.get_numeric(0).value, value=data_section.init)
 
     @logger.logger
     def start(self, field: bytes, param: list[NumericType]):

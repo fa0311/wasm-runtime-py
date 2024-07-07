@@ -16,7 +16,7 @@ class WasmExecDebug(WasmExec):
         try:
             block, returns = super().run(index, param)
         except RecursionError:
-            raise WasmCallStackExhaustedError([x.__class__ for x in param])
+            raise WasmCallStackExhaustedError()
 
         TypeCheck.type_check(returns, fn_type.returns)
         return block, returns

@@ -8,7 +8,7 @@ from src.wasm.type.numeric.numpy.int import I8, I16, I32, I64, SignedI8, SignedI
 
 class CodeSectionBlock(CodeSectionRun):
     def unreachable(self):
-        raise Exception("unreachable")
+        pass
 
     def nop(self):
         pass
@@ -243,7 +243,7 @@ class CodeSectionBlock(CodeSectionRun):
 
     def memory_size(self, index: int):
         a = len(self.env.memory) // 64 // 1024
-        self.stack.push(I32.from_int(a - 1))
+        self.stack.push(I32.from_int(a))
 
     def memory_grow(self, index: int):
         a = self.stack.i32()

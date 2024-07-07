@@ -1,6 +1,5 @@
 from math import trunc
 
-from src.wasm.optimizer.optimizer import WasmOptimizer
 from src.wasm.runtime.code_exec import CodeSectionBlock
 from src.wasm.runtime.debug.check import TypeCheck
 from src.wasm.runtime.error.error import (
@@ -10,12 +9,16 @@ from src.wasm.runtime.error.error import (
     WasmInvalidConversionError,
     WasmOutOfBoundsMemoryAccessError,
     WasmUndefinedElementError,
+    WasmUnreachableError,
 )
 from src.wasm.runtime.error.helper import NumpyErrorHelper
 from src.wasm.type.numeric.numpy.int import I32, I64, SignedI32, SignedI64
 
 
 class CodeSectionBlockDebug(CodeSectionBlock):
+    def unreachable(self):
+        raise WasmUnreachableError()
+
     def call_indirect(self, index: int, elm_index: int):
         fn_type_params, fn_type_returns = self.env.get_type(index)
         a = self.stack.i32(read_only=True)
@@ -27,9 +30,9 @@ class CodeSectionBlockDebug(CodeSectionBlock):
             TypeCheck.list_check(fn_type.returns, fn_type_returns or [])
             return super().call_indirect(index, elm_index)
         except IndexError:
-            raise WasmUndefinedElementError([WasmOptimizer.get_numeric_type(fn_type_params[0])])
+            raise WasmUndefinedElementError()
         except TypeError:
-            raise WasmIndirectCallTypeMismatchError([WasmOptimizer.get_numeric_type(fn_type_params[0])])
+            raise WasmIndirectCallTypeMismatchError()
 
     def i32_store(self, align: int, offset: int):
         try:
@@ -50,9 +53,9 @@ class CodeSectionBlockDebug(CodeSectionBlock):
             return super().i64_div_s()
         except FloatingPointError:
             if b == I64.from_int(0):
-                raise WasmIntegerDivideByZeroError([I64])
+                raise WasmIntegerDivideByZeroError()
             else:
-                raise WasmIntegerOverflowError([I64])
+                raise WasmIntegerOverflowError()
 
     @NumpyErrorHelper.seterr("raise")
     def i64_div_u(self):
@@ -61,9 +64,9 @@ class CodeSectionBlockDebug(CodeSectionBlock):
             return super().i64_div_u()
         except FloatingPointError:
             if b == I64.from_int(0):
-                raise WasmIntegerDivideByZeroError([I64])
+                raise WasmIntegerDivideByZeroError()
             else:
-                raise WasmIntegerOverflowError([I64])
+                raise WasmIntegerOverflowError()
 
     @NumpyErrorHelper.seterr("raise")
     def i64_rem_s(self):
@@ -72,7 +75,7 @@ class CodeSectionBlockDebug(CodeSectionBlock):
             return super().i64_rem_s()
         except FloatingPointError:
             if b == I64.from_int(0):
-                raise WasmIntegerDivideByZeroError([I64])
+                raise WasmIntegerDivideByZeroError()
             else:
                 self.stack.push(I64.from_int(0))
 
@@ -83,7 +86,7 @@ class CodeSectionBlockDebug(CodeSectionBlock):
             return super().i64_rem_u()
         except FloatingPointError:
             if b == I64.from_int(0):
-                raise WasmIntegerDivideByZeroError([I64])
+                raise WasmIntegerDivideByZeroError()
             else:
                 self.stack.push(I64.from_int(0))
 
@@ -94,9 +97,9 @@ class CodeSectionBlockDebug(CodeSectionBlock):
             return super().i32_div_s()
         except FloatingPointError:
             if b == I32.from_int(0):
-                raise WasmIntegerDivideByZeroError([I32])
+                raise WasmIntegerDivideByZeroError()
             else:
-                raise WasmIntegerOverflowError([I32])
+                raise WasmIntegerOverflowError()
 
     @NumpyErrorHelper.seterr("raise")
     def i32_div_u(self):
@@ -105,9 +108,9 @@ class CodeSectionBlockDebug(CodeSectionBlock):
             return super().i32_div_u()
         except FloatingPointError:
             if b == I32.from_int(0):
-                raise WasmIntegerDivideByZeroError([I32])
+                raise WasmIntegerDivideByZeroError()
             else:
-                raise WasmIntegerOverflowError([I32])
+                raise WasmIntegerOverflowError()
 
     @NumpyErrorHelper.seterr("raise")
     def i32_rem_s(self):
@@ -116,7 +119,7 @@ class CodeSectionBlockDebug(CodeSectionBlock):
             return super().i32_rem_s()
         except FloatingPointError:
             if b == I32.from_int(0):
-                raise WasmIntegerDivideByZeroError([I32])
+                raise WasmIntegerDivideByZeroError()
             else:
                 self.stack.push(I32.from_int(0))
 
@@ -127,7 +130,7 @@ class CodeSectionBlockDebug(CodeSectionBlock):
             return super().i32_rem_u()
         except FloatingPointError:
             if b == I32.from_int(0):
-                raise WasmIntegerDivideByZeroError([I32])
+                raise WasmIntegerDivideByZeroError()
             else:
                 self.stack.push(I32.from_int(0))
 
@@ -138,9 +141,9 @@ class CodeSectionBlockDebug(CodeSectionBlock):
             return super().i32_trunc_f32_s()
         except FloatingPointError:
             if a.isnan():
-                raise WasmInvalidConversionError([I32])
+                raise WasmInvalidConversionError()
             else:
-                raise WasmIntegerOverflowError([I32])
+                raise WasmIntegerOverflowError()
 
     def i32_trunc_f32_u(self):
         a = self.stack.f32(read_only=True)
@@ -149,9 +152,9 @@ class CodeSectionBlockDebug(CodeSectionBlock):
             return super().i32_trunc_f32_u()
         except FloatingPointError:
             if a.isnan():
-                raise WasmInvalidConversionError([I32])
+                raise WasmInvalidConversionError()
             else:
-                raise WasmIntegerOverflowError([I32])
+                raise WasmIntegerOverflowError()
 
     def i32_trunc_f64_s(self):
         a = self.stack.f64(read_only=True)
@@ -160,9 +163,9 @@ class CodeSectionBlockDebug(CodeSectionBlock):
             return super().i32_trunc_f64_s()
         except FloatingPointError:
             if a.isnan():
-                raise WasmInvalidConversionError([I32])
+                raise WasmInvalidConversionError()
             else:
-                raise WasmIntegerOverflowError([I32])
+                raise WasmIntegerOverflowError()
 
     def i32_trunc_f64_u(self):
         a = self.stack.f64(read_only=True)
@@ -171,9 +174,9 @@ class CodeSectionBlockDebug(CodeSectionBlock):
             return super().i32_trunc_f64_u()
         except FloatingPointError:
             if a.isnan():
-                raise WasmInvalidConversionError([I32])
+                raise WasmInvalidConversionError()
             else:
-                raise WasmIntegerOverflowError([I32])
+                raise WasmIntegerOverflowError()
 
     def i64_trunc_f32_s(self):
         a = self.stack.f32(read_only=True)
@@ -182,9 +185,9 @@ class CodeSectionBlockDebug(CodeSectionBlock):
             return super().i64_trunc_f32_s()
         except FloatingPointError:
             if a.isnan():
-                raise WasmInvalidConversionError([I64])
+                raise WasmInvalidConversionError()
             else:
-                raise WasmIntegerOverflowError([I64])
+                raise WasmIntegerOverflowError()
 
     def i64_trunc_f32_u(self):
         a = self.stack.f32(read_only=True)
@@ -193,9 +196,9 @@ class CodeSectionBlockDebug(CodeSectionBlock):
             return super().i64_trunc_f32_u()
         except FloatingPointError:
             if a.isnan():
-                raise WasmInvalidConversionError([I64])
+                raise WasmInvalidConversionError()
             else:
-                raise WasmIntegerOverflowError([I64])
+                raise WasmIntegerOverflowError()
 
     def i64_trunc_f64_s(self):
         a = self.stack.f64(read_only=True)
@@ -204,9 +207,9 @@ class CodeSectionBlockDebug(CodeSectionBlock):
             return super().i64_trunc_f64_s()
         except FloatingPointError:
             if a.isnan():
-                raise WasmInvalidConversionError([I64])
+                raise WasmInvalidConversionError()
             else:
-                raise WasmIntegerOverflowError([I64])
+                raise WasmIntegerOverflowError()
 
     def i64_trunc_f64_u(self):
         a = self.stack.f64(read_only=True)
@@ -215,6 +218,6 @@ class CodeSectionBlockDebug(CodeSectionBlock):
             return super().i64_trunc_f64_u()
         except FloatingPointError:
             if a.isnan():
-                raise WasmInvalidConversionError([I64])
+                raise WasmInvalidConversionError()
             else:
-                raise WasmIntegerOverflowError([I64])
+                raise WasmIntegerOverflowError()

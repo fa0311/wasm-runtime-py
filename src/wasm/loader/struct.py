@@ -34,7 +34,8 @@ class TableSection:
 class MemorySection:
     """Memory Sectionのデータ構造"""
 
-    limits: int = field(metadata={"description": "メモリの制限"})
+    limits_min: int = field(metadata={"description": "メモリの最小値"})
+    limits_max: Optional[int] = field(metadata={"description": "メモリの最大値"})
 
 
 @dataclass
@@ -91,6 +92,15 @@ class ExportSection:
 
 
 @dataclass
+class DataSection:
+    """Data Sectionのデータ構造"""
+
+    index: int = field(metadata={"description": "データのインデックス"})
+    offset: list["CodeInstruction"] = field(metadata={"description": "オフセット"})
+    init: bytes = field(metadata={"description": "初期値"})
+
+
+@dataclass
 class WasmSections:
     type_section: list[TypeSection]
     function_section: list[FunctionSection]
@@ -100,3 +110,4 @@ class WasmSections:
     element_section: list[ElementSection]
     code_section: list[CodeSection]
     export_section: list[ExportSection]
+    data_section: list[DataSection]

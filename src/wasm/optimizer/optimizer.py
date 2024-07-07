@@ -5,6 +5,7 @@ from src.wasm.loader.spec import BlockType
 from src.wasm.loader.struct import (
     CodeInstruction,
     CodeSection,
+    DataSection,
     ElementSection,
     ExportSection,
     FunctionSection,
@@ -17,6 +18,7 @@ from src.wasm.loader.struct import (
 from src.wasm.optimizer.struct import (
     CodeInstructionOptimize,
     CodeSectionOptimize,
+    DataSectionOptimize,
     ElementSectionOptimize,
     ExportSectionOptimize,
     FunctionSectionOptimize,
@@ -82,6 +84,7 @@ class WasmOptimizer:
             element_section=[self.element_section(x) for x in self.sections.element_section],
             code_section=[self.code_section(x) for x in self.sections.code_section],
             export_section=[self.export_section(x) for x in self.sections.export_section],
+            data_section=[self.data_section(x) for x in self.sections.data_section],
         )
         return opt
 
@@ -106,7 +109,8 @@ class WasmOptimizer:
 
     def memory_section(self, section: "MemorySection") -> "MemorySectionOptimize":
         return MemorySectionOptimize(
-            limits=section.limits,
+            limits_min=section.limits_min,
+            limits_max=section.limits_max,
         )
 
     def global_section(self, section: "GlobalSection") -> "GlobalSectionOptimize":
@@ -171,4 +175,11 @@ class WasmOptimizer:
             field_name=section.field_name,
             kind=section.kind,
             index=section.index,
+        )
+
+    def data_section(self, section: "DataSection") -> "DataSectionOptimize":
+        return DataSectionOptimize(
+            index=section.index,
+            offset=self.expr(section.offset),
+            init=section.init,
         )

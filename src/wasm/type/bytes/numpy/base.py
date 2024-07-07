@@ -11,6 +11,10 @@ class NumpyBytesType(BytesType):
     def from_size(cls, size: int):
         return cls(np.zeros(size, dtype=np.uint8))
 
+    def store(self, offset: int, value: bytes):
+        data = np.frombuffer(value, dtype=np.uint8)
+        self.value[offset : offset + len(data)] = data
+
     def __getitem__(self, key):
         return self.value[key]
 

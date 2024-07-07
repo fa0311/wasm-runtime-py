@@ -8,6 +8,7 @@ from src.wasm.loader.spec import BlockType
 from src.wasm.loader.struct import (
     CodeInstruction,
     CodeSection,
+    DataSection,
     ElementSection,
     ExportSection,
     FunctionSection,
@@ -64,6 +65,8 @@ class WasmLoader:
                 res.extend(self.code_section(data))
             elif id == 7:
                 res.extend(self.export_section(data))
+            elif id == 11:
+                res.extend(self.data_section(data))
             else:
                 self.logger.error(f"unknown id: {id}")
 
@@ -76,6 +79,7 @@ class WasmLoader:
             element_section=[x for x in res if isinstance(x, ElementSection)],
             code_section=[x for x in res if isinstance(x, CodeSection)],
             export_section=[x for x in res if isinstance(x, ExportSection)],
+            data_section=[x for x in res if isinstance(x, DataSection)],
         )
 
         # 解析結果を返す
@@ -163,8 +167,16 @@ class WasmLoader:
         # Memory Sectionのデータを読み込む
         res: list[MemorySection] = []
         for _ in range(memory_count):
-            limits = data.read_byte()
-            section = MemorySection(limits=limits)
+            limit_type = data.read_byte()
+            if limit_type == 0:
+                min = data.read_leb128()
+                max = None
+            elif limit_type == 1:
+                min = data.read_leb128()
+                max = data.read_leb128()
+            else:
+                raise Exception("invalid limit type")
+            section = MemorySection(limits_min=min, limits_max=max)
             self.logger.debug(section)
             res.append(section)
 
@@ -184,7 +196,7 @@ class WasmLoader:
         for _ in range(global_count):
             content_type = data.read_byte()
             mutable = data.read_byte()
-            init = data.read_expr()  # noqa: F841
+            _ = self.code_section_instructions(data)
             section = GlobalSection(type=content_type, mutable=mutable, init=b"0")
             self.logger.debug(section)
             res.append(section)
@@ -331,6 +343,30 @@ class WasmLoader:
             kind = data.read_byte()
             index = data.read_leb128()
             section = ExportSection(field_name=field, kind=kind, index=index)
+            self.logger.debug(section)
+            res.append(section)
+
+        # 解析結果を返す
+        return res
+
+    @logger.logger
+    def data_section(self, data: ByteReader) -> list[DataSection]:
+        """Data Sectionを読み込む"""
+
+        # Data Sectionの数を読み込む
+        data_count = data.read_leb128()
+        self.logger.debug(f"data count: {data_count}")
+
+        # Data Sectionのデータを読み込む
+        res: list[DataSection] = []
+        for _ in range(data_count):
+            data_type = data.read_byte()
+            if data_type == 0:
+                offset = self.code_section_instructions(data)
+                init = data.read_bytes(data.read_leb128())
+                section = DataSection(index=0, offset=offset, init=init.data)
+            else:
+                raise Exception("invalid data_type")
             self.logger.debug(section)
             res.append(section)
 

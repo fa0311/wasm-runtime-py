@@ -1,7 +1,5 @@
 from typing import Callable
 
-from src.wasm.type.numeric.base import NumericType
-
 
 class WasmError(Exception):
     pass
@@ -25,8 +23,7 @@ class WasmUnexpectedTokenError(WasmInvalidError):
 class WasmRuntimeError(WasmError):
     MESSAGE = "runtime error"
 
-    def __init__(self, expected: list[type[NumericType]] = []):
-        self.expected = expected
+    def __init__(self):
         self.message = self.MESSAGE
 
 
@@ -60,6 +57,10 @@ class WasmIndirectCallTypeMismatchError(WasmRuntimeError):
 
 class WasmOutOfBoundsMemoryAccessError(WasmRuntimeError):
     MESSAGE = "out of bounds memory access"
+
+
+class WasmUnreachableError(WasmRuntimeError):
+    MESSAGE = "unreachable"
 
 
 class WasmUnimplementedError(WasmError):
