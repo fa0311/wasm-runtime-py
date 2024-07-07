@@ -24,7 +24,7 @@ class WasmExec:
         self.reset()
 
     def reset(self):
-        memory_size = self.sections.memory_section[0].limits_min
+        memory_size = self.sections.memory_section[0].limits_min if self.sections.memory_section else 0
         self.memory = NumpyBytesType.from_size(len(self.sections.memory_section) * 64 * 1024 * memory_size)
         self.globals = [WasmOptimizer.get_numeric_type(x.type).from_int(0) for x in self.sections.global_section]
 
