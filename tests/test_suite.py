@@ -202,7 +202,6 @@ class TestSuite(unittest.TestCase):
             "f64": lambda x: F64.from_str(x),
         }
         args = cmd["action"]["args"]
-        expect = cmd["expected"]
         text = cmd["text"]
         numeric_args: list[NumericType] = [type_map[value["type"]](value["value"]) for value in args]
 
