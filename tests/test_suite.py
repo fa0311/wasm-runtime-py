@@ -130,8 +130,8 @@ class TestSuite(unittest.TestCase):
         elif t == "assert_malformed":
             pass
         elif t == "module":
-            data = WasmLoader(wasm).load()
-            optimizer = WasmOptimizer(data).optimize()
+            data = WasmLoader().load(wasm)
+            optimizer = WasmOptimizer().optimize(data)
             data = WasmExecEntry.entry(optimizer)
 
             for case, cmd in enumerate(cmds):
@@ -143,8 +143,8 @@ class TestSuite(unittest.TestCase):
 
     def __test_index_case(self, name: str, index: int, case: int):
         t, wasm, cmds = self.__get_test_suite_data(name)[index]
-        data = WasmLoader(wasm).load()
-        optimizer = WasmOptimizer(data).optimize()
+        data = WasmLoader().load(wasm)
+        optimizer = WasmOptimizer().optimize(data)
         data = WasmExecEntry.entry(optimizer)
         self.__test_run(data, cmds[case])
 

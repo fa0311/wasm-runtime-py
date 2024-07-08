@@ -12,6 +12,10 @@ class NumericStack:
     def __init__(self, value: list[NumericType]):
         self.value = value
 
+    def __str__(self):
+        a = [str(x) for x in self.value]
+        return f"[{', '.join(a)}]" if a else "[]"
+
     def push(self, value: NumericType):
         self.value.append(value)
 

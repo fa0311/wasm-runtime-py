@@ -10,3 +10,18 @@ class WasmExecEntry:
             return WasmExecDebug(sections)
         else:
             return WasmExec(sections)
+
+    @staticmethod
+    def init() -> WasmExec:
+        sections = WasmSectionsOptimize(
+            type_section=[],
+            function_section=[],
+            table_section=[],
+            memory_section=[],
+            global_section=[],
+            export_section=[],
+            element_section=[],
+            code_section=[],
+            data_section=[],
+        )
+        return WasmExecEntry.entry(sections)

@@ -1,8 +1,7 @@
 import logging
 
-from tools.byte import ByteReader
-from tools.logger import NestedLogger
-
+from src.tools.byte import ByteReader
+from src.tools.logger import NestedLogger
 from src.wasm.loader.helper import CodeSectionSpecHelper
 from src.wasm.loader.spec import BlockType
 from src.wasm.loader.struct import (
@@ -27,27 +26,25 @@ class WasmLoader:
 
     logger = NestedLogger(logging.getLogger(__name__))
 
-    def __init__(self, data: bytes):
-        self.data = ByteReader(data)
-
     @logger.logger
-    def load(self) -> WasmSections:
+    def load(self, bin: bytes) -> WasmSections:
         """Wasmバイナリを読み込んで解析する"""
+        data = ByteReader(bin)
 
         # マジックナンバーとバージョン番号を確認
-        if self.data.read_bytes(4) != bytes([0, 97, 115, 109]):
+        if data.read_bytes(4) != bytes([0, 97, 115, 109]):
             raise Exception("invalid magic number")
 
         # バージョン番号を確認
-        if self.data.read_bytes(4) != bytes([1, 0, 0, 0]):
+        if data.read_bytes(4) != bytes([1, 0, 0, 0]):
             raise Exception("invalid version number")
 
         # セクションを読み込む
         res = []
-        while self.data.has_next():
-            id = self.data.read_byte()
-            size = self.data.read_leb128()
-            data = self.data.read_bytes(size)
+        while data.has_next():
+            id = data.read_byte()
+            size = data.read_leb128()
+            data = data.read_bytes(size)
             self.logger.debug(f"id: {id}, size: {size}")
             if id == 1:
                 res.extend(self.type_section(data))

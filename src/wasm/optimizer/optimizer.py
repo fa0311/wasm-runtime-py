@@ -35,9 +35,6 @@ from src.wasm.type.numeric.numpy.int import I32, I64
 
 
 class WasmOptimizer:
-    def __init__(self, sections: "WasmSections"):
-        self.sections = sections
-
     @staticmethod
     def get_type(type: int):
         if type == 0x7F:
@@ -74,17 +71,17 @@ class WasmOptimizer:
 
         raise Exception(f"invalid type: {type:02X}")
 
-    def optimize(self) -> "WasmSectionsOptimize":
+    def optimize(self, sections: "WasmSections") -> "WasmSectionsOptimize":
         opt = WasmSectionsOptimize(
-            type_section=[self.type_section(x) for x in self.sections.type_section],
-            function_section=[self.function_section(x) for x in self.sections.function_section],
-            table_section=[self.table_section(x) for x in self.sections.table_section],
-            memory_section=[self.memory_section(x) for x in self.sections.memory_section],
-            global_section=[self.global_section(x) for x in self.sections.global_section],
-            element_section=[self.element_section(x) for x in self.sections.element_section],
-            code_section=[self.code_section(x) for x in self.sections.code_section],
-            export_section=[self.export_section(x) for x in self.sections.export_section],
-            data_section=[self.data_section(x) for x in self.sections.data_section],
+            type_section=[self.type_section(x) for x in sections.type_section],
+            function_section=[self.function_section(x) for x in sections.function_section],
+            table_section=[self.table_section(x) for x in sections.table_section],
+            memory_section=[self.memory_section(x) for x in sections.memory_section],
+            global_section=[self.global_section(x) for x in sections.global_section],
+            element_section=[self.element_section(x) for x in sections.element_section],
+            code_section=[self.code_section(x) for x in sections.code_section],
+            export_section=[self.export_section(x) for x in sections.export_section],
+            data_section=[self.data_section(x) for x in sections.data_section],
         )
         return opt
 

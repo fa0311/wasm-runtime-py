@@ -47,6 +47,10 @@ class NumpyNumericType(NumericType):
     def signbit(self):
         return np.signbit(self.value)
 
+    def __str__(self):
+        cls_name = self.__class__.__name__
+        return f"{cls_name}(value={self.value})"
+
     def __repr__(self):
         cls_name = self.__class__.__name__
         return f"{cls_name}(value={self.value})"
