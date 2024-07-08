@@ -44,26 +44,26 @@ class WasmLoader:
         while data.has_next():
             id = data.read_byte()
             size = data.read_leb128()
-            data = data.read_bytes(size)
+            section = data.read_bytes(size)
             self.logger.debug(f"id: {id}, size: {size}")
             if id == 1:
-                res.extend(self.type_section(data))
+                res.extend(self.type_section(section))
             elif id == 3:
-                res.extend(self.function_section(data))
+                res.extend(self.function_section(section))
             elif id == 4:
-                res.extend(self.table_section(data))
+                res.extend(self.table_section(section))
             elif id == 5:
-                res.extend(self.memory_section(data))
+                res.extend(self.memory_section(section))
             elif id == 6:
-                res.extend(self.global_section(data))
+                res.extend(self.global_section(section))
             elif id == 9:
-                res.extend(self.element_section(data))
+                res.extend(self.element_section(section))
             elif id == 10:
-                res.extend(self.code_section(data))
+                res.extend(self.code_section(section))
             elif id == 7:
-                res.extend(self.export_section(data))
+                res.extend(self.export_section(section))
             elif id == 11:
-                res.extend(self.data_section(data))
+                res.extend(self.data_section(section))
             else:
                 self.logger.error(f"unknown id: {id}")
 
