@@ -1,7 +1,7 @@
 from math import trunc
 
+from src.wasm.runtime.check.check import TypeCheck
 from src.wasm.runtime.code_exec import CodeSectionBlock
-from src.wasm.runtime.debug.check import TypeCheck
 from src.wasm.runtime.error.error import (
     WasmIndirectCallTypeMismatchError,
     WasmIntegerDivideByZeroError,

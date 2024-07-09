@@ -1,15 +1,17 @@
+import os
+
 from src.wasm.optimizer.struct import WasmSectionsOptimize
-from src.wasm.runtime.debug.exec import WasmExecDebug
+from src.wasm.runtime.check.exec import WasmExecCheck, WasmExecRelease
 from src.wasm.runtime.exec import WasmExec
 
 
 class WasmExecEntry:
     @staticmethod
     def entry(sections: WasmSectionsOptimize) -> WasmExec:
-        if __debug__:
-            return WasmExecDebug(sections)
+        if os.getenv("WASM_FAST") == "true":
+            return WasmExecRelease(sections)
         else:
-            return WasmExec(sections)
+            return WasmExecCheck(sections)
 
     @staticmethod
     def init() -> WasmExec:

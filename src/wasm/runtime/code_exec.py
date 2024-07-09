@@ -1,6 +1,6 @@
 from math import ceil, floor, trunc
 
-from src.wasm.runtime.debug.check import TypeCheck
+from src.wasm.runtime.check.check import TypeCheck
 from src.wasm.runtime.run import CodeSectionRun
 from src.wasm.type.numeric.numpy.float import F32, F64
 from src.wasm.type.numeric.numpy.int import I8, I16, I32, I64, SignedI8, SignedI16, SignedI32, SignedI64

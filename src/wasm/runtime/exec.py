@@ -36,7 +36,7 @@ class WasmExec:
     def start(self, field: bytes, param: list[NumericType]):
         """エントリーポイントを実行する"""
 
-        self.logger.info(f"field: {field.decode()}")
+        assert self.logger.info(f"field: {field.decode()}")
 
         # エントリーポイントの関数を取得する
         start = [fn for fn in self.sections.export_section if fn.field_name == field][0]
@@ -57,7 +57,7 @@ class WasmExec:
             returns = [res.pop() for _ in fn_type.returns][::-1]
         else:
             returns = [block.stack.any() for _ in fn_type.returns][::-1]
-        self.logger.debug(f"res: {returns}")
+        assert self.logger.debug(f"res: {returns}")
 
         return (block, returns)
 

@@ -45,7 +45,7 @@ class WasmLoader:
             id = data.read_byte()
             size = data.read_leb128()
             section = data.read_bytes(size)
-            self.logger.debug(f"id: {id}, size: {size}")
+            assert self.logger.debug(f"id: {id}, size: {size}")
             if id == 1:
                 res.extend(self.type_section(section))
             elif id == 3:
@@ -65,7 +65,7 @@ class WasmLoader:
             elif id == 11:
                 res.extend(self.data_section(section))
             else:
-                self.logger.error(f"unknown id: {id}")
+                assert self.logger.error(f"unknown id: {id}")
 
         sections = WasmSections(
             type_section=[x for x in res if isinstance(x, TypeSection)],
@@ -88,7 +88,7 @@ class WasmLoader:
 
         # Type Sectionの数を読み込む
         type_count = data.read_leb128()
-        self.logger.debug(f"type count: {type_count}")
+        assert self.logger.debug(f"type count: {type_count}")
 
         # Type Sectionのデータを読み込む
         res: list[TypeSection] = []
@@ -99,7 +99,7 @@ class WasmLoader:
             return_count = data.read_leb128()
             returns = [data.read_byte() for _ in range(return_count)]
             section = TypeSection(form=form, params=params, returns=returns)
-            self.logger.debug(section)
+            assert self.logger.debug(section)
             res.append(section)
 
         # 解析結果を返す
@@ -111,14 +111,14 @@ class WasmLoader:
 
         # Function Sectionの数を読み込む
         function_count = data.read_leb128()
-        self.logger.debug(f"function count: {function_count}")
+        assert self.logger.debug(f"function count: {function_count}")
 
         # Function Sectionのデータを読み込む
         res: list[FunctionSection] = []
         for _ in range(function_count):
             type = data.read_leb128()
             section = FunctionSection(type=type)
-            self.logger.debug(section)
+            assert self.logger.debug(section)
             res.append(section)
 
         # 解析結果を返す
@@ -130,7 +130,7 @@ class WasmLoader:
 
         # Table Sectionの数を読み込む
         table_count = data.read_leb128()
-        self.logger.debug(f"table count: {table_count}")
+        assert self.logger.debug(f"table count: {table_count}")
 
         # Table Sectionのデータを読み込む
         res: list[TableSection] = []
@@ -147,7 +147,7 @@ class WasmLoader:
             else:
                 raise Exception("invalid limit type")
             section = TableSection(element_type=element_type, limits_min=min, limits_max=max)
-            self.logger.debug(section)
+            assert self.logger.debug(section)
             res.append(section)
 
         # 解析結果を返す
@@ -159,7 +159,7 @@ class WasmLoader:
 
         # Memory Sectionの数を読み込む
         memory_count = data.read_leb128()
-        self.logger.debug(f"memory count: {memory_count}")
+        assert self.logger.debug(f"memory count: {memory_count}")
 
         # Memory Sectionのデータを読み込む
         res: list[MemorySection] = []
@@ -174,7 +174,7 @@ class WasmLoader:
             else:
                 raise Exception("invalid limit type")
             section = MemorySection(limits_min=min, limits_max=max)
-            self.logger.debug(section)
+            assert self.logger.debug(section)
             res.append(section)
 
         # 解析結果を返す
@@ -186,7 +186,7 @@ class WasmLoader:
 
         # Global Sectionの数を読み込む
         global_count = data.read_leb128()
-        self.logger.debug(f"global count: {global_count}")
+        assert self.logger.debug(f"global count: {global_count}")
 
         # Global Sectionのデータを読み込む
         res: list[GlobalSection] = []
@@ -195,7 +195,7 @@ class WasmLoader:
             mutable = data.read_byte()
             _ = self.code_section_instructions(data)
             section = GlobalSection(type=content_type, mutable=mutable, init=b"0")
-            self.logger.debug(section)
+            assert self.logger.debug(section)
             res.append(section)
 
         # 解析結果を返す
@@ -207,7 +207,7 @@ class WasmLoader:
 
         # Element Sectionの数を読み込む
         element_count = data.read_leb128()
-        self.logger.debug(f"element count: {element_count}")
+        assert self.logger.debug(f"element count: {element_count}")
 
         # Element Sectionのデータを読み込む
         res: list[ElementSection] = []
@@ -236,7 +236,7 @@ class WasmLoader:
             section = ElementSection(type=elem_type, table=table, data=expr, funcidx=funcidx)
             res.append(section)
 
-            self.logger.debug(section)
+            assert self.logger.debug(section)
 
         # 解析結果を返す
         return res
@@ -247,17 +247,17 @@ class WasmLoader:
 
         # Code Sectionの数を読み込む
         code_count = data.read_leb128()
-        self.logger.debug(f"code count: {code_count}")
+        assert self.logger.debug(f"code count: {code_count}")
 
         # Code Sectionのデータを読み込む
         res: list[CodeSection] = []
         for _ in range(code_count):
             body_size = data.read_leb128()
-            self.logger.debug(f"body size: {body_size}")
+            assert self.logger.debug(f"body size: {body_size}")
             local = self.code_section_local(data)
             instructions = self.code_section_instructions(data)
             section = CodeSection(data=instructions, local=local)
-            self.logger.debug(section)
+            assert self.logger.debug(section)
             res.append(section)
 
         # 解析結果を返す
@@ -301,7 +301,7 @@ class WasmLoader:
                 else:
                     raise Exception("invalid type")
             instruction = CodeInstruction(opcode=opcode, args=args)
-            self.logger.debug(instruction)
+            assert self.logger.debug(instruction)
             res.append(instruction)
         return res[:-1]
 
@@ -311,7 +311,7 @@ class WasmLoader:
 
         # ローカル変数の数を読み込む
         count = data.read_leb128()
-        self.logger.debug(f"local count: {count}")
+        assert self.logger.debug(f"local count: {count}")
 
         # ローカル変数のデータを読み込む
         local: list[int] = []
@@ -319,7 +319,7 @@ class WasmLoader:
             local_count = data.read_leb128()
             local_type = data.read_byte()
             local.extend([local_type] * local_count)
-            self.logger.debug(f"type: {local_type} * {local_count}")
+            assert self.logger.debug(f"type: {local_type} * {local_count}")
 
         # 解析結果を返す
         return local
@@ -330,7 +330,7 @@ class WasmLoader:
 
         # Export Sectionの数を読み込む
         export_count = data.read_leb128()
-        self.logger.debug(f"export count: {export_count}")
+        assert self.logger.debug(f"export count: {export_count}")
 
         # Export Sectionのデータを読み込む
         res: list[ExportSection] = []
@@ -340,7 +340,7 @@ class WasmLoader:
             kind = data.read_byte()
             index = data.read_leb128()
             section = ExportSection(field_name=field, kind=kind, index=index)
-            self.logger.debug(section)
+            assert self.logger.debug(section)
             res.append(section)
 
         # 解析結果を返す
@@ -352,7 +352,7 @@ class WasmLoader:
 
         # Data Sectionの数を読み込む
         data_count = data.read_leb128()
-        self.logger.debug(f"data count: {data_count}")
+        assert self.logger.debug(f"data count: {data_count}")
 
         # Data Sectionのデータを読み込む
         res: list[DataSection] = []
@@ -364,7 +364,7 @@ class WasmLoader:
                 section = DataSection(index=0, offset=offset, init=init.data)
             else:
                 raise Exception("invalid data_type")
-            self.logger.debug(section)
+            assert self.logger.debug(section)
             res.append(section)
 
         # 解析結果を返す

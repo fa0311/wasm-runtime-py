@@ -347,7 +347,3 @@ class TestSuite(unittest.TestCase):
 
     def test_unreachable(self):
         self.__test_file("unreachable")
-
-
-if __name__ == "__main__":
-    unittest.main()

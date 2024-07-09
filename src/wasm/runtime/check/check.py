@@ -1,3 +1,5 @@
+import os
+
 from src.wasm.optimizer.optimizer import WasmOptimizer
 from src.wasm.type.numeric.base import NumericType
 
@@ -41,6 +43,6 @@ class TypeCheck:
             if a != b:
                 raise TypeError(f"invalid value {a} != {b}")
 
-    if not __debug__:
+    if os.getenv("WASM_FAST") == "true":
         type_check = lambda *args, **kwargs: None  # noqa: E731
         list_check = lambda *args, **kwargs: None  # noqa: E731

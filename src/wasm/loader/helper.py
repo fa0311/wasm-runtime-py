@@ -6,31 +6,44 @@ from src.wasm.type.numeric.base import NumericType
 BindingType = Callable[[NumericType], Optional[Any]]
 
 
-class CodeSectionSpecHelper:
-    def never(self):
-        raise Exception("never calle")
-
+class CodeSectionSpecHelperUtil:
     @classmethod
-    def mapped(cls, opcode: int) -> Callable:
+    def get_opcode(cls) -> dict[int, Callable]:
         value = CodeSectionSpec.__dict__.values()
         data = {}
         for v in value:
             if hasattr(v, "opcode"):
                 for m in v.opcode:
                     data[m] = v
-        return data.get(opcode, cls.never)
+        return data
 
     @classmethod
-    def is_prefix(cls, opcode: int) -> bool:
-        """2バイトのopcodeの先頭かどうかを判定する"""
+    def get_multi_byte_opcode(cls) -> dict[int, Callable]:
         value = CodeSectionSpec.__dict__.values()
-        prefix = {}
+        data = {}
         for v in value:
             if hasattr(v, "opcode"):
                 for m in v.opcode:
                     if m > 0xFF:
-                        prefix[m >> 8] = True
-        return opcode in prefix
+                        data[m >> 8] = v
+        return data
+
+
+class CodeSectionSpecHelper:
+    opcode = CodeSectionSpecHelperUtil.get_opcode()
+    multi_byte_opcode = CodeSectionSpecHelperUtil.get_multi_byte_opcode()
+
+    def never(self):
+        raise Exception("never calle")
+
+    @classmethod
+    def mapped(cls, opcode: int) -> Callable:
+        return cls.opcode.get(opcode, cls.never)
+
+    @classmethod
+    def is_prefix(cls, opcode: int) -> bool:
+        """2バイトのopcodeの先頭かどうかを判定する"""
+        return opcode in cls.multi_byte_opcode
 
     @classmethod
     def bind(cls, pearent: "CodeSectionSpec", opcode: int) -> BindingType:

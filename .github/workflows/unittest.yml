@@ -37,6 +37,11 @@ jobs:
             numpy-version: "1.26"
     permissions:
       contents: write
+    env:
+      OUTPUT_LOG_1: test_result_temp_1.log
+      OUTPUT_LOG_2: test_result_temp_2.log
+      OUTPUT_LOG_3: test_result_temp_3.log
+      OUTPUT_LOG_4: test_result_temp_4.log
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -73,47 +78,69 @@ jobs:
         id: tests
         if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-13' || matrix.os == 'macos-14'
         env:
-          OUTPUT_LOG: test_result_temp.log
           CI: "true"
         run: |
-          python -m unittest discover -p test_*.py -s tests > $OUTPUT_LOG 2>&1 || true
-          cat $OUTPUT_LOG
+          python -m unittest discover -p test_*.py -s tests > $OUTPUT_LOG_1 2>&1 || true
+          python -OO -m unittest discover -p test_*.py -s tests > $OUTPUT_LOG_2 2>&1 || true
+          python -OO -m unittest discover -p test_*.py -s tests/device > $OUTPUT_LOG_3 2>&1 || true
+          export WASM_FAST="true"
+          python -OO -m unittest discover -p test_*.py -s tests/benchmark > $OUTPUT_LOG_4 2>&1 || true
+          cat $OUTPUT_LOG_1
 
       - name: Run tests on Windows
         if: matrix.os == 'windows-latest'
         env:
-          OUTPUT_LOG: test_result_temp.log
           CI: "true"
         run: |
-          wast2json --version
-          python -m unittest discover -p test_*.py -s tests > %OUTPUT_LOG% 2>&1 || true
-          type %OUTPUT_LOG%
+          python -m unittest discover -p test_*.py -s tests > %OUTPUT_LOG_1% 2>&1 || true
+          python -OO -m unittest discover -p test_*.py -s tests > %OUTPUT_LOG_2% 2>&1 || true
+          python -OO -m unittest discover -p test_*.py -s tests/device > %OUTPUT_LOG_3% 2>&1 || true
+          $env:WASM_FAST="true"
+          python -OO -m unittest discover -p test_*.py -s tests/benchmark > %OUTPUT_LOG_4% 2>&1 || true
+          type %OUTPUT_LOG_1%
         shell: cmd
 
       - name: Comment on commit
         uses: actions/github-script@v7
         env:
-          OUTPUT_LOG: test_result_temp.log
           ON: ${{ matrix.os }} ${{ matrix.python-version }} ${{ matrix.numpy-version }}
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
             const commit_sha = context.sha;
-            const test_result = require('fs').readFileSync(process.env.OUTPUT_LOG, 'utf8');
-            const line = test_result.split('\n');
+            const test_result_1 = require('fs').readFileSync(process.env.OUTPUT_LOG_1, 'utf8').split('\n');
+            const test_result_2 = require('fs').readFileSync(process.env.OUTPUT_LOG_2, 'utf8').split('\n');
+            const test_result_3 = require('fs').readFileSync(process.env.OUTPUT_LOG_3, 'utf8').split('\n');
+            const test_result_4 = require('fs').readFileSync(process.env.OUTPUT_LOG_4, 'utf8').split('\n');
 
-            const separator = '-----';
-            const separator_index = line.findLastIndex(x => x.includes(separator));
-            const bottom = line.slice(separator_index + 1, separator_index + 4).join('\n');
-            const message = line.slice(separator_index + 4, line.length - 1).join('\n');
+            const get_bottom = (line) => {
+                const separator = '-----';
+                const separator_index = line.findLastIndex(x => x.includes(separator));
+                return line.slice(separator_index + 1, separator_index + 4);
+            };
 
-            const indent = '\n';
-            const log = (x) =>`${indent}\`\`\`log${indent}${x}${indent}\`\`\`${indent}`;
+            const get_message = (line) => {
+                const separator = '-----';
+                const separator_index = line.findIndex(x => x.includes(separator));
+                return line.slice(separator_index + 6, -1);
+            };
 
-            const body = `Test result on ${process.env.ON}:${log(bottom)}${log(message)}`;
+            const log = (x) =>`\`\`\`log\n${x.join('\n')}\n\`\`\``;
+            const body = [
+              `Test result on ${process.env.ON}:`,
+              "`Test on debug mode`",
+              log(get_bottom(test_result_1)),
+              "`Test on release mode`",
+              log(get_bottom(test_result_2)),
+              "`Test on device`",
+              log(get_message(test_result_3)),
+              "`Test on benchmark`",
+              log(get_message(test_result_4)),
+            ];
+
             github.rest.repos.createCommitComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 commit_sha: commit_sha,
-                body: body
+                body: body.join('\n'),
             });

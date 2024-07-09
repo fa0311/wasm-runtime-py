@@ -45,19 +45,24 @@ class NestedLogger:
     def debug(self, msg, *args, **kwargs):
         """デバッグログを出力する"""
         self.logging.debug(self.message(msg), *args, **kwargs)
+        return True
 
     def info(self, msg, *args, **kwargs):
         """情報ログを出力する"""
         self.logging.info(self.message(msg), *args, **kwargs)
+        return True
 
     def warning(self, msg, *args, **kwargs):
         """警告ログを出力する"""
         self.logging.warning(self.message(msg), *args, **kwargs)
+        return True
 
     def error(self, msg, *args, **kwargs):
         """エラーログを出力する"""
         self.logging.error(self.message(msg), *args, **kwargs)
+        return True
 
     def critical(self, msg, *args, **kwargs):
         """致命的なエラーログを出力する"""
         self.logging.critical(self.message(msg), *args, **kwargs)
+        return True

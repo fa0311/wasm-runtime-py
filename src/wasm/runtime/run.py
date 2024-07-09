@@ -31,7 +31,7 @@ class CodeSectionRun(CodeSectionSpec):
 
     @logger.logger
     def run(self, code: list[CodeInstructionOptimize]) -> Optional[Union[int, list[NumericType]]]:
-        self.logger.debug(f"params: {self.stack.value}")
+        assert self.logger.debug(f"params: {self.stack.value}")
         for data in code:
             res = self.run_instruction(data)
             if res is not None:
@@ -41,6 +41,6 @@ class CodeSectionRun(CodeSectionSpec):
         self.instruction = data
         opcode = self.instruction.opcode
         args = self.instruction.args
-        self.logger.debug(f"run: {self.instruction}")
+        assert self.logger.debug(f"run: {self.instruction}")
         fn = CodeSectionSpecHelper.bind(self, opcode)
         return fn(*args)

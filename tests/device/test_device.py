@@ -11,14 +11,20 @@ from src.wasm.runtime.error.helper import NumpyErrorHelper
 
 
 class TestDeice(unittest.TestCase):
-    def setUp(self):
-        self.data = []
+    """
+    python -OO -m unittest discover -p test_*.py -s tests/device
+    """
 
-    def tearDown(self):
-        [f() for f in self.data]
+    data = []
 
-    def print(self, *args, **kwargs):
-        self.data.append(lambda: print(*args, **kwargs))
+    @classmethod
+    def tearDownClass(cls):
+        print("\n")
+        [f() for f in cls.data]
+
+    @classmethod
+    def print(cls, *args, **kwargs):
+        cls.data.append(lambda: print(*args, **kwargs))
 
     def test_min(self):
         a = np.minimum(np.float32(-0.0), np.float32(0.0))
