@@ -46,7 +46,9 @@ class WasmLoader:
             size = data.read_leb128()
             section = data.read_bytes(size)
             assert self.logger.debug(f"id: {id}, size: {size}")
-            if id == 1:
+            if id == 0:
+                res.extend(self.import_section(section))
+            elif id == 1:
                 res.extend(self.type_section(section))
             elif id == 3:
                 res.extend(self.function_section(section))
@@ -81,6 +83,18 @@ class WasmLoader:
 
         # 解析結果を返す
         return sections
+
+    @logger.logger
+    def import_section(self, data: ByteReader) -> list:
+        """Import Sectionを読み込む"""
+
+        # Import Sectionの数を読み込む
+        import_count = data.read_leb128()
+        assert self.logger.debug(f"import count: {import_count}")
+
+        # Import Sectionのデータを読み込む
+        res = []
+        return res
 
     @logger.logger
     def type_section(self, data: ByteReader) -> list[TypeSection]:
@@ -286,7 +300,7 @@ class WasmLoader:
 
             for annotation in annotations:
                 if annotation == int:  # noqa: E721
-                    args.append(data.read_byte())
+                    args.append(data.read_leb128())
                 elif annotation == I32:
                     args.append(I32.astype(SignedI32.from_int(data.read_sleb128())))
                 elif annotation == I64:

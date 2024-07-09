@@ -72,7 +72,7 @@ class WasmExec:
     def get_type(self, index: int) -> tuple[list[int], Optional[list[int]]]:
         """関数のインデックスからCode SectionとType Sectionを取得する"""
 
-        if index < len(self.sections.type_section):
+        if index < len(self.sections.type_section) and 0x40 < index:
             type = self.sections.type_section[index]
             return type.params, type.returns
         else:
