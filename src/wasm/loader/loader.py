@@ -160,7 +160,11 @@ class WasmLoader:
                 max = data.read_leb128()
             else:
                 raise Exception("invalid limit type")
-            section = TableSection(element_type=element_type, limits_min=min, limits_max=max)
+            section = TableSection(
+                element_type=element_type,
+                limits_min=min,
+                limits_max=max,
+            )
             assert self.logger.debug(section)
             res.append(section)
 

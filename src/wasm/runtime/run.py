@@ -8,7 +8,7 @@ from src.wasm.optimizer.struct import (
     CodeInstructionOptimize,
 )
 from src.wasm.runtime.stack import NumericStack
-from src.wasm.type.numeric.base import NumericType
+from src.wasm.type.base import AnyType
 
 if TYPE_CHECKING:
     from src.wasm.runtime.exec import WasmExec
@@ -20,7 +20,7 @@ class CodeSectionRun(CodeSectionSpec):
     def __init__(
         self,
         env: "WasmExec",
-        locals: list[NumericType],
+        locals: list[AnyType],
         stack: NumericStack,
     ):
         self.env = env
@@ -30,7 +30,7 @@ class CodeSectionRun(CodeSectionSpec):
         self.instruction: CodeInstructionOptimize
 
     @logger.logger
-    def run(self, code: list[CodeInstructionOptimize]) -> Optional[Union[int, list[NumericType]]]:
+    def run(self, code: list[CodeInstructionOptimize]) -> Optional[Union[int, list[AnyType]]]:
         assert self.logger.debug(f"params: {self.stack.value}")
         for data in code:
             res = self.run_instruction(data)

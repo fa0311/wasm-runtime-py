@@ -34,15 +34,187 @@ class CodeSectionBlockDebug(CodeSectionBlock):
         except TypeError:
             raise WasmIndirectCallTypeMismatchError()
 
+    def i32_load(self, align: int, offset: int):
+        try:
+            return super().i32_load(align, offset)
+        except IndexError:
+            raise WasmOutOfBoundsMemoryAccessError()
+        except ValueError:
+            raise WasmOutOfBoundsMemoryAccessError()
+
+    def i64_load(self, align: int, offset: int):
+        try:
+            return super().i64_load(align, offset)
+        except IndexError:
+            raise WasmOutOfBoundsMemoryAccessError()
+        except ValueError:
+            raise WasmOutOfBoundsMemoryAccessError()
+
+    def f32_load(self, align: int, offset: int):
+        try:
+            return super().f32_load(align, offset)
+        except IndexError:
+            raise WasmOutOfBoundsMemoryAccessError()
+        except ValueError:
+            raise WasmOutOfBoundsMemoryAccessError()
+
+    def f64_load(self, align: int, offset: int):
+        try:
+            return super().f64_load(align, offset)
+        except IndexError:
+            raise WasmOutOfBoundsMemoryAccessError()
+        except ValueError:
+            raise WasmOutOfBoundsMemoryAccessError()
+
+    def i32_load8_s(self, align: int, offset: int):
+        try:
+            return super().i32_load8_s(align, offset)
+        except IndexError:
+            raise WasmOutOfBoundsMemoryAccessError()
+        except ValueError:
+            raise WasmOutOfBoundsMemoryAccessError()
+
+    def i32_load8_u(self, align: int, offset: int):
+        try:
+            return super().i32_load8_u(align, offset)
+        except IndexError:
+            raise WasmOutOfBoundsMemoryAccessError()
+        except ValueError:
+            raise WasmOutOfBoundsMemoryAccessError()
+
+    def i32_load16_s(self, align: int, offset: int):
+        try:
+            return super().i32_load16_s(align, offset)
+        except IndexError:
+            raise WasmOutOfBoundsMemoryAccessError()
+        except ValueError:
+            raise WasmOutOfBoundsMemoryAccessError()
+
+    def i32_load16_u(self, align: int, offset: int):
+        try:
+            return super().i32_load16_u(align, offset)
+        except IndexError:
+            raise WasmOutOfBoundsMemoryAccessError()
+        except ValueError:
+            raise WasmOutOfBoundsMemoryAccessError()
+
+    def i64_load8_s(self, align: int, offset: int):
+        try:
+            return super().i64_load8_s(align, offset)
+        except IndexError:
+            raise WasmOutOfBoundsMemoryAccessError()
+        except ValueError:
+            raise WasmOutOfBoundsMemoryAccessError()
+
+    def i64_load8_u(self, align: int, offset: int):
+        try:
+            return super().i64_load8_u(align, offset)
+        except IndexError:
+            raise WasmOutOfBoundsMemoryAccessError()
+        except ValueError:
+            raise WasmOutOfBoundsMemoryAccessError()
+
+    def i64_load16_s(self, align: int, offset: int):
+        try:
+            return super().i64_load16_s(align, offset)
+        except IndexError:
+            raise WasmOutOfBoundsMemoryAccessError()
+        except ValueError:
+            raise WasmOutOfBoundsMemoryAccessError()
+
+    def i64_load16_u(self, align: int, offset: int):
+        try:
+            return super().i64_load16_u(align, offset)
+        except IndexError:
+            raise WasmOutOfBoundsMemoryAccessError()
+        except ValueError:
+            raise WasmOutOfBoundsMemoryAccessError()
+
+    def i64_load32_s(self, align: int, offset: int):
+        try:
+            return super().i64_load32_s(align, offset)
+        except IndexError:
+            raise WasmOutOfBoundsMemoryAccessError()
+        except ValueError:
+            raise WasmOutOfBoundsMemoryAccessError()
+
+    def i64_load32_u(self, align: int, offset: int):
+        try:
+            return super().i64_load32_u(align, offset)
+        except IndexError:
+            raise WasmOutOfBoundsMemoryAccessError()
+        except ValueError:
+            raise WasmOutOfBoundsMemoryAccessError()
+
     def i32_store(self, align: int, offset: int):
         try:
             return super().i32_store(align, offset)
+        except IndexError:
+            raise WasmOutOfBoundsMemoryAccessError()
         except ValueError:
             raise WasmOutOfBoundsMemoryAccessError()
 
     def i64_store(self, align: int, offset: int):
         try:
             return super().i64_store(align, offset)
+        except IndexError:
+            raise WasmOutOfBoundsMemoryAccessError()
+        except ValueError:
+            raise WasmOutOfBoundsMemoryAccessError()
+
+    def f32_store(self, align: int, offset: int):
+        try:
+            return super().f32_store(align, offset)
+        except IndexError:
+            raise WasmOutOfBoundsMemoryAccessError()
+        except ValueError:
+            raise WasmOutOfBoundsMemoryAccessError()
+
+    def f64_store(self, align: int, offset: int):
+        try:
+            return super().f64_store(align, offset)
+        except IndexError:
+            raise WasmOutOfBoundsMemoryAccessError()
+        except ValueError:
+            raise WasmOutOfBoundsMemoryAccessError()
+
+    def i32_store8(self, align: int, offset: int):
+        try:
+            return super().i32_store8(align, offset)
+        except IndexError:
+            raise WasmOutOfBoundsMemoryAccessError()
+        except ValueError:
+            raise WasmOutOfBoundsMemoryAccessError()
+
+    def i32_store16(self, align: int, offset: int):
+        try:
+            return super().i32_store16(align, offset)
+        except IndexError:
+            raise WasmOutOfBoundsMemoryAccessError()
+        except ValueError:
+            raise WasmOutOfBoundsMemoryAccessError()
+
+    def i64_store8(self, align: int, offset: int):
+        try:
+            return super().i64_store8(align, offset)
+        except IndexError:
+            raise WasmOutOfBoundsMemoryAccessError()
+        except ValueError:
+            raise WasmOutOfBoundsMemoryAccessError()
+
+    def i64_store16(self, align: int, offset: int):
+        try:
+            return super().i64_store16(align, offset)
+        except IndexError:
+            raise WasmOutOfBoundsMemoryAccessError()
+        except ValueError:
+            raise WasmOutOfBoundsMemoryAccessError()
+
+    def i64_store32(self, align: int, offset: int):
+        try:
+            return super().i64_store32(align, offset)
+        except IndexError:
+            raise WasmOutOfBoundsMemoryAccessError()
         except ValueError:
             raise WasmOutOfBoundsMemoryAccessError()
 

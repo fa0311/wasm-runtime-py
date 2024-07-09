@@ -1,6 +1,7 @@
 import os
 
 from src.wasm.optimizer.optimizer import WasmOptimizer
+from src.wasm.type.base import AnyType
 from src.wasm.type.numeric.base import NumericType
 
 
@@ -27,7 +28,7 @@ class TypeCheck:
             raise FloatingPointError()
 
     @staticmethod
-    def type_check(param: list[NumericType], params_type: list[int]):
+    def type_check(param: list[AnyType], params_type: list[int]):
         if len(param) != len(params_type):
             raise TypeError("invalid param length")
         for a, b in zip(param, params_type):

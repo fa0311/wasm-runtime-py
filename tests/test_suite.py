@@ -18,10 +18,10 @@ from src.wasm.optimizer.optimizer import WasmOptimizer
 from src.wasm.runtime.entry import WasmExecEntry
 from src.wasm.runtime.error.error import WasmCallStackExhaustedError, WasmRuntimeError, WasmUnimplementedError
 from src.wasm.runtime.exec import WasmExec
-from src.wasm.type.externref.base import ExternRef
-from src.wasm.type.numeric.base import NumericType
+from src.wasm.type.base import AnyType
 from src.wasm.type.numeric.numpy.float import F32, F64
 from src.wasm.type.numeric.numpy.int import I32, I64
+from src.wasm.type.ref.base import ExternRef, FuncRef
 
 
 class TestSuite(unittest.TestCase):
@@ -101,6 +101,8 @@ class TestSuite(unittest.TestCase):
                 res[-1][2].append(cmd)
             elif cmd["type"] == "assert_malformed":
                 res.append((cmd["type"], self.__read_module(name, cmd["filename"]), []))
+            elif cmd["type"] == "action":
+                res[-1][2].append(cmd)
             else:
                 self.fail(f"unknown command: {cmd['type']}")
         return res
@@ -156,6 +158,8 @@ class TestSuite(unittest.TestCase):
                 self.__test_run_assert_trap(data, cmd)
             elif cmd["type"] == "assert_exhaustion":
                 self.__test_run_assert_trap(data, cmd)
+            elif cmd["type"] == "action":
+                self.__test_run_assert_return(data, cmd)
             else:
                 self.fail(f"expect: assert_return or assert_trap, actual: {cmd['type']}")
         except WasmUnimplementedError as e:
@@ -173,12 +177,13 @@ class TestSuite(unittest.TestCase):
             "i64": lambda x: I64.from_str(x),
             "f32": lambda x: F32.from_str(x),
             "f64": lambda x: F64.from_str(x),
-            "externref": lambda x: ExternRef(x),
+            "externref": lambda x: ExternRef.from_value(None) if x == "null" else ExternRef.from_value(x),
+            "funcref": lambda x: FuncRef.from_value(None) if x == "null" else FuncRef.from_value(x),
         }
         args = cmd["action"]["args"]
         expect = cmd["expected"]
-        numeric_args: list[NumericType] = [type_map[value["type"]](value["value"]) for value in args]
-        numeric_expect: list[NumericType] = [type_map[value["type"]](value["value"]) for value in expect]
+        numeric_args: list[AnyType] = [type_map[value["type"]](value["value"]) for value in args]
+        numeric_expect: list[AnyType] = [type_map[value["type"]](value["value"]) for value in expect]
         assert data is not None
         runtime, res = data.start(
             field=field,
@@ -190,6 +195,8 @@ class TestSuite(unittest.TestCase):
             a, b = r.value, e.value
             if type(r) != type(e):
                 self.fail(f"expect: {e.__class__}, actual: {r.__class__}")
+            if a is None and b is None:
+                continue
             if a < b or a > b:
                 self.fail(f"expect: {b}, actual: {a}")
 
@@ -203,7 +210,7 @@ class TestSuite(unittest.TestCase):
         }
         args = cmd["action"]["args"]
         text = cmd["text"]
-        numeric_args: list[NumericType] = [type_map[value["type"]](value["value"]) for value in args]
+        numeric_args: list[AnyType] = [type_map[value["type"]](value["value"]) for value in args]
 
         try:
             assert data is not None
@@ -347,3 +354,75 @@ class TestSuite(unittest.TestCase):
 
     def test_unreachable(self):
         self.__test_file("unreachable")
+
+    def test_unreached_valid(self):
+        self.__test_file("unreached-valid")
+
+    def test_unreached_invalid(self):
+        self.__test_file("unreached-invalid")
+
+    def test_unwind(self):
+        self.__test_file("unwind")
+
+    def test_ref_null(self):
+        self.__test_file("ref_null")
+
+    def test_traps(self):
+        self.__test_file("traps")
+
+    def test_table_sub(self):
+        self.__test_file("table-sub")
+
+    def test_table_set(self):
+        self.__test_file("table_set")
+
+    def test_table_set_0_2(self):
+        self.__test_index_case("table_set", 0, 2)
+
+    def test_table_get(self):
+        self.__test_file("table_get")
+
+    def test_ref_is_null(self):
+        self.__test_file("ref_is_null")
+
+    def test_table_fill(self):
+        self.__test_file("table_fill")
+
+    def test_table_grow(self):
+        self.__test_file("table_grow")
+
+    def test_table_size(self):
+        self.__test_file("table_size")
+
+    def test_address(self):
+        self.__test_file("address")
+
+    def test_float_exprs(self):
+        self.__test_file("float_exprs")
+
+    def test_float_memory(self):
+        self.__test_file("float_memory")
+
+    def test_memory_redundancy(self):
+        self.__test_file("memory_redundancy")
+
+    def test_memory_fill(self):
+        self.__test_file("memory_fill")
+
+    def test_memory_copy(self):
+        self.__test_file("memory_copy")
+
+    def test_memory_init(self):
+        self.__test_file("memory_init")
+
+    def test_memory_grow(self):
+        self.__test_file("memory_grow")
+
+    def test_memory_size(self):
+        self.__test_file("memory_size")
+
+    def test_memory_trap(self):
+        self.__test_file("memory_trap")
+
+    def test_nop(self):
+        self.__test_file("nop")

@@ -1,5 +1,6 @@
 from math import ceil, floor, trunc
 
+from src.wasm.optimizer.optimizer import WasmOptimizer
 from src.wasm.runtime.check.check import TypeCheck
 from src.wasm.runtime.run import CodeSectionRun
 from src.wasm.type.numeric.numpy.float import F32, F64
@@ -138,6 +139,17 @@ class CodeSectionBlock(CodeSectionRun):
 
     def global_set(self, index: int):
         self.env.globals[index] = self.stack.any()
+
+    def table_get(self, index: int):
+        a = self.stack.i32()
+        table = self.env.sections.table_section[index]
+        ref = WasmOptimizer.get_ref_type(table.element_type)
+        self.stack.push(ref.from_value(table.value.get(int(a.value))))
+
+    def table_set(self, index: int):
+        b, a = self.stack.any(), self.stack.i32()
+        table = self.env.sections.table_section[index]
+        table.value[int(a.value)] = b.value
 
     def i32_load(self, index: int, align: int):
         addr = self.stack.i32()
@@ -790,6 +802,19 @@ class CodeSectionBlock(CodeSectionRun):
         a = self.stack.i64()
         sa = SignedI32.astype(a)
         self.stack.push(I64.astype(sa))
+
+    def ref_null(self, type: int):
+        self.stack.push(WasmOptimizer.get_ref_type(type).from_null())
+
+    def ref_is_null(self):
+        a = self.stack.ref()
+        self.stack.push(I32.from_bool(a.value is None))
+
+    def ref_func(self):
+        pass
+
+    def ref_as_non_null(self):
+        pass
 
     def i64_trunc_f32_s(self):
         a = self.stack.f32()

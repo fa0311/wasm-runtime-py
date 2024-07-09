@@ -143,6 +143,16 @@ class CodeSectionSpec(ABC):
         pass
 
     @abstractmethod
+    @Metadata.opcode(0x25)
+    def table_get(self, index: int):
+        pass
+
+    @abstractmethod
+    @Metadata.opcode(0x26)
+    def table_set(self, index: int):
+        pass
+
+    @abstractmethod
     @Metadata.opcode(0x28)
     def i32_load(self, index: int, align: int):
         pass
@@ -928,8 +938,23 @@ class CodeSectionSpec(ABC):
         pass
 
     @abstractmethod
-    @Metadata.opcode(0xFC00)
-    def i32_trunc_sat_f32_s(self):
+    @Metadata.opcode(0xD0)
+    def ref_null(self, type: int):
+        pass
+
+    @abstractmethod
+    @Metadata.opcode(0xD1)
+    def ref_is_null(self):
+        pass
+
+    @abstractmethod
+    @Metadata.opcode(0xD2)
+    def ref_func(self):
+        pass
+
+    @abstractmethod
+    @Metadata.opcode(0xD3)
+    def ref_as_non_null(self):
         pass
 
     @abstractmethod

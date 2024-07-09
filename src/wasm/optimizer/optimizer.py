@@ -28,10 +28,11 @@ from src.wasm.optimizer.struct import (
     TypeSectionOptimize,
     WasmSectionsOptimize,
 )
-from src.wasm.type.externref.base import ExternRef
+from src.wasm.type.base import AnyType
 from src.wasm.type.numeric.base import NumericType
 from src.wasm.type.numeric.numpy.float import F32, F64
 from src.wasm.type.numeric.numpy.int import I32, I64
+from src.wasm.type.ref.base import ExternRef, FuncRef, RefType
 
 
 class WasmOptimizer:
@@ -49,6 +50,8 @@ class WasmOptimizer:
             return None
         if type == 0x6F:
             return ExternRef
+        if type == 0x70:
+            return FuncRef
 
         raise Exception(f"invalid type: {type:02X}")
 
@@ -68,7 +71,30 @@ class WasmOptimizer:
             return F32
         if type == 0x7C:
             return F64
+        raise Exception(f"invalid type: {type:02X}")
 
+    @staticmethod
+    def get_any_type(type: int) -> type[AnyType]:
+        if type == 0x7F:
+            return I32
+        if type == 0x7E:
+            return I64
+        if type == 0x7D:
+            return F32
+        if type == 0x7C:
+            return F64
+        if type == 0x6F:
+            return ExternRef
+        if type == 0x70:
+            return FuncRef
+        raise Exception(f"invalid type: {type:02X}")
+
+    @staticmethod
+    def get_ref_type(type: int) -> type[RefType]:
+        if type == 0x6F:
+            return ExternRef
+        if type == 0x70:
+            return FuncRef
         raise Exception(f"invalid type: {type:02X}")
 
     def optimize(self, sections: "WasmSections") -> "WasmSectionsOptimize":
@@ -99,6 +125,7 @@ class WasmOptimizer:
 
     def table_section(self, section: "TableSection") -> "TableSectionOptimize":
         return TableSectionOptimize(
+            value={},
             element_type=section.element_type,
             limits_min=section.limits_min,
             limits_max=section.limits_max,

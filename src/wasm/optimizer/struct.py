@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Any, Optional
 
 from src.tools.byte import ByteReader
 from src.wasm.loader.helper import CodeSectionSpecHelper
@@ -26,6 +26,7 @@ class FunctionSectionOptimize:
 class TableSectionOptimize:
     """Table Sectionのデータ構造"""
 
+    value: dict[int, Any] = field(metadata={"description": "テーブルの値"})
     element_type: int = field(metadata={"description": "要素の型"})
     limits_min: int = field(metadata={"description": "テーブルの最小値"})
     limits_max: Optional[int] = field(metadata={"description": "テーブルの最大値"})

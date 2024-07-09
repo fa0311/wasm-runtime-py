@@ -10,8 +10,8 @@ from src.wasm.optimizer.struct import (
 )
 from src.wasm.runtime.code_exec import CodeSectionBlock
 from src.wasm.runtime.stack import NumericStack
+from src.wasm.type.base import AnyType
 from src.wasm.type.bytes.numpy.base import NumpyBytesType
-from src.wasm.type.numeric.base import NumericType
 
 
 class WasmExec:
@@ -26,14 +26,14 @@ class WasmExec:
     def reset(self):
         memory_size = self.sections.memory_section[0].limits_min if self.sections.memory_section else 0
         self.memory = NumpyBytesType.from_size(len(self.sections.memory_section) * 64 * 1024 * memory_size)
-        self.globals = [WasmOptimizer.get_numeric_type(x.type).from_int(0) for x in self.sections.global_section]
+        self.globals = [WasmOptimizer.get_any_type(x.type).from_null() for x in self.sections.global_section]
 
         for data_section in self.sections.data_section:
             for offset in data_section.offset:
                 self.memory.store(offset=offset.get_numeric(0).value, value=data_section.init)
 
     @logger.logger
-    def start(self, field: bytes, param: list[NumericType]):
+    def start(self, field: bytes, param: list[AnyType]):
         """エントリーポイントを実行する"""
 
         assert self.logger.info(f"field: {field.decode()}")
@@ -43,7 +43,7 @@ class WasmExec:
 
         return self.run(start.index, param)
 
-    def run(self, index: int, param: list[NumericType]):
+    def run(self, index: int, param: list[AnyType]):
         fn, fn_type = self.get_function(index)
 
         # ローカル変数とExecインスタンスを生成
@@ -80,7 +80,7 @@ class WasmExec:
             returns = None if type is None else [type]
             return [], returns
 
-    def get_block(self, locals: list[NumericType], stack: list[NumericType]):
+    def get_block(self, locals: list[AnyType], stack: list[AnyType]):
         return CodeSectionBlock(
             env=self,
             locals=locals,

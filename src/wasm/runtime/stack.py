@@ -1,31 +1,32 @@
 from typing import TypeVar
 
-from src.wasm.type.numeric.base import NumericType
+from src.wasm.type.base import AnyType
 from src.wasm.type.numeric.numpy.float import F32, F64
 from src.wasm.type.numeric.numpy.int import I32, I64
+from src.wasm.type.ref.base import RefType
 
 
 class NumericStack:
-    value: list[NumericType]
-    T = TypeVar("T", bound=NumericType)
+    value: list[AnyType]
+    T = TypeVar("T", bound=AnyType)
 
-    def __init__(self, value: list[NumericType]):
+    def __init__(self, value: list[AnyType]):
         self.value = value
 
     def __str__(self):
         a = [str(x) for x in self.value]
         return f"[{', '.join(a)}]" if a else "[]"
 
-    def push(self, value: NumericType):
+    def push(self, value: AnyType):
         self.value.append(value)
 
-    def extend(self, value: list[NumericType]):
+    def extend(self, value: list[AnyType]):
         self.value.extend(value)
 
-    def any(self, read_only=False, key=-1) -> NumericType:
+    def any(self, read_only=False, key=-1) -> AnyType:
         return self.value[key] if read_only else self.value.pop()
 
-    def all(self) -> list[NumericType]:
+    def all(self) -> list[AnyType]:
         return self.value
 
     def __len__(self):
@@ -51,3 +52,6 @@ class NumericStack:
 
     def f64(self, read_only=False, key=-1) -> F64:
         return self.__pop(F64, read_only, key)
+
+    def ref(self, read_only=False, key=-1) -> RefType:
+        return self.__pop(RefType, read_only, key)

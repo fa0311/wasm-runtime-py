@@ -1,13 +1,16 @@
 from typing import Union
 
+from src.wasm.type.base import AnyType
 
-class NumericType:
-    def __init__(self, value):
-        self.value = value
 
+class NumericType(AnyType):
     @classmethod
     def from_value(cls, value):
         return cls(value)
+
+    @classmethod
+    def from_null(cls):
+        return cls(0)
 
     @classmethod
     def astype(cls, other: "NumericType"):

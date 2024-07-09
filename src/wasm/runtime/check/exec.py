@@ -5,16 +5,16 @@ from src.wasm.runtime.error.error import (
 )
 from src.wasm.runtime.exec import WasmExec
 from src.wasm.runtime.stack import NumericStack
-from src.wasm.type.numeric.base import NumericType
+from src.wasm.type.base import AnyType
 
 
 class WasmExecRelease(WasmExec):
-    def run(self, index: int, param: list[NumericType]):
+    def run(self, index: int, param: list[AnyType]):
         return super().run(index, param)
 
 
 class WasmExecCheck(WasmExec):
-    def run(self, index: int, param: list[NumericType]):
+    def run(self, index: int, param: list[AnyType]):
         fn, fn_type = self.get_function(index)
         TypeCheck.type_check(param, fn_type.params)
 
@@ -26,7 +26,7 @@ class WasmExecCheck(WasmExec):
         TypeCheck.type_check(returns, fn_type.returns)
         return block, returns
 
-    def get_block(self, locals: list[NumericType], stack: list[NumericType]):
+    def get_block(self, locals: list[AnyType], stack: list[AnyType]):
         return CodeSectionBlockDebug(
             env=self,
             locals=locals,
