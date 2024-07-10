@@ -27,7 +27,6 @@ from src.wasm.type.ref.base import ExternRef, FuncRef
 class TestSuite(unittest.TestCase):
     def setUp(self):
         self.CI = os.getenv("CI") == "true"
-        self.CI = True
         self.__set_logger()
         if sys.version_info >= (3, 12):
             sys.setrecursionlimit(10**6)
@@ -178,18 +177,13 @@ class TestSuite(unittest.TestCase):
             "i64": lambda x: I64.from_str(x),
             "f32": lambda x: F32.from_str(x),
             "f64": lambda x: F64.from_str(x),
-            "externref": lambda x: ExternRef.from_value(None),
-            "funcref": lambda x: FuncRef.from_value(None),
-        }
-        err_map = {
-            "externref": lambda x: x != "null",
-            "funcref": lambda x: x != "null",
+            "externref": lambda x: ExternRef.from_value(x if x != "null" else None),
+            "funcref": lambda x: FuncRef.from_value(x if x != "null" else None),
         }
         args = cmd["action"]["args"]
         expect = cmd["expected"]
         numeric_args: list[AnyType] = [type_map[value["type"]](value["value"]) for value in args]
         numeric_expect: list[AnyType] = [type_map[value["type"]](value["value"]) for value in expect]
-        assert not any([err_map.get(value["type"], lambda x: False)(value["value"]) for value in args])
         assert data is not None
         runtime, res = data.start(
             field=field,
@@ -198,10 +192,6 @@ class TestSuite(unittest.TestCase):
         if len(res) != len(numeric_expect):
             self.fail(f"expect: {len(numeric_expect)}, actual: {len(res)}")
         for i, (r, e) in enumerate(zip(res, numeric_expect)):
-            if isinstance(r, ExternRef) and isinstance(e, ExternRef):
-                continue
-            if isinstance(r, FuncRef) and isinstance(e, FuncRef):
-                continue
             a, b = r.value, e.value
             if type(r) != type(e):
                 self.fail(f"expect: {e.__class__}, actual: {r.__class__}")
@@ -217,18 +207,12 @@ class TestSuite(unittest.TestCase):
             "i64": lambda x: I64.from_str(x),
             "f32": lambda x: F32.from_str(x),
             "f64": lambda x: F64.from_str(x),
-            "externref": lambda x: ExternRef.from_value(None),
-            "funcref": lambda x: FuncRef.from_value(None),
-        }
-        err_map = {
-            "externref": lambda x: x != "null",
-            "funcref": lambda x: x != "null",
+            "externref": lambda x: ExternRef.from_value(x if x != "null" else None),
+            "funcref": lambda x: FuncRef.from_value(x if x != "null" else None),
         }
         args = cmd["action"]["args"]
         text = cmd["text"]
         numeric_args: list[AnyType] = [type_map[value["type"]](value["value"]) for value in args]
-        assert not any([err_map.get(value["type"], lambda x: False)(value["value"]) for value in args])
-
         try:
             assert data is not None
             runtime, res = data.start(
@@ -341,6 +325,18 @@ class TestSuite(unittest.TestCase):
 
     def test_call_indirect(self):
         self.__test_file("call_indirect")
+        
+    def test_call_indirect_0(self):
+        self.__test_index("call_indirect", 0)
+
+    def test_call_indirect_1(self):
+        self.__test_index("call_indirect", 1)
+
+    def test_call_indirect_1_2(self):
+        self.__test_index_case("call_indirect", 1, 2)
+    
+    def test_call_indirect_1_9(self):
+        self.__test_index_case("call_indirect", 1, 9)
 
     def test_return(self):
         self.__test_file("return")

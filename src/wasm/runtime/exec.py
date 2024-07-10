@@ -37,10 +37,13 @@ class WasmExec:
 
         for table_index, table in enumerate(self.sections.table_section):
             ref = WasmOptimizer.get_ref_type(table.element_type)
-            _, element = self.get_table_elem(table_index)
-            if element is not None:
+            element = self.get_table_elem(table_index)
+            if  element is not None and element.active is not None:
                 for funcidx in element.funcidx:
-                    self.tables[table_index][element.offset] = ref.from_value(funcidx)
+                    self.tables[table_index][element.active.offset] = ref.from_value(funcidx)
+            elif element is not None:
+                for funcidx in element.funcidx:
+                    self.run(funcidx, [])
 
         for data_section in self.sections.data_section:
             self.memory.store(offset=data_section.offset, value=data_section.init)
@@ -93,11 +96,11 @@ class WasmExec:
             returns = None if type is None else [type]
             return [], returns
 
-    def get_table_elem(self, index: int) -> tuple[TableSectionOptimize, Optional[ElementSectionOptimize]]:
+    def get_table_elem(self, index: int) -> Optional[ElementSectionOptimize]:
         """関数のインデックスからCode SectionとType Sectionを取得する"""
-        element = [x for x in self.sections.element_section if x.table == index]
+        element = [x for x in self.sections.element_section if x.active is not None and x.active.table == index]
         elem = element[0] if len(element) > 0 else None
-        return self.sections.table_section[index], elem
+        return elem
 
     def get_table(self, index: int) -> tuple[TableSectionOptimize, TableType]:
         """関数のインデックスからCode SectionとType Sectionを取得する"""

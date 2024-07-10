@@ -52,9 +52,16 @@ class ElementSectionOptimize:
     """Element Sectionのデータ構造"""
 
     type: int = field(metadata={"description": "このエレメントの種類"})
-    table: Optional[int] = field(metadata={"description": "テーブルのインデックス"})
-    offset: int = field(metadata={"description": "オフセット"})
     funcidx: list[int] = field(metadata={"description": "関数のインデックス"})
+    active: Optional["ElementSectionActiveOptimize"] = field(metadata={"description": "Activeの場合のデータ"})
+
+
+@dataclass
+class ElementSectionActiveOptimize:
+    """Element Sectionのデータ構造"""
+
+    table: int = field(metadata={"description": "テーブルのインデックス"})
+    offset: int = field(metadata={"description": "オフセット"})
 
 
 @dataclass

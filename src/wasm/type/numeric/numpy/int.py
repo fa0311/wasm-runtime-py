@@ -53,6 +53,10 @@ class I8(UnsignedIntType):
         self.value = value
 
     @classmethod
+    def from_null(cls):
+        return cls(np.uint8(0))
+
+    @classmethod
     def astype(cls, value: NumpyNumericType):
         return cls(value.value.astype(np.uint8))
 
@@ -86,6 +90,10 @@ class I16(UnsignedIntType):
 
     def __init__(self, value: np.uint16):
         self.value = value
+
+    @classmethod
+    def from_null(cls):
+        return cls(np.uint16(0))
 
     @classmethod
     def astype(cls, value: NumpyNumericType):
@@ -123,6 +131,10 @@ class I32(UnsignedIntType):
         self.value = value
 
     @classmethod
+    def from_null(cls):
+        return cls(np.uint32(0))
+
+    @classmethod
     def astype(cls, value: NumpyNumericType):
         return cls(value.value.astype(np.uint32))
 
@@ -157,6 +169,10 @@ class I64(UnsignedIntType):
     def __init__(self, value: np.uint64):
         self.value = value
 
+    @classmethod
+    def from_null(cls):
+        return cls(np.uint64(0))
+    
     @classmethod
     def astype(cls, value: NumpyNumericType):
         return cls(value.value.astype(np.uint64))
@@ -193,6 +209,10 @@ class SignedI8(SignedIntType):
         self.value = value
 
     @classmethod
+    def from_null(cls):
+        return cls(np.int8(0))
+
+    @classmethod
     def astype(cls, value: NumpyNumericType):
         return cls(value.value.astype(np.int8))
 
@@ -221,6 +241,10 @@ class SignedI16(SignedIntType):
 
     def __init__(self, value: np.int16):
         self.value = value
+
+    @classmethod
+    def from_null(cls):
+        return cls(np.int16(0))
 
     @classmethod
     def astype(cls, value: NumpyNumericType):
@@ -253,6 +277,10 @@ class SignedI32(SignedIntType):
         self.value = value
 
     @classmethod
+    def from_null(cls):
+        return cls(np.int32(0))
+
+    @classmethod
     def astype(cls, value: NumpyNumericType):
         return cls(value.value.astype(np.int32))
 
@@ -283,6 +311,10 @@ class SignedI64(SignedIntType):
         self.value = value
 
     @classmethod
+    def from_null(cls):
+        return cls(np.int64(0))
+
+    @classmethod
     def astype(cls, value: NumpyNumericType):
         return cls(value.value.astype(np.int64))
 
@@ -305,7 +337,3 @@ class SignedI64(SignedIntType):
     def to_bits(self) -> bytes:
         return self.value.astype("<i8")
 
-
-class LEB128(NumpyNumericType):
-    def __init__(self, value):
-        self.value = value

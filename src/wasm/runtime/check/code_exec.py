@@ -1,5 +1,6 @@
 from math import trunc
 
+from src.wasm.optimizer.optimizer import WasmOptimizer
 from src.wasm.runtime.check.check import TypeCheck
 from src.wasm.runtime.code_exec import CodeSectionBlock
 from src.wasm.runtime.error.error import (
@@ -10,6 +11,7 @@ from src.wasm.runtime.error.error import (
     WasmOutOfBoundsMemoryAccessError,
     WasmOutOfBoundsTableAccessError,
     WasmUndefinedElementError,
+    WasmUninitializedElementError,
     WasmUnreachableError,
 )
 from src.wasm.runtime.error.helper import NumpyErrorHelper
@@ -24,14 +26,21 @@ class CodeSectionBlockDebug(CodeSectionBlock):
         fn_type_params, fn_type_returns = self.env.get_type(index)
         a = self.stack.i32(read_only=True)
         element = self.env.sections.element_section[elm_index]
+        if element.active is not None:
+            table, _ = self.env.get_table(element.active.table)
+            ref = WasmOptimizer.get_ref_type(table.element_type)
 
         try:
-            __, fn_type = self.env.get_function(element.funcidx[a.value])
+            a, fn_type = self.env.get_function(element.funcidx[a.value])
             TypeCheck.list_check(fn_type.params, fn_type_params)
             TypeCheck.list_check(fn_type.returns, fn_type_returns or [])
             return super().call_indirect(index, elm_index)
         except IndexError:
             raise WasmUndefinedElementError()
+            if element.type == 0:
+                raise WasmUninitializedElementError()
+            else:
+                raise WasmUndefinedElementError()
         except TypeError:
             raise WasmIndirectCallTypeMismatchError()
 

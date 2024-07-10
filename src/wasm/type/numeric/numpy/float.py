@@ -62,13 +62,16 @@ class F32(FloatType):
         self.value = value
 
     @classmethod
+    def from_null(cls):
+        return cls(np.float32(0))
+
+    @classmethod
     def astype(cls, value: NumpyNumericType):
         return cls(value.value.astype(np.float32))
 
     @classmethod
     def from_int(cls, value: Union[int, float]):
-        x = np.float32(value)
-        return cls(x)
+        return cls(np.float32(value))
 
     @classmethod
     def from_str(cls, value: Union[str, bytes]):
@@ -97,13 +100,16 @@ class F64(FloatType):
         self.value = value
 
     @classmethod
+    def from_null(cls):
+        return cls(np.float64(0))
+    
+    @classmethod
     def astype(cls, value: NumpyNumericType):
         return cls(value.value.astype(np.float64))
 
     @classmethod
     def from_int(cls, value: Union[int, float]):
-        x = np.float64(value)
-        return cls(x)
+        return cls(np.float64(value))
 
     @classmethod
     def from_str(cls, value: Union[str, bytes]):

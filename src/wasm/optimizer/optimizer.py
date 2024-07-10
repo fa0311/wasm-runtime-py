@@ -7,6 +7,7 @@ from src.wasm.loader.struct import (
     CodeSection,
     DataSection,
     ElementSection,
+    ElementSectionActive,
     ExportSection,
     FunctionSection,
     GlobalSection,
@@ -19,6 +20,7 @@ from src.wasm.optimizer.struct import (
     CodeInstructionOptimize,
     CodeSectionOptimize,
     DataSectionOptimize,
+    ElementSectionActiveOptimize,
     ElementSectionOptimize,
     ExportSectionOptimize,
     FunctionSectionOptimize,
@@ -146,10 +148,16 @@ class WasmOptimizer:
     def element_section(self, section: "ElementSection") -> "ElementSectionOptimize":
         return ElementSectionOptimize(
             type=section.type,
+            funcidx=section.funcidx,
+            active=self.element_section_active(section.active) if section.active is not None else None,
+        )
+    
+    def element_section_active(self, section: "ElementSectionActive") -> "ElementSectionActiveOptimize":
+        return ElementSectionActiveOptimize(
             table=section.table,
             offset=section.offset,
-            funcidx=section.funcidx,
         )
+    
 
     def code_section(self, section: "CodeSection") -> "CodeSectionOptimize":
         res = CodeSectionOptimize(

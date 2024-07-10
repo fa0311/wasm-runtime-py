@@ -10,6 +10,7 @@ from src.wasm.loader.struct import (
     CodeSection,
     DataSection,
     ElementSection,
+    ElementSectionActive,
     ExportSection,
     FunctionSection,
     GlobalSection,
@@ -238,9 +239,8 @@ class WasmLoader:
             elem_type = data.read_byte()  # Elementのモード
 
             if elem_type == 0:  # Active
-                table = 0
-                expr = self.code_section_instructions(data)
-                offset = self.pick_int(expr)
+                offset = self.pick_int(self.code_section_instructions(data))
+                active = ElementSectionActive(table=0, offset=offset)
                 count = data.read_leb128()
                 funcidx = [data.read_leb128() for _ in range(count)]
             # elif elem_type == 1:  # Passive
@@ -249,21 +249,20 @@ class WasmLoader:
             #     funcidx = [data.read_leb128() for _ in range(count)]
             elif elem_type == 2:  # Active
                 table = data.read_leb128()
-                expr = self.code_section_instructions(data)
-                offset = self.pick_int(expr)
+                offset = self.pick_int(self.code_section_instructions(data))
+                active = ElementSectionActive(table=table, offset=offset)
                 _ = data.read_byte()
                 count = data.read_leb128()
                 funcidx = [data.read_leb128() for _ in range(count)]
             elif elem_type == 3:  # Declarative
-                table = 0
-                offset = 0  # None
+                active = None
                 _ = data.read_byte()
                 count = data.read_leb128()
                 funcidx = [data.read_leb128() for _ in range(count)]
             else:
                 raise Exception("invalid elem_type")
 
-            section = ElementSection(type=elem_type, table=table, offset=offset, funcidx=funcidx)
+            section = ElementSection(type=elem_type, funcidx=funcidx, active=active)
             res.append(section)
 
             assert self.logger.debug(section)
