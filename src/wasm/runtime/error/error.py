@@ -63,6 +63,10 @@ class WasmUnreachableError(WasmRuntimeError):
     MESSAGE = "unreachable"
 
 
+class WasmOutOfBoundsTableAccessError(WasmRuntimeError):
+    MESSAGE = "out of bounds table access"
+
+
 class WasmUnimplementedError(WasmError):
     @staticmethod
     def throw():

@@ -949,12 +949,17 @@ class CodeSectionSpec(ABC):
 
     @abstractmethod
     @Metadata.opcode(0xD2)
-    def ref_func(self):
+    def ref_func(self, index: int):
         pass
 
     @abstractmethod
     @Metadata.opcode(0xD3)
     def ref_as_non_null(self):
+        pass
+
+    @abstractmethod
+    @Metadata.opcode(0xFC00)
+    def i32_trunc_sat_f32_s(self):
         pass
 
     @abstractmethod
@@ -1029,15 +1034,15 @@ class CodeSectionSpec(ABC):
 
     @abstractmethod
     @Metadata.opcode(0xFC0F)
-    def table_grow(self):
+    def table_grow(self, index: int):
         pass
 
     @abstractmethod
     @Metadata.opcode(0xFC10)
-    def table_size(self):
+    def table_size(self, index: int):
         pass
 
     @abstractmethod
     @Metadata.opcode(0xFC11)
-    def table_fill(self):
+    def table_fill(self, index: int):
         pass

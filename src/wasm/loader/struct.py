@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from typing import Optional
 
 from src.tools.byte import ByteReader
-from src.wasm.type.numeric.base import NumericType
+from src.wasm.loader.helper import ArgumentType
 
 
 @dataclass
@@ -44,7 +44,7 @@ class GlobalSection:
 
     type: int = field(metadata={"description": "グローバル変数の型"})
     mutable: int = field(metadata={"description": "グローバル変数の変更可能性"})
-    init: bytes = field(metadata={"description": "グローバル変数の初期値"})
+    init: int = field(metadata={"description": "グローバル変数の初期値"})
 
 
 @dataclass
@@ -53,7 +53,7 @@ class ElementSection:
 
     type: int = field(metadata={"description": "このエレメントの種類"})
     table: Optional[int] = field(metadata={"description": "テーブルのインデックス"})
-    data: list["CodeInstruction"] = field(metadata={"description": "命令セット"})
+    offset: int = field(metadata={"description": "オフセット"})
     funcidx: list[int] = field(metadata={"description": "関数のインデックス"})
 
 
@@ -62,7 +62,7 @@ class CodeInstruction:
     """Code Sectionの命令セット"""
 
     opcode: int = field(metadata={"description": "命令コード"})
-    args: list[NumericType] = field(metadata={"description": "命令の引数"})
+    args: list[ArgumentType] = field(metadata={"description": "命令の引数"})
 
     if __debug__:
 
@@ -96,7 +96,7 @@ class DataSection:
     """Data Sectionのデータ構造"""
 
     index: int = field(metadata={"description": "データのインデックス"})
-    offset: list["CodeInstruction"] = field(metadata={"description": "オフセット"})
+    offset: int = field(metadata={"description": "オフセット"})
     init: bytes = field(metadata={"description": "初期値"})
 
 

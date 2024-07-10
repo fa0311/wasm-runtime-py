@@ -5,6 +5,7 @@ from src.wasm.runtime.check.check import TypeCheck
 from src.wasm.runtime.run import CodeSectionRun
 from src.wasm.type.numeric.numpy.float import F32, F64
 from src.wasm.type.numeric.numpy.int import I8, I16, I32, I64, SignedI8, SignedI16, SignedI32, SignedI64
+from src.wasm.type.ref.base import FuncRef
 
 
 class CodeSectionBlock(CodeSectionRun):
@@ -142,14 +143,11 @@ class CodeSectionBlock(CodeSectionRun):
 
     def table_get(self, index: int):
         a = self.stack.i32()
-        table = self.env.sections.table_section[index]
-        ref = WasmOptimizer.get_ref_type(table.element_type)
-        self.stack.push(ref.from_value(table.value.get(int(a.value))))
+        self.stack.push(self.env.tables[index][a.value])
 
     def table_set(self, index: int):
-        b, a = self.stack.any(), self.stack.i32()
-        table = self.env.sections.table_section[index]
-        table.value[int(a.value)] = b.value
+        b, a = self.stack.ref(), self.stack.i32()
+        self.env.tables[index][a.value] = b
 
     def i32_load(self, index: int, align: int):
         addr = self.stack.i32()
@@ -810,8 +808,8 @@ class CodeSectionBlock(CodeSectionRun):
         a = self.stack.ref()
         self.stack.push(I32.from_bool(a.value is None))
 
-    def ref_func(self):
-        pass
+    def ref_func(self, index: int):
+        self.stack.push(FuncRef.from_value(index))
 
     def ref_as_non_null(self):
         pass
@@ -908,11 +906,20 @@ class CodeSectionBlock(CodeSectionRun):
     def table_copy(self):
         pass
 
-    def table_grow(self):
-        pass
+    def table_grow(self, index: int):
+        a = self.stack.i32()
+        table_type, table = self.env.get_table(index)
+        if (table_type.limits_max or I32.get_max()) < len(table) + a.value:
+            self.stack.push(I32.from_int(-1))
+        else:
+            b = self.stack.ref()
+            self.stack.push(I32.from_int(len(table)))
+            table[len(table) : len(table) + a.value] = [b for _ in range(a.value)]
 
-    def table_size(self):
-        pass
+    def table_size(self, index: int):
+        self.stack.push(I32.from_int(len(self.env.tables[index])))
 
-    def table_fill(self):
-        pass
+    def table_fill(self, index: int):
+        c, b, a = self.stack.i32(), self.stack.ref(), self.stack.i32()
+        table = self.env.tables[index]
+        table[a.value : a.value + c.value] = [b for _ in range(c.value)]

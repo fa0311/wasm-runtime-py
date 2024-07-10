@@ -125,7 +125,6 @@ class WasmOptimizer:
 
     def table_section(self, section: "TableSection") -> "TableSectionOptimize":
         return TableSectionOptimize(
-            value={},
             element_type=section.element_type,
             limits_min=section.limits_min,
             limits_max=section.limits_max,
@@ -148,7 +147,7 @@ class WasmOptimizer:
         return ElementSectionOptimize(
             type=section.type,
             table=section.table,
-            data=self.expr(section.data),
+            offset=section.offset,
             funcidx=section.funcidx,
         )
 
@@ -204,6 +203,6 @@ class WasmOptimizer:
     def data_section(self, section: "DataSection") -> "DataSectionOptimize":
         return DataSectionOptimize(
             index=section.index,
-            offset=self.expr(section.offset),
+            offset=section.offset,
             init=section.init,
         )

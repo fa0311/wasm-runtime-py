@@ -1,9 +1,10 @@
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, Union
 
 from src.wasm.loader.spec import BlockType, CodeSectionSpec
 from src.wasm.type.numeric.base import NumericType
 
-BindingType = Callable[[NumericType], Optional[Any]]
+ArgumentType = Union[NumericType, int, list[int]]
+BindingType = Callable[[ArgumentType], Optional[Any]]
 
 
 class CodeSectionSpecHelperUtil:

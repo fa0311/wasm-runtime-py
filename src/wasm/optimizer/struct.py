@@ -1,9 +1,8 @@
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Optional
 
 from src.tools.byte import ByteReader
-from src.wasm.loader.helper import CodeSectionSpecHelper
-from src.wasm.type.numeric.base import NumericType
+from src.wasm.loader.helper import ArgumentType, CodeSectionSpecHelper
 
 
 @dataclass
@@ -26,7 +25,6 @@ class FunctionSectionOptimize:
 class TableSectionOptimize:
     """Table Sectionのデータ構造"""
 
-    value: dict[int, Any] = field(metadata={"description": "テーブルの値"})
     element_type: int = field(metadata={"description": "要素の型"})
     limits_min: int = field(metadata={"description": "テーブルの最小値"})
     limits_max: Optional[int] = field(metadata={"description": "テーブルの最大値"})
@@ -46,7 +44,7 @@ class GlobalSectionOptimize:
 
     type: int = field(metadata={"description": "グローバル変数の型"})
     mutable: int = field(metadata={"description": "グローバル変数の変更可能性"})
-    init: bytes = field(metadata={"description": "グローバル変数の初期値"})
+    init: int = field(metadata={"description": "グローバル変数の初期値"})
 
 
 @dataclass
@@ -55,7 +53,7 @@ class ElementSectionOptimize:
 
     type: int = field(metadata={"description": "このエレメントの種類"})
     table: Optional[int] = field(metadata={"description": "テーブルのインデックス"})
-    data: list["CodeInstructionOptimize"] = field(metadata={"description": "命令セット"})
+    offset: int = field(metadata={"description": "オフセット"})
     funcidx: list[int] = field(metadata={"description": "関数のインデックス"})
 
 
@@ -64,12 +62,9 @@ class CodeInstructionOptimize:
     """Code Sectionの命令セット"""
 
     opcode: int = field(metadata={"description": "命令コード"})
-    args: list[NumericType] = field(metadata={"description": "命令の引数"})
+    args: list[ArgumentType] = field(metadata={"description": "命令の引数"})
     child: list["CodeInstructionOptimize"] = field(metadata={"description": "子命令"})
     else_child: list["CodeInstructionOptimize"] = field(metadata={"description": "子命令"})
-
-    def get_numeric(self, index: int) -> NumericType:
-        return self.args[index]
 
     def __str__(self):
         return self.__repr__()
@@ -102,7 +97,7 @@ class DataSectionOptimize:
     """Data Sectionのデータ構造"""
 
     index: int = field(metadata={"description": "データのインデックス"})
-    offset: list["CodeInstructionOptimize"] = field(metadata={"description": "オフセット"})
+    offset: int = field(metadata={"description": "オフセット"})
     init: bytes = field(metadata={"description": "初期値"})
 
 

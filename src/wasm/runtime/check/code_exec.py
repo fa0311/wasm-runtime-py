@@ -8,6 +8,7 @@ from src.wasm.runtime.error.error import (
     WasmIntegerOverflowError,
     WasmInvalidConversionError,
     WasmOutOfBoundsMemoryAccessError,
+    WasmOutOfBoundsTableAccessError,
     WasmUndefinedElementError,
     WasmUnreachableError,
 )
@@ -33,6 +34,18 @@ class CodeSectionBlockDebug(CodeSectionBlock):
             raise WasmUndefinedElementError()
         except TypeError:
             raise WasmIndirectCallTypeMismatchError()
+
+    def table_get(self, index: int):
+        try:
+            return super().table_get(index)
+        except IndexError:
+            raise WasmOutOfBoundsTableAccessError()
+
+    def table_set(self, index: int):
+        try:
+            return super().table_set(index)
+        except IndexError:
+            raise WasmOutOfBoundsTableAccessError()
 
     def i32_load(self, align: int, offset: int):
         try:
@@ -220,7 +233,7 @@ class CodeSectionBlockDebug(CodeSectionBlock):
 
     @NumpyErrorHelper.seterr("raise")
     def i64_div_s(self):
-        b = self.stack.i64(read_only=True, key=-2)
+        b = self.stack.i64(read_only=True)
         try:
             return super().i64_div_s()
         except FloatingPointError:
@@ -231,7 +244,7 @@ class CodeSectionBlockDebug(CodeSectionBlock):
 
     @NumpyErrorHelper.seterr("raise")
     def i64_div_u(self):
-        b = self.stack.i64(read_only=True, key=-2)
+        b = self.stack.i64(read_only=True)
         try:
             return super().i64_div_u()
         except FloatingPointError:
@@ -242,7 +255,7 @@ class CodeSectionBlockDebug(CodeSectionBlock):
 
     @NumpyErrorHelper.seterr("raise")
     def i64_rem_s(self):
-        b = self.stack.i64(read_only=True, key=-2)
+        b = self.stack.i64(read_only=True)
         try:
             return super().i64_rem_s()
         except FloatingPointError:
@@ -253,7 +266,7 @@ class CodeSectionBlockDebug(CodeSectionBlock):
 
     @NumpyErrorHelper.seterr("raise")
     def i64_rem_u(self):
-        b = self.stack.i64(read_only=True, key=-2)
+        b = self.stack.i64(read_only=True)
         try:
             return super().i64_rem_u()
         except FloatingPointError:
@@ -264,7 +277,7 @@ class CodeSectionBlockDebug(CodeSectionBlock):
 
     @NumpyErrorHelper.seterr("raise")
     def i32_div_s(self):
-        b = self.stack.i32(read_only=True, key=-2)
+        b = self.stack.i32(read_only=True)
         try:
             return super().i32_div_s()
         except FloatingPointError:
@@ -275,7 +288,7 @@ class CodeSectionBlockDebug(CodeSectionBlock):
 
     @NumpyErrorHelper.seterr("raise")
     def i32_div_u(self):
-        b = self.stack.i32(read_only=True, key=-2)
+        b = self.stack.i32(read_only=True)
         try:
             return super().i32_div_u()
         except FloatingPointError:
@@ -286,7 +299,7 @@ class CodeSectionBlockDebug(CodeSectionBlock):
 
     @NumpyErrorHelper.seterr("raise")
     def i32_rem_s(self):
-        b = self.stack.i32(read_only=True, key=-2)
+        b = self.stack.i32(read_only=True)
         try:
             return super().i32_rem_s()
         except FloatingPointError:
@@ -297,7 +310,7 @@ class CodeSectionBlockDebug(CodeSectionBlock):
 
     @NumpyErrorHelper.seterr("raise")
     def i32_rem_u(self):
-        b = self.stack.i32(read_only=True, key=-2)
+        b = self.stack.i32(read_only=True)
         try:
             return super().i32_rem_u()
         except FloatingPointError:
@@ -393,3 +406,9 @@ class CodeSectionBlockDebug(CodeSectionBlock):
                 raise WasmInvalidConversionError()
             else:
                 raise WasmIntegerOverflowError()
+
+    def table_fill(self, index: int):
+        c, a = self.stack.i32(read_only=True, key=-3), self.stack.i32(read_only=True, key=-1)
+        if a.value + c.value > len(self.env.tables[index]):
+            raise WasmOutOfBoundsTableAccessError()
+        return super().table_fill(index)

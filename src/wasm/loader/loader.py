@@ -1,4 +1,5 @@
 import logging
+from typing import TypeVar
 
 from src.tools.byte import ByteReader
 from src.tools.logger import NestedLogger
@@ -17,6 +18,7 @@ from src.wasm.loader.struct import (
     TypeSection,
     WasmSections,
 )
+from src.wasm.type.numeric.base import NumericType
 from src.wasm.type.numeric.numpy.float import F32, F64
 from src.wasm.type.numeric.numpy.int import I32, I64, SignedI32, SignedI64
 
@@ -25,6 +27,7 @@ class WasmLoader:
     """Wasmバイナリを読み込むためのクラス"""
 
     logger = NestedLogger(logging.getLogger(__name__))
+    T = TypeVar("T")
 
     @logger.logger
     def load(self, bin: bytes) -> WasmSections:
@@ -211,8 +214,9 @@ class WasmLoader:
         for _ in range(global_count):
             content_type = data.read_byte()
             mutable = data.read_byte()
-            _ = self.code_section_instructions(data)
-            section = GlobalSection(type=content_type, mutable=mutable, init=b"0")
+            expr = self.code_section_instructions(data)
+            init = self.pick_int(expr)
+            section = GlobalSection(type=content_type, mutable=mutable, init=init)
             assert self.logger.debug(section)
             res.append(section)
 
@@ -234,8 +238,9 @@ class WasmLoader:
             elem_type = data.read_byte()  # Elementのモード
 
             if elem_type == 0:  # Active
-                table = None
+                table = 0
                 expr = self.code_section_instructions(data)
+                offset = self.pick_int(expr)
                 count = data.read_leb128()
                 funcidx = [data.read_leb128() for _ in range(count)]
             # elif elem_type == 1:  # Passive
@@ -245,13 +250,20 @@ class WasmLoader:
             elif elem_type == 2:  # Active
                 table = data.read_leb128()
                 expr = self.code_section_instructions(data)
+                offset = self.pick_int(expr)
+                _ = data.read_byte()
+                count = data.read_leb128()
+                funcidx = [data.read_leb128() for _ in range(count)]
+            elif elem_type == 3:  # Declarative
+                table = 0
+                offset = 0  # None
                 _ = data.read_byte()
                 count = data.read_leb128()
                 funcidx = [data.read_leb128() for _ in range(count)]
             else:
                 raise Exception("invalid elem_type")
 
-            section = ElementSection(type=elem_type, table=table, data=expr, funcidx=funcidx)
+            section = ElementSection(type=elem_type, table=table, offset=offset, funcidx=funcidx)
             res.append(section)
 
             assert self.logger.debug(section)
@@ -323,6 +335,13 @@ class WasmLoader:
             res.append(instruction)
         return res[:-1]
 
+    def pick_int(self, expr: list[CodeInstruction]) -> int:
+        if isinstance(expr[0].args[0], int):
+            return expr[0].args[0]
+        if isinstance(expr[0].args[0], NumericType):
+            return expr[0].args[0].value
+        raise Exception("invalid type")
+
     @logger.logger
     def code_section_local(self, data: ByteReader) -> list[int]:
         """Code Sectionのローカル変数を読み込む"""
@@ -377,7 +396,8 @@ class WasmLoader:
         for _ in range(data_count):
             data_type = data.read_byte()
             if data_type == 0:
-                offset = self.code_section_instructions(data)
+                expr = self.code_section_instructions(data)
+                offset = self.pick_int(expr)
                 init = data.read_bytes(data.read_leb128())
                 section = DataSection(index=0, offset=offset, init=init.data)
             else:

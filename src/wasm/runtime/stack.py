@@ -33,7 +33,7 @@ class NumericStack:
         return len(self.value)
 
     def __pop(self, value: type[T], read_only=False, key=-1) -> T:
-        item = self.any(read_only)
+        item = self.any(read_only, key)
         if not isinstance(item, value):
             raise Exception("invalid type")
         return item

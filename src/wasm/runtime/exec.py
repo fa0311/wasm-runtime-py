@@ -5,6 +5,8 @@ from src.tools.logger import NestedLogger
 from src.wasm.optimizer.optimizer import WasmOptimizer
 from src.wasm.optimizer.struct import (
     CodeSectionOptimize,
+    ElementSectionOptimize,
+    TableSectionOptimize,
     TypeSectionOptimize,
     WasmSectionsOptimize,
 )
@@ -12,6 +14,7 @@ from src.wasm.runtime.code_exec import CodeSectionBlock
 from src.wasm.runtime.stack import NumericStack
 from src.wasm.type.base import AnyType
 from src.wasm.type.bytes.numpy.base import NumpyBytesType
+from src.wasm.type.table.base import TableType
 
 
 class WasmExec:
@@ -27,10 +30,20 @@ class WasmExec:
         memory_size = self.sections.memory_section[0].limits_min if self.sections.memory_section else 0
         self.memory = NumpyBytesType.from_size(len(self.sections.memory_section) * 64 * 1024 * memory_size)
         self.globals = [WasmOptimizer.get_any_type(x.type).from_null() for x in self.sections.global_section]
+        self.tables = [
+            TableType.from_size(WasmOptimizer.get_ref_type(x.element_type), x.limits_min)
+            for x in self.sections.table_section
+        ]
+
+        for table_index, table in enumerate(self.sections.table_section):
+            ref = WasmOptimizer.get_ref_type(table.element_type)
+            _, element = self.get_table_elem(table_index)
+            if element is not None:
+                for funcidx in element.funcidx:
+                    self.tables[table_index][element.offset] = ref.from_value(funcidx)
 
         for data_section in self.sections.data_section:
-            for offset in data_section.offset:
-                self.memory.store(offset=offset.get_numeric(0).value, value=data_section.init)
+            self.memory.store(offset=data_section.offset, value=data_section.init)
 
     @logger.logger
     def start(self, field: bytes, param: list[AnyType]):
@@ -47,7 +60,7 @@ class WasmExec:
         fn, fn_type = self.get_function(index)
 
         # ローカル変数とExecインスタンスを生成
-        locals_param = [WasmOptimizer.get_numeric_type(x).from_int(0) for x in fn.local]
+        locals_param = [WasmOptimizer.get_any_type(x).from_null() for x in fn.local]
         locals = [*param, *locals_param]
         block = self.get_block(locals=locals, stack=[])
 
@@ -79,6 +92,16 @@ class WasmExec:
             type = WasmOptimizer.get_type_or_none(index)
             returns = None if type is None else [type]
             return [], returns
+
+    def get_table_elem(self, index: int) -> tuple[TableSectionOptimize, Optional[ElementSectionOptimize]]:
+        """関数のインデックスからCode SectionとType Sectionを取得する"""
+        element = [x for x in self.sections.element_section if x.table == index]
+        elem = element[0] if len(element) > 0 else None
+        return self.sections.table_section[index], elem
+
+    def get_table(self, index: int) -> tuple[TableSectionOptimize, TableType]:
+        """関数のインデックスからCode SectionとType Sectionを取得する"""
+        return self.sections.table_section[index], self.tables[index]
 
     def get_block(self, locals: list[AnyType], stack: list[AnyType]):
         return CodeSectionBlock(
