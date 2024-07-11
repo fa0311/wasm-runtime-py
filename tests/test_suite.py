@@ -215,7 +215,7 @@ class TestSuite(unittest.TestCase):
         numeric_args: list[AnyType] = [type_map[value["type"]](value["value"]) for value in args]
         try:
             assert data is not None
-            runtime, res = data.start(
+            res = data.start(
                 field=field,
                 param=numeric_args,
             )
@@ -389,17 +389,11 @@ class TestSuite(unittest.TestCase):
     def test_table_grow(self):
         self.__test_file("table_grow")
 
-    def test_table_grow_1(self):
-        self.__test_index("table_grow", 1)
-
     def test_table_size(self):
         self.__test_file("table_size")
 
-    # def test_address(self):
-    #     self.__test_file("address")
-
-    # def test_float_exprs(self):
-    #     self.__test_file("float_exprs")
+    def test_address(self):
+        self.__test_file("address")
 
     def test_float_memory(self):
         self.__test_file("float_memory")

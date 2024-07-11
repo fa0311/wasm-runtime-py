@@ -149,105 +149,119 @@ class CodeSectionBlock(CodeSectionRun):
         b, a = self.stack.ref(), self.stack.i32()
         self.env.tables[index][a.value] = b
 
-    def i32_load(self, index: int, align: int):
-        addr = self.stack.i32()
+    def i32_load(self, align: int, offset: int):
+        a = self.stack.i32()
+        addr = a + I32.from_int(offset)
         self.stack.push(I32.from_bits(self.env.memory[addr.value : addr.value + 4]))
 
-    def i64_load(self, index: int, align: int):
-        addr = self.stack.i32()
+    def i64_load(self, align: int, offset: int):
+        a = self.stack.i32()
+        addr = a + I32.from_int(offset)
         self.stack.push(I64.from_bits(self.env.memory[addr.value : addr.value + 8]))
 
-    def f32_load(self, index: int, align: int):
-        addr = self.stack.i32()
+    def f32_load(self, align: int, offset: int):
+        a = self.stack.i32()
+        addr = a + I32.from_int(offset)
         self.stack.push(F32.from_bits(self.env.memory[addr.value : addr.value + 4]))
 
-    def f64_load(self, index: int, align: int):
-        addr = self.stack.i32()
+    def f64_load(self, align: int, offset: int):
+        a = self.stack.i32()
+        addr = a + I32.from_int(offset)
         self.stack.push(F64.from_bits(self.env.memory[addr.value : addr.value + 8]))
 
-    def i32_load8_s(self, index: int, align: int):
-        addr = self.stack.i32()
+    def i32_load8_s(self, align: int, offset: int):
+        a = self.stack.i32()
+        addr = a + I32.from_int(offset)
         i8 = SignedI8.from_bits(self.env.memory[addr.value : addr.value + 1])
         self.stack.push(I32.astype(i8))
 
-    def i32_load8_u(self, index: int, align: int):
-        addr = self.stack.i32()
+    def i32_load8_u(self, align: int, offset: int):
+        a = self.stack.i32()
+        addr = a + I32.from_int(offset)
         i8 = I8.from_bits(self.env.memory[addr.value : addr.value + 1])
         self.stack.push(I32.astype(i8))
 
-    def i32_load16_s(self, index: int, align: int):
-        addr = self.stack.i32()
+    def i32_load16_s(self, align: int, offset: int):
+        a = self.stack.i32()
+        addr = a + I32.from_int(offset)
         i16 = SignedI16.from_bits(self.env.memory[addr.value : addr.value + 2])
         self.stack.push(I32.astype(i16))
 
-    def i32_load16_u(self, index: int, align: int):
-        addr = self.stack.i32()
+    def i32_load16_u(self, align: int, offset: int):
+        a = self.stack.i32()
+        addr = a + I32.from_int(offset)
         i16 = I16.from_bits(self.env.memory[addr.value : addr.value + 2])
         self.stack.push(I32.astype(i16))
 
-    def i64_load8_s(self, index: int, align: int):
-        addr = self.stack.i32()
+    def i64_load8_s(self, align: int, offset: int):
+        a = self.stack.i32()
+        addr = a + I32.from_int(offset)
         i8 = SignedI8.from_bits(self.env.memory[addr.value : addr.value + 1])
         self.stack.push(I64.astype(i8))
 
-    def i64_load8_u(self, index: int, align: int):
-        addr = self.stack.i32()
+    def i64_load8_u(self, align: int, offset: int):
+        a = self.stack.i32()
+        addr = a + I32.from_int(offset)
         i8 = I8.from_bits(self.env.memory[addr.value : addr.value + 1])
         self.stack.push(I64.astype(i8))
 
-    def i64_load16_s(self, index: int, align: int):
-        addr = self.stack.i32()
+    def i64_load16_s(self, align: int, offset: int):
+        a = self.stack.i32()
+        addr = a + I32.from_int(offset)
         i16 = SignedI16.from_bits(self.env.memory[addr.value : addr.value + 2])
         self.stack.push(I64.astype(i16))
 
-    def i64_load16_u(self, index: int, align: int):
-        addr = self.stack.i32()
+    def i64_load16_u(self, align: int, offset: int):
+        a = self.stack.i32()
+        addr = a + I32.from_int(offset)
         i16 = I16.from_bits(self.env.memory[addr.value : addr.value + 2])
         self.stack.push(I64.astype(i16))
 
-    def i64_load32_s(self, index: int, align: int):
-        addr = self.stack.i32()
+    def i64_load32_s(self, align: int, offset: int):
+        a = self.stack.i32()
+        addr = a + I32.from_int(offset)
         i32 = SignedI32.from_bits(self.env.memory[addr.value : addr.value + 4])
         self.stack.push(I64.astype(i32))
 
-    def i64_load32_u(self, index: int, align: int):
-        addr = self.stack.i32()
+    def i64_load32_u(self, align: int, offset: int):
+        a = self.stack.i32()
+        addr = a + I32.from_int(offset)
         i32 = I32.from_bits(self.env.memory[addr.value : addr.value + 4])
         self.stack.push(I64.astype(i32))
 
-    def i32_store(self, index: int, align: int):
+    def i32_store(self, align: int, offset: int):
         a, addr = self.stack.i32(), self.stack.i32()
         self.env.memory[addr.value : addr.value + 4] = a.to_bytes()
 
-    def i64_store(self, index: int, align: int):
+    def i64_store(self, align: int, offset: int):
         a, addr = self.stack.i64(), self.stack.i32()
         self.env.memory[addr.value : addr.value + 8] = a.to_bytes()
 
-    def f32_store(self, index: int, align: int):
+    def f32_store(self, align: int, offset: int):
         a, addr = self.stack.f32(), self.stack.i32()
         self.env.memory[addr.value : addr.value + 4] = a.to_bytes()
 
-    def f64_store(self, index: int, align: int):
+    def f64_store(self, align: int, offset: int):
         a, addr = self.stack.f64(), self.stack.i32()
         self.env.memory[addr.value : addr.value + 8] = a.to_bytes()
 
-    def i32_store8(self, index: int, align: int):
+    def i32_store8(self, align: int, offset: int):
         a, addr = self.stack.i32(), self.stack.i32()
         self.env.memory[addr.value : addr.value + 1] = a.to_bytes()[0:1]
 
-    def i32_store16(self, index: int, align: int):
+    def i32_store16(self, align: int, offset: int):
         a, addr = self.stack.i32(), self.stack.i32()
         self.env.memory[addr.value : addr.value + 2] = a.to_bytes()[0:2]
 
-    def i64_store8(self, index: int, align: int):
+    def i64_store8(self, align: int, offset: int):
         a, addr = self.stack.i64(), self.stack.i32()
         self.env.memory[addr.value : addr.value + 1] = a.to_bytes()[0:1]
 
-    def i64_store16(self, index: int, align: int):
+    def i64_store16(self, align: int, offset: int):
         a, addr = self.stack.i64(), self.stack.i32()
         self.env.memory[addr.value : addr.value + 2] = a.to_bytes()[0:2]
 
-    def i64_store32(self, index: int, align: int):
+    def i64_store32(self, align: int, offset: int):
         a, addr = self.stack.i64(), self.stack.i32()
         self.env.memory[addr.value : addr.value + 4] = a.to_bytes()[0:4]
 

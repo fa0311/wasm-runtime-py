@@ -154,117 +154,117 @@ class CodeSectionSpec(ABC):
 
     @abstractmethod
     @Metadata.opcode(0x28)
-    def i32_load(self, index: int, align: int):
+    def i32_load(self, align: int, offset: int):
         pass
 
     @abstractmethod
     @Metadata.opcode(0x29)
-    def i64_load(self, index: int, align: int):
+    def i64_load(self, align: int, offset: int):
         pass
 
     @abstractmethod
     @Metadata.opcode(0x2A)
-    def f32_load(self, index: int, align: int):
+    def f32_load(self, align: int, offset: int):
         pass
 
     @abstractmethod
     @Metadata.opcode(0x2B)
-    def f64_load(self, index: int, align: int):
+    def f64_load(self, align: int, offset: int):
         pass
 
     @abstractmethod
     @Metadata.opcode(0x2C)
-    def i32_load8_s(self, index: int, align: int):
+    def i32_load8_s(self, align: int, offset: int):
         pass
 
     @abstractmethod
     @Metadata.opcode(0x2D)
-    def i32_load8_u(self, index: int, align: int):
+    def i32_load8_u(self, align: int, offset: int):
         pass
 
     @abstractmethod
     @Metadata.opcode(0x2E)
-    def i32_load16_s(self, index: int, align: int):
+    def i32_load16_s(self, align: int, offset: int):
         pass
 
     @abstractmethod
     @Metadata.opcode(0x2F)
-    def i32_load16_u(self, index: int, align: int):
+    def i32_load16_u(self, align: int, offset: int):
         pass
 
     @abstractmethod
     @Metadata.opcode(0x30)
-    def i64_load8_s(self, index: int, align: int):
+    def i64_load8_s(self, align: int, offset: int):
         pass
 
     @abstractmethod
     @Metadata.opcode(0x31)
-    def i64_load8_u(self, index: int, align: int):
+    def i64_load8_u(self, align: int, offset: int):
         pass
 
     @abstractmethod
     @Metadata.opcode(0x32)
-    def i64_load16_s(self, index: int, align: int):
+    def i64_load16_s(self, align: int, offset: int):
         pass
 
     @abstractmethod
     @Metadata.opcode(0x33)
-    def i64_load16_u(self, index: int, align: int):
+    def i64_load16_u(self, align: int, offset: int):
         pass
 
     @abstractmethod
     @Metadata.opcode(0x34)
-    def i64_load32_s(self, index: int, align: int):
+    def i64_load32_s(self, align: int, offset: int):
         pass
 
     @abstractmethod
     @Metadata.opcode(0x35)
-    def i64_load32_u(self, index: int, align: int):
+    def i64_load32_u(self, align: int, offset: int):
         pass
 
     @abstractmethod
     @Metadata.opcode(0x36)
-    def i32_store(self, index: int, align: int):
+    def i32_store(self, align: int, offset: int):
         pass
 
     @abstractmethod
     @Metadata.opcode(0x37)
-    def i64_store(self, index: int, align: int):
+    def i64_store(self, align: int, offset: int):
         pass
 
     @abstractmethod
     @Metadata.opcode(0x38)
-    def f32_store(self, index: int, align: int):
+    def f32_store(self, align: int, offset: int):
         pass
 
     @abstractmethod
     @Metadata.opcode(0x39)
-    def f64_store(self, index: int, align: int):
+    def f64_store(self, align: int, offset: int):
         pass
 
     @abstractmethod
     @Metadata.opcode(0x3A)
-    def i32_store8(self, index: int, align: int):
+    def i32_store8(self, align: int, offset: int):
         pass
 
     @abstractmethod
     @Metadata.opcode(0x3B)
-    def i32_store16(self, index: int, align: int):
+    def i32_store16(self, align: int, offset: int):
         pass
 
     @abstractmethod
     @Metadata.opcode(0x3C)
-    def i64_store8(self, index: int, align: int):
+    def i64_store8(self, align: int, offset: int):
         pass
 
     @abstractmethod
     @Metadata.opcode(0x3D)
-    def i64_store16(self, index: int, align: int):
+    def i64_store16(self, align: int, offset: int):
         pass
 
     @abstractmethod
     @Metadata.opcode(0x3E)
-    def i64_store32(self, index: int, align: int):
+    def i64_store32(self, align: int, offset: int):
         pass
 
     @abstractmethod

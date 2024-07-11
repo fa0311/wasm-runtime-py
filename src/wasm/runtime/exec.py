@@ -15,6 +15,7 @@ from src.wasm.runtime.code_exec import CodeSectionBlock
 from src.wasm.runtime.stack import NumericStack
 from src.wasm.type.base import AnyType
 from src.wasm.type.bytes.numpy.base import NumpyBytesType
+from src.wasm.type.numeric.numpy.int import I32
 from src.wasm.type.table.base import TableType
 
 
@@ -58,7 +59,8 @@ class WasmExec:
                     ref = WasmOptimizer.get_ref_type(table.element_type)
                     self.tables[elem.active.table][offset] = ref.from_value(funcidx)
                 elif elem is not None:
-                    self.run(funcidx, [])
+                    _, fn_type = self.get_function(funcidx)
+                    self.run(funcidx, [I32.from_value(0) for _ in fn_type.params])
 
     @logger.logger
     def start(self, field: bytes, param: list[AnyType]):
