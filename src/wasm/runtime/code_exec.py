@@ -109,7 +109,7 @@ class CodeSectionBlock(CodeSectionRun):
     def call(self, index: int):
         _, fn_type = self.env.get_function(index)
         param = [self.stack.any() for _ in fn_type.params][::-1]
-        runtime, res = self.env.run(index, param)
+        res = self.env.run(index, param)
         self.stack.extend(res)
 
     def call_indirect(self, index: int, elm_index: int):
@@ -910,7 +910,7 @@ class CodeSectionBlock(CodeSectionRun):
         a = self.stack.i32()
         table_type, table = self.env.get_table(index)
         if (table_type.limits_max or I32.get_max()) < len(table) + a.value:
-            self.stack.push(I32.from_int(-1))
+            self.stack.push(I32.astype(SignedI32.from_int(-1)))
         else:
             b = self.stack.ref()
             self.stack.push(I32.from_int(len(table)))

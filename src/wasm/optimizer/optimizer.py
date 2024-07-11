@@ -142,7 +142,7 @@ class WasmOptimizer:
         return GlobalSectionOptimize(
             type=section.type,
             mutable=section.mutable,
-            init=section.init,
+            init=self.expr(section.init),
         )
 
     def element_section(self, section: "ElementSection") -> "ElementSectionOptimize":
@@ -151,13 +151,12 @@ class WasmOptimizer:
             funcidx=section.funcidx,
             active=self.element_section_active(section.active) if section.active is not None else None,
         )
-    
+
     def element_section_active(self, section: "ElementSectionActive") -> "ElementSectionActiveOptimize":
         return ElementSectionActiveOptimize(
             table=section.table,
-            offset=section.offset,
+            offset=self.expr(section.offset),
         )
-    
 
     def code_section(self, section: "CodeSection") -> "CodeSectionOptimize":
         res = CodeSectionOptimize(
@@ -211,6 +210,6 @@ class WasmOptimizer:
     def data_section(self, section: "DataSection") -> "DataSectionOptimize":
         return DataSectionOptimize(
             index=section.index,
-            offset=section.offset,
+            offset=self.expr(section.offset),
             init=section.init,
         )

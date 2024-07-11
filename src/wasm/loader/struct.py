@@ -44,7 +44,7 @@ class GlobalSection:
 
     type: int = field(metadata={"description": "グローバル変数の型"})
     mutable: int = field(metadata={"description": "グローバル変数の変更可能性"})
-    init: int = field(metadata={"description": "グローバル変数の初期値"})
+    init: list["CodeInstruction"] = field(metadata={"description": "グローバル変数の初期値"})
 
 
 @dataclass
@@ -61,9 +61,7 @@ class ElementSectionActive:
     """Element Sectionのデータ構造"""
 
     table: int = field(metadata={"description": "テーブルのインデックス"})
-    offset: int = field(metadata={"description": "オフセット"})
-
-    
+    offset: list["CodeInstruction"] = field(metadata={"description": "オフセット"})
 
 
 @dataclass
@@ -105,7 +103,7 @@ class DataSection:
     """Data Sectionのデータ構造"""
 
     index: int = field(metadata={"description": "データのインデックス"})
-    offset: int = field(metadata={"description": "オフセット"})
+    offset: list["CodeInstruction"] = field(metadata={"description": "オフセット"})
     init: bytes = field(metadata={"description": "初期値"})
 
 

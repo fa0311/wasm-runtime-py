@@ -1,9 +1,10 @@
 import logging
-from typing import Optional
+from typing import Optional, TypeVar
 
 from src.tools.logger import NestedLogger
 from src.wasm.optimizer.optimizer import WasmOptimizer
 from src.wasm.optimizer.struct import (
+    CodeInstructionOptimize,
     CodeSectionOptimize,
     ElementSectionOptimize,
     TableSectionOptimize,
@@ -21,12 +22,13 @@ class WasmExec:
     """Code Sectionのデータ構造"""
 
     logger = NestedLogger(logging.getLogger(__name__))
+    T = TypeVar("T")
 
     def __init__(self, sections: WasmSectionsOptimize):
         self.sections = sections
-        self.reset()
+        self.init()
 
-    def reset(self):
+    def init(self):
         memory_size = self.sections.memory_section[0].limits_min if self.sections.memory_section else 0
         self.memory = NumpyBytesType.from_size(len(self.sections.memory_section) * 64 * 1024 * memory_size)
         self.globals = [WasmOptimizer.get_any_type(x.type).from_null() for x in self.sections.global_section]
@@ -35,18 +37,28 @@ class WasmExec:
             for x in self.sections.table_section
         ]
 
-        for table_index, table in enumerate(self.sections.table_section):
-            ref = WasmOptimizer.get_ref_type(table.element_type)
-            element = self.get_table_elem(table_index)
-            if  element is not None and element.active is not None:
-                for funcidx in element.funcidx:
-                    self.tables[table_index][element.active.offset] = ref.from_value(funcidx)
-            elif element is not None:
-                for funcidx in element.funcidx:
-                    self.run(funcidx, [])
-
         for data_section in self.sections.data_section:
-            self.memory.store(offset=data_section.offset, value=data_section.init)
+            offset = self.run_data_int(data_section.offset)
+            self.memory.store(offset=offset, value=data_section.init)
+
+        self.table_init()
+
+    def get_table_elem(self, index: int) -> Optional[ElementSectionOptimize]:
+        """関数のインデックスからCode SectionとType Sectionを取得する"""
+        element = [x for x in self.sections.element_section if x.active is not None and x.active.table == index]
+        elem = element[0] if len(element) > 0 else None
+        return elem
+
+    def table_init(self):
+        for elem in self.sections.element_section:
+            for funcidx in elem.funcidx:
+                if elem is not None and elem.active is not None:
+                    table = self.sections.table_section[elem.active.table]
+                    offset = self.run_data_int(elem.active.offset)
+                    ref = WasmOptimizer.get_ref_type(table.element_type)
+                    self.tables[elem.active.table][offset] = ref.from_value(funcidx)
+                elif elem is not None:
+                    self.run(funcidx, [])
 
     @logger.logger
     def start(self, field: bytes, param: list[AnyType]):
@@ -75,7 +87,17 @@ class WasmExec:
             returns = [block.stack.any() for _ in fn_type.returns][::-1]
         assert self.logger.debug(f"res: {returns}")
 
-        return (block, returns)
+        return returns
+
+    def run_data_int(self, data: list[CodeInstructionOptimize]):
+        block = self.get_block(locals=[], stack=[])
+        res = block.run(data)
+        if isinstance(res, list):
+            returns = res.pop()
+        else:
+            returns = block.stack.any()
+        assert self.logger.debug(f"res: {returns}")
+        return int(returns.value)
 
     def get_function(self, index: int) -> tuple[CodeSectionOptimize, TypeSectionOptimize]:
         """関数のインデックスからCode SectionとType Sectionを取得する"""
@@ -95,12 +117,6 @@ class WasmExec:
             type = WasmOptimizer.get_type_or_none(index)
             returns = None if type is None else [type]
             return [], returns
-
-    def get_table_elem(self, index: int) -> Optional[ElementSectionOptimize]:
-        """関数のインデックスからCode SectionとType Sectionを取得する"""
-        element = [x for x in self.sections.element_section if x.active is not None and x.active.table == index]
-        elem = element[0] if len(element) > 0 else None
-        return elem
 
     def get_table(self, index: int) -> tuple[TableSectionOptimize, TableType]:
         """関数のインデックスからCode SectionとType Sectionを取得する"""

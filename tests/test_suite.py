@@ -185,7 +185,7 @@ class TestSuite(unittest.TestCase):
         numeric_args: list[AnyType] = [type_map[value["type"]](value["value"]) for value in args]
         numeric_expect: list[AnyType] = [type_map[value["type"]](value["value"]) for value in expect]
         assert data is not None
-        runtime, res = data.start(
+        res = data.start(
             field=field,
             param=numeric_args,
         )
@@ -247,9 +247,6 @@ class TestSuite(unittest.TestCase):
 
     def test_i32(self):
         self.__test_file("i32")
-
-    def test_i32_0_24(self):
-        self.__test_index_case("i32", 0, 24)
 
     def test_i64(self):
         self.__test_file("i64")
@@ -325,18 +322,6 @@ class TestSuite(unittest.TestCase):
 
     def test_call_indirect(self):
         self.__test_file("call_indirect")
-        
-    def test_call_indirect_0(self):
-        self.__test_index("call_indirect", 0)
-
-    def test_call_indirect_1(self):
-        self.__test_index("call_indirect", 1)
-
-    def test_call_indirect_1_2(self):
-        self.__test_index_case("call_indirect", 1, 2)
-    
-    def test_call_indirect_1_9(self):
-        self.__test_index_case("call_indirect", 1, 9)
 
     def test_return(self):
         self.__test_file("return")
@@ -403,6 +388,9 @@ class TestSuite(unittest.TestCase):
 
     def test_table_grow(self):
         self.__test_file("table_grow")
+
+    def test_table_grow_1(self):
+        self.__test_index("table_grow", 1)
 
     def test_table_size(self):
         self.__test_file("table_size")

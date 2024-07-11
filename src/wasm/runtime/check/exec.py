@@ -1,3 +1,4 @@
+from src.wasm.optimizer.struct import CodeInstructionOptimize
 from src.wasm.runtime.check.check import TypeCheck
 from src.wasm.runtime.check.code_exec import CodeSectionBlockDebug
 from src.wasm.runtime.error.error import (
@@ -19,12 +20,19 @@ class WasmExecCheck(WasmExec):
         TypeCheck.type_check(param, fn_type.params)
 
         try:
-            block, returns = super().run(index, param)
+            returns = super().run(index, param)
         except RecursionError:
             raise WasmCallStackExhaustedError()
 
         TypeCheck.type_check(returns, fn_type.returns)
-        return block, returns
+        return returns
+
+    def run_data_int(self, data: list[CodeInstructionOptimize]):
+        try:
+            returns = super().run_data_int(data)
+        except RecursionError:
+            raise WasmCallStackExhaustedError()
+        return returns
 
     def get_block(self, locals: list[AnyType], stack: list[AnyType]):
         return CodeSectionBlockDebug(

@@ -1,6 +1,5 @@
 from math import trunc
 
-from src.wasm.optimizer.optimizer import WasmOptimizer
 from src.wasm.runtime.check.check import TypeCheck
 from src.wasm.runtime.code_exec import CodeSectionBlock
 from src.wasm.runtime.error.error import (
@@ -11,7 +10,6 @@ from src.wasm.runtime.error.error import (
     WasmOutOfBoundsMemoryAccessError,
     WasmOutOfBoundsTableAccessError,
     WasmUndefinedElementError,
-    WasmUninitializedElementError,
     WasmUnreachableError,
 )
 from src.wasm.runtime.error.helper import NumpyErrorHelper
@@ -26,21 +24,20 @@ class CodeSectionBlockDebug(CodeSectionBlock):
         fn_type_params, fn_type_returns = self.env.get_type(index)
         a = self.stack.i32(read_only=True)
         element = self.env.sections.element_section[elm_index]
-        if element.active is not None:
-            table, _ = self.env.get_table(element.active.table)
-            ref = WasmOptimizer.get_ref_type(table.element_type)
+
+        # if not isinstance(element.active, ElementSectionActiveOptimize):
+        #     raise Exception("ElementSectionActiveOptimize is not found")
+        # offset = self.env.run_data_int(element.active.offset)
+        # k = self.env.tables[element.active.table][offset]
+        # table = self.env.sections.table_section[element.active.table]
 
         try:
-            a, fn_type = self.env.get_function(element.funcidx[a.value])
+            b, fn_type = self.env.get_function(element.funcidx[a.value])
             TypeCheck.list_check(fn_type.params, fn_type_params)
             TypeCheck.list_check(fn_type.returns, fn_type_returns or [])
             return super().call_indirect(index, elm_index)
         except IndexError:
             raise WasmUndefinedElementError()
-            if element.type == 0:
-                raise WasmUninitializedElementError()
-            else:
-                raise WasmUndefinedElementError()
         except TypeError:
             raise WasmIndirectCallTypeMismatchError()
 
@@ -415,6 +412,13 @@ class CodeSectionBlockDebug(CodeSectionBlock):
                 raise WasmInvalidConversionError()
             else:
                 raise WasmIntegerOverflowError()
+
+    @NumpyErrorHelper.seterr("raise")
+    def table_grow(self, index: int):
+        try:
+            return super().table_grow(index)
+        except FloatingPointError:
+            self.stack.push(I32.astype(SignedI32.from_int(-1)))
 
     def table_fill(self, index: int):
         c, a = self.stack.i32(read_only=True, key=-3), self.stack.i32(read_only=True, key=-1)
