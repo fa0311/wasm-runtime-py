@@ -483,12 +483,31 @@ class CodeSectionBlockDebug(CodeSectionBlock):
                 raise WasmIntegerOverflowError()
 
     @NumpyErrorHelper.seterr("raise")
+    def memory_copy(self, index: int, index2: int):
+        c, b, a = (
+            self.stack.i32(read_only=True, key=-1),
+            self.stack.i32(read_only=True, key=-2),
+            self.stack.i32(read_only=True, key=-3),
+        )
+        try:
+            if I32.from_int(len(self.env.memory)) < a + c:
+                raise WasmOutOfBoundsMemoryAccessError()
+            elif I32.from_int(len(self.env.memory)) < b + c:
+                raise WasmOutOfBoundsMemoryAccessError()
+            else:
+                return super().memory_copy(index, index2)
+        except IndexError:
+            raise WasmOutOfBoundsMemoryAccessError()
+        except ValueError:
+            raise WasmOutOfBoundsMemoryAccessError()
+        except FloatingPointError:
+            raise WasmOutOfBoundsMemoryAccessError()
+
+    @NumpyErrorHelper.seterr("raise")
     def memory_fill(self, index: int):
         c, a = self.stack.i32(read_only=True, key=-1), self.stack.i32(read_only=True, key=-3)
         try:
-            if I32.from_int(I32.get_max()) < a + c:
-                self.stack.push(I32.from_int(-1))
-            elif I32.from_int(len(self.env.memory)) < a + c:
+            if I32.from_int(len(self.env.memory)) < a + c:
                 raise WasmOutOfBoundsMemoryAccessError()
             else:
                 return super().memory_fill(index)

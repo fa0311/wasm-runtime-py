@@ -1009,7 +1009,7 @@ class CodeSectionSpec(ABC):
 
     @abstractmethod
     @Metadata.opcode(0xFC0A)
-    def memory_copy(self):
+    def memory_copy(self, index: int, index2: int):
         pass
 
     @abstractmethod

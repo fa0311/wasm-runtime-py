@@ -63,12 +63,11 @@ class CodeSectionBlock(CodeSectionRun):
 
     def if_(self, block_type: int):
         a = self.stack.bool()
-        fn_type_params, fn_type_returns = self.env.get_type(block_type)
-        block_stack = [self.stack.any() for _ in fn_type_params][::-1]
-        TypeCheck.type_check(block_stack, fn_type_params)
-
         code = self.instruction.child if a else self.instruction.else_child
         if len(code) > 0:
+            fn_type_params, fn_type_returns = self.env.get_type(block_type)
+            block_stack = [self.stack.any() for _ in fn_type_params][::-1]
+            TypeCheck.type_check(block_stack, fn_type_params)
             block = self.env.get_block(locals=self.locals, stack=block_stack)
             br = block.run(code)
 
@@ -906,8 +905,9 @@ class CodeSectionBlock(CodeSectionRun):
     def data_drop(self):
         pass
 
-    def memory_copy(self):
-        pass
+    def memory_copy(self, index: int, index2: int):
+        c, b, a = self.stack.i32(), self.stack.i32(), self.stack.i32()
+        self.env.memory[a.value : a.value + c.value] = self.env.memory[b.value : b.value + c.value]
 
     def memory_fill(self, index: int):
         c, b, a = self.stack.i32(), self.stack.i32(), self.stack.i32()
