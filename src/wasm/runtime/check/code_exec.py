@@ -483,14 +483,36 @@ class CodeSectionBlockDebug(CodeSectionBlock):
                 raise WasmIntegerOverflowError()
 
     @NumpyErrorHelper.seterr("raise")
-    def table_grow(self, index: int):
+    def memory_fill(self, index: int):
+        c, a = self.stack.i32(read_only=True, key=-1), self.stack.i32(read_only=True, key=-3)
         try:
-            return super().table_grow(index)
+            if I32.from_int(I32.get_max()) < a + c:
+                self.stack.push(I32.from_int(-1))
+            elif I32.from_int(len(self.env.memory)) < a + c:
+                raise WasmOutOfBoundsMemoryAccessError()
+            else:
+                return super().memory_fill(index)
+        except IndexError:
+            raise WasmOutOfBoundsMemoryAccessError()
+        except ValueError:
+            raise WasmOutOfBoundsMemoryAccessError()
+        except FloatingPointError:
+            raise WasmOutOfBoundsMemoryAccessError()
+
+    @NumpyErrorHelper.seterr("raise")
+    def table_grow(self, index: int):
+        a = self.stack.i32()
+        table_type, table = self.env.get_table(index)
+        try:
+            if I32.from_int(table_type.limits_max or I32.get_max()) < I32.from_int(len(table)) + a:
+                self.stack.push(I32.astype(SignedI32.from_int(-1)))
+            else:
+                return super().table_grow(index)
         except FloatingPointError:
             self.stack.push(I32.astype(SignedI32.from_int(-1)))
 
     def table_fill(self, index: int):
-        c, a = self.stack.i32(read_only=True, key=-3), self.stack.i32(read_only=True, key=-1)
+        c, a = self.stack.i32(read_only=True, key=-1), self.stack.i32(read_only=True, key=-3)
         if a.value + c.value > len(self.env.tables[index]):
             raise WasmOutOfBoundsTableAccessError()
         return super().table_fill(index)

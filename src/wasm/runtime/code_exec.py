@@ -68,21 +68,22 @@ class CodeSectionBlock(CodeSectionRun):
         TypeCheck.type_check(block_stack, fn_type_params)
 
         code = self.instruction.child if a else self.instruction.else_child
-        block = self.env.get_block(locals=self.locals, stack=block_stack)
-        br = block.run(code)
+        if len(code) > 0:
+            block = self.env.get_block(locals=self.locals, stack=block_stack)
+            br = block.run(code)
 
-        if isinstance(br, list):
-            return br
+            if isinstance(br, list):
+                return br
 
-        if fn_type_returns is None:
-            res_stack = block.stack.all()
-        else:
-            res_stack = [block.stack.any() for _ in fn_type_returns][::-1]
-            TypeCheck.type_check(res_stack, fn_type_returns)
-        self.stack.extend(res_stack)
+            if fn_type_returns is None:
+                res_stack = block.stack.all()
+            else:
+                res_stack = [block.stack.any() for _ in fn_type_returns][::-1]
+                TypeCheck.type_check(res_stack, fn_type_returns)
+            self.stack.extend(res_stack)
 
-        if isinstance(br, int) and br > 0:
-            return br - 1
+            if isinstance(br, int) and br > 0:
+                return br - 1
 
     def else_(self):
         Exception("else_")
@@ -908,8 +909,10 @@ class CodeSectionBlock(CodeSectionRun):
     def memory_copy(self):
         pass
 
-    def memory_fill(self):
-        pass
+    def memory_fill(self, index: int):
+        c, b, a = self.stack.i32(), self.stack.i32(), self.stack.i32()
+        value = I8.astype(b)
+        self.env.memory[a.value : a.value + c.value] = [value.value for _ in range(c.value)]
 
     def table_init(self):
         pass
@@ -922,13 +925,10 @@ class CodeSectionBlock(CodeSectionRun):
 
     def table_grow(self, index: int):
         a = self.stack.i32()
-        table_type, table = self.env.get_table(index)
-        if (table_type.limits_max or I32.get_max()) < len(table) + a.value:
-            self.stack.push(I32.astype(SignedI32.from_int(-1)))
-        else:
-            b = self.stack.ref()
-            self.stack.push(I32.from_int(len(table)))
-            table[len(table) : len(table) + a.value] = [b for _ in range(a.value)]
+        _, table = self.env.get_table(index)
+        b = self.stack.ref()
+        self.stack.push(I32.from_int(len(table)))
+        table[len(table) : len(table) + a.value] = [b for _ in range(a.value)]
 
     def table_size(self, index: int):
         self.stack.push(I32.from_int(len(self.env.tables[index])))

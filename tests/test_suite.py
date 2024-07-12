@@ -401,8 +401,8 @@ class TestSuite(unittest.TestCase):
     def test_memory_redundancy(self):
         self.__test_file("memory_redundancy")
 
-    # def test_memory_fill(self):
-    #     self.__test_file("memory_fill")
+    def test_memory_fill(self):
+        self.__test_file("memory_fill")
 
     # def test_memory_copy(self):
     #     self.__test_file("memory_copy")

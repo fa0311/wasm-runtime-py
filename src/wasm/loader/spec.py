@@ -1014,7 +1014,7 @@ class CodeSectionSpec(ABC):
 
     @abstractmethod
     @Metadata.opcode(0xFC0B)
-    def memory_fill(self):
+    def memory_fill(self, index: int):
         pass
 
     @abstractmethod
