@@ -389,9 +389,6 @@ class TestSuite(unittest.TestCase):
     def test_table_grow(self):
         self.__test_file("table_grow")
 
-    def test_table_grow_0_3(self):
-        self.__test_index_case("table_grow", 0, 3)
-
     def test_table_size(self):
         self.__test_file("table_size")
 
@@ -410,17 +407,17 @@ class TestSuite(unittest.TestCase):
     def test_memory_copy(self):
         self.__test_file("memory_copy")
 
-    # def test_memory_init(self):
-    #     self.__test_file("memory_init")
+    def test_memory_init(self):
+        self.__test_file("memory_init")
 
-    # def test_memory_grow(self):
-    #     self.__test_file("memory_grow")
+    def test_memory_grow(self):
+        self.__test_file("memory_grow")
 
-    # def test_memory_size(self):
-    #     self.__test_file("memory_size")
+    def test_memory_size(self):
+        self.__test_file("memory_size")
 
-    # def test_memory_trap(self):
-    #     self.__test_file("memory_trap")
+    def test_memory_trap(self):
+        self.__test_file("memory_trap")
 
     def test_nop(self):
         self.__test_file("nop")

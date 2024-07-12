@@ -8,8 +8,15 @@ class NumpyBytesType(BytesType):
         self.value = value
 
     @classmethod
+    def from_str(cls, value: bytes):
+        return cls(np.frombuffer(value, dtype=np.uint8))
+
+    @classmethod
     def from_size(cls, size: int):
         return cls(np.zeros(size, dtype=np.uint8))
+
+    def drop(self):
+        self.value = np.zeros(0, dtype=np.uint8)
 
     def store(self, offset: int, value: bytes):
         data = np.frombuffer(value, dtype=np.uint8)

@@ -231,19 +231,19 @@ class CodeSectionBlock(CodeSectionRun):
 
     def i32_store(self, align: int, offset: int):
         a, addr = self.stack.i32(), self.stack.i32()
-        self.env.memory[addr.value : addr.value + 4] = a.to_bytes()
+        self.env.memory[addr.value : addr.value + 4] = a.to_bytes()[0:4]
 
     def i64_store(self, align: int, offset: int):
         a, addr = self.stack.i64(), self.stack.i32()
-        self.env.memory[addr.value : addr.value + 8] = a.to_bytes()
+        self.env.memory[addr.value : addr.value + 8] = a.to_bytes()[0:8]
 
     def f32_store(self, align: int, offset: int):
         a, addr = self.stack.f32(), self.stack.i32()
-        self.env.memory[addr.value : addr.value + 4] = a.to_bytes()
+        self.env.memory[addr.value : addr.value + 4] = a.to_bytes()[0:4]
 
     def f64_store(self, align: int, offset: int):
         a, addr = self.stack.f64(), self.stack.i32()
-        self.env.memory[addr.value : addr.value + 8] = a.to_bytes()
+        self.env.memory[addr.value : addr.value + 8] = a.to_bytes()[0:8]
 
     def i32_store8(self, align: int, offset: int):
         a, addr = self.stack.i32(), self.stack.i32()
@@ -899,11 +899,13 @@ class CodeSectionBlock(CodeSectionRun):
         i64 = I64.from_value_with_clamp(t, I64)
         self.stack.push(i64)
 
-    def memory_init(self):
-        pass
+    def memory_init(self, index: int, index2: int):
+        c, b, a = self.stack.i32(), self.stack.i32(), self.stack.i32()
+        memory = self.env.init_memory[index]
+        self.env.memory[a.value : a.value + c.value] = memory[b.value : b.value + c.value]
 
-    def data_drop(self):
-        pass
+    def data_drop(self, index: int):
+        self.env.init_memory[index].drop()
 
     def memory_copy(self, index: int, index2: int):
         c, b, a = self.stack.i32(), self.stack.i32(), self.stack.i32()
@@ -912,7 +914,7 @@ class CodeSectionBlock(CodeSectionRun):
     def memory_fill(self, index: int):
         c, b, a = self.stack.i32(), self.stack.i32(), self.stack.i32()
         value = I8.astype(b)
-        self.env.memory[a.value : a.value + c.value] = [value.value for _ in range(c.value)]
+        self.env.memory[a.value : a.value + c.value] = value.value
 
     def table_init(self):
         pass

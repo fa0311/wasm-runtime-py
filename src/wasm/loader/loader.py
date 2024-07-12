@@ -10,11 +10,11 @@ from src.wasm.loader.struct import (
     CodeSection,
     DataSection,
     ElementSection,
-    ElementSectionActive,
     ExportSection,
     FunctionSection,
     GlobalSection,
     MemorySection,
+    ModeActive,
     TableSection,
     TypeSection,
     WasmSections,
@@ -238,7 +238,7 @@ class WasmLoader:
 
             if elem_type == 0:  # Active
                 offset = self.code_section_instructions(data)
-                active = ElementSectionActive(table=0, offset=offset)
+                active = ModeActive(table=0, offset=offset)
                 count = data.read_leb128()
                 funcidx = [data.read_leb128() for _ in range(count)]
             # elif elem_type == 1:  # Passive
@@ -248,7 +248,7 @@ class WasmLoader:
             elif elem_type == 2:  # Active
                 table = data.read_leb128()
                 offset = self.code_section_instructions(data)
-                active = ElementSectionActive(table=table, offset=offset)
+                active = ModeActive(table=table, offset=offset)
                 _ = data.read_byte()
                 count = data.read_leb128()
                 funcidx = [data.read_leb128() for _ in range(count)]
@@ -386,9 +386,12 @@ class WasmLoader:
         for _ in range(data_count):
             data_type = data.read_byte()
             if data_type == 0:
-                offset = self.code_section_instructions(data)
+                active = ModeActive(table=0, offset=self.code_section_instructions(data))
                 init = data.read_bytes(data.read_leb128())
-                section = DataSection(index=0, offset=offset, init=init.data)
+                section = DataSection(init=init.data, active=active)
+            elif data_type == 1:
+                init = data.read_bytes(data.read_leb128())
+                section = DataSection(init=init.data, active=None)
             else:
                 raise Exception("invalid data_type")
             assert self.logger.debug(section)

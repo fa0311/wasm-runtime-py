@@ -53,12 +53,12 @@ class ElementSectionOptimize:
 
     type: int = field(metadata={"description": "このエレメントの種類"})
     funcidx: list[int] = field(metadata={"description": "関数のインデックス"})
-    active: Optional["ElementSectionActiveOptimize"] = field(metadata={"description": "Activeの場合のデータ"})
+    active: Optional["ModeActiveOptimize"] = field(metadata={"description": "Activeの場合のデータ"})
 
 
 @dataclass
-class ElementSectionActiveOptimize:
-    """Element Sectionのデータ構造"""
+class ModeActiveOptimize:
+    """Activeのデータ構造"""
 
     table: int = field(metadata={"description": "テーブルのインデックス"})
     offset: list["CodeInstructionOptimize"] = field(metadata={"description": "オフセット"})
@@ -103,9 +103,8 @@ class ExportSectionOptimize:
 class DataSectionOptimize:
     """Data Sectionのデータ構造"""
 
-    index: int = field(metadata={"description": "データのインデックス"})
-    offset: list["CodeInstructionOptimize"] = field(metadata={"description": "オフセット"})
     init: bytes = field(metadata={"description": "初期値"})
+    active: Optional["ModeActiveOptimize"] = field(metadata={"description": "Activeの場合のデータ"})
 
 
 @dataclass

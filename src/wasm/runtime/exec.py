@@ -37,11 +37,15 @@ class WasmExec:
             TableType.from_size(WasmOptimizer.get_ref_type(x.element_type), x.limits_min)
             for x in self.sections.table_section
         ]
+        self.init_memory: list[NumpyBytesType] = []
 
         for data_section in self.sections.data_section:
-            offset = self.run_data_int(data_section.offset)
-            self.memory.store(offset=offset, value=data_section.init)
-
+            if data_section.active is not None:
+                offset = self.run_data_int(data_section.active.offset)
+                self.memory.store(offset=offset, value=data_section.init)
+            # elif data_section.active is None:
+            self.init_memory.append(NumpyBytesType.from_str(data_section.init))
+            # self.memory.store(offset=0, value=data_section.init)
         self.table_init()
 
     def get_table_elem(self, index: int) -> Optional[ElementSectionOptimize]:

@@ -999,12 +999,12 @@ class CodeSectionSpec(ABC):
 
     @abstractmethod
     @Metadata.opcode(0xFC08)
-    def memory_init(self):
+    def memory_init(self, index: int, index2: int):
         pass
 
     @abstractmethod
     @Metadata.opcode(0xFC09)
-    def data_drop(self):
+    def data_drop(self, index: int):
         pass
 
     @abstractmethod

@@ -7,11 +7,11 @@ from src.wasm.loader.struct import (
     CodeSection,
     DataSection,
     ElementSection,
-    ElementSectionActive,
     ExportSection,
     FunctionSection,
     GlobalSection,
     MemorySection,
+    ModeActive,
     TableSection,
     TypeSection,
     WasmSections,
@@ -20,12 +20,12 @@ from src.wasm.optimizer.struct import (
     CodeInstructionOptimize,
     CodeSectionOptimize,
     DataSectionOptimize,
-    ElementSectionActiveOptimize,
     ElementSectionOptimize,
     ExportSectionOptimize,
     FunctionSectionOptimize,
     GlobalSectionOptimize,
     MemorySectionOptimize,
+    ModeActiveOptimize,
     TableSectionOptimize,
     TypeSectionOptimize,
     WasmSectionsOptimize,
@@ -149,11 +149,11 @@ class WasmOptimizer:
         return ElementSectionOptimize(
             type=section.type,
             funcidx=section.funcidx,
-            active=self.element_section_active(section.active) if section.active is not None else None,
+            active=self.mode_active(section.active) if section.active is not None else None,
         )
 
-    def element_section_active(self, section: "ElementSectionActive") -> "ElementSectionActiveOptimize":
-        return ElementSectionActiveOptimize(
+    def mode_active(self, section: "ModeActive") -> "ModeActiveOptimize":
+        return ModeActiveOptimize(
             table=section.table,
             offset=self.expr(section.offset),
         )
@@ -209,7 +209,6 @@ class WasmOptimizer:
 
     def data_section(self, section: "DataSection") -> "DataSectionOptimize":
         return DataSectionOptimize(
-            index=section.index,
-            offset=self.expr(section.offset),
+            active=self.mode_active(section.active) if section.active is not None else None,
             init=section.init,
         )
