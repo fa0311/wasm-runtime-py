@@ -115,6 +115,11 @@ class CodeSectionSpec(ABC):
     def select(self):
         pass
 
+    @abstractmethod
+    @Metadata.opcode(0x1C)
+    def select_t(self, _: int, type: int):
+        pass
+
     # Variable Instructions
 
     @abstractmethod

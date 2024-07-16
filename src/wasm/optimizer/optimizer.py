@@ -147,7 +147,9 @@ class WasmOptimizer:
 
     def element_section(self, section: "ElementSection") -> "ElementSectionOptimize":
         return ElementSectionOptimize(
+            elem=section.elem,
             type=section.type,
+            ref=self.expr(section.ref) if section.ref is not None else None,
             funcidx=section.funcidx,
             active=self.mode_active(section.active) if section.active is not None else None,
         )

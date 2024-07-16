@@ -51,9 +51,14 @@ class GlobalSectionOptimize:
 class ElementSectionOptimize:
     """Element Sectionのデータ構造"""
 
-    type: int = field(metadata={"description": "このエレメントの種類"})
-    funcidx: list[int] = field(metadata={"description": "関数のインデックス"})
+    elem: int = field(metadata={"description": "このエレメントの種類"})
+    type: int = field(metadata={"description": "エレメントの型"})
+    funcidx: Optional[list[int]] = field(metadata={"description": "関数のインデックス"})
     active: Optional["ModeActiveOptimize"] = field(metadata={"description": "Activeの場合のデータ"})
+    ref: Optional[list["CodeInstructionOptimize"]] = field(metadata={"description": "参照のインデックス"})
+
+    def get_funcidx(self) -> list[int]:
+        return self.funcidx if self.funcidx is not None else []
 
 
 @dataclass

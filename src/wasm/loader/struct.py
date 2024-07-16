@@ -51,9 +51,11 @@ class GlobalSection:
 class ElementSection:
     """Element Sectionのデータ構造"""
 
-    type: int = field(metadata={"description": "このエレメントの種類"})
-    funcidx: list[int] = field(metadata={"description": "関数のインデックス"})
+    elem: int = field(metadata={"description": "このエレメントの種類"})
+    type: int = field(metadata={"description": "エレメントの型"})
+    funcidx: Optional[list[int]] = field(metadata={"description": "関数のインデックス"})
     active: Optional["ModeActive"] = field(metadata={"description": "Activeの場合のデータ"})
+    ref: Optional[list["CodeInstruction"]] = field(metadata={"description": "参照のインデックス"})
 
 
 @dataclass

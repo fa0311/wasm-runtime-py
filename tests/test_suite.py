@@ -421,3 +421,66 @@ class TestSuite(unittest.TestCase):
 
     def test_nop(self):
         self.__test_file("nop")
+
+    def test_select(self):
+        self.__test_file("select")
+
+    def test_bulk(self):
+        self.__test_file("bulk")
+
+    def test_stack(self):
+        self.__test_file("stack")
+
+    def test_token(self):
+        self.__test_file("token")
+
+    def test_custom(self):
+        self.__test_file("custom")
+
+    def test_skip_stack_guard_page(self):
+        self.__test_file("skip-stack-guard-page")
+
+    def test_ref_func(self):
+        self.__test_file("ref_func")
+
+    def test_table_copy(self):
+        self.__test_file("table_copy")
+
+    def test_table_init(self):
+        self.__test_file("table_init")
+
+    def test_tokens(self):
+        self.__test_file("tokens")
+
+    def test_linking(self):
+        self.__test_file("linking")
+
+    def test_imports(self):
+        self.__test_file("imports")
+
+    def test_table(self):
+        self.__test_file("table")
+
+    def test_func_ptrs(self):
+        self.__test_file("func_ptrs")
+
+    def test_start(self):
+        self.__test_file("start")
+
+    def test_binary(self):
+        self.__test_file("binary")
+
+    def test_binary_leb128(self):
+        self.__test_file("binary-leb128")
+
+    def test_global(self):
+        self.__test_file("global")
+
+    def test_elem(self):
+        self.__test_file("elem")
+
+    def test_data(self):
+        self.__test_file("data")
+
+    def test_exports(self):
+        self.__test_file("exports")

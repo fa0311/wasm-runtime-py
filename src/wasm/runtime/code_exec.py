@@ -115,13 +115,17 @@ class CodeSectionBlock(CodeSectionRun):
     def call_indirect(self, index: int, elm_index: int):
         a = self.stack.i32()
         element = self.env.sections.element_section[elm_index]
-        self.call(element.funcidx[a.value])
+        self.call(element.get_funcidx()[a.value])
 
     def drop(self):
         self.stack.any()
 
     def select(self):
-        c, b, a = self.stack.i32(), self.stack.any(), self.stack.any()
+        c, b, a = self.stack.bool(), self.stack.any(), self.stack.any()
+        self.stack.push(a if c else b)
+
+    def select_t(self, _: int, type: int):
+        c, b, a = self.stack.bool(), self.stack.any(), self.stack.any()
         self.stack.push(a if c else b)
 
     # Variable Instructions
