@@ -32,7 +32,7 @@ class CodeSectionBlockDebug(CodeSectionBlock):
         # table = self.env.sections.table_section[element.active.table]
 
         try:
-            b, fn_type = self.env.get_function(element.funcidx[a.value])
+            b, fn_type = self.env.get_function(element.get_funcidx()[a.value])
             TypeCheck.list_check(fn_type.params, fn_type_params)
             TypeCheck.list_check(fn_type.returns, fn_type_returns or [])
             return super().call_indirect(index, elm_index)

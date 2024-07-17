@@ -56,15 +56,16 @@ class WasmExec:
 
     def table_init(self):
         for elem in self.sections.element_section:
-            for funcidx in elem.funcidx:
-                if elem is not None and elem.active is not None:
-                    table = self.sections.table_section[elem.active.table]
-                    offset = self.run_data_int(elem.active.offset)
-                    ref = WasmOptimizer.get_ref_type(table.element_type)
-                    self.tables[elem.active.table][offset] = ref.from_value(funcidx)
-                elif elem is not None:
-                    _, fn_type = self.get_function(funcidx)
-                    self.run(funcidx, [I32.from_value(0) for _ in fn_type.params])
+            if elem.funcidx is not None:
+                for funcidx in elem.funcidx:
+                    if elem is not None and elem.active is not None:
+                        table = self.sections.table_section[elem.active.table]
+                        offset = self.run_data_int(elem.active.offset)
+                        ref = WasmOptimizer.get_ref_type(table.element_type)
+                        self.tables[elem.active.table][offset] = ref.from_value(funcidx)
+                    elif elem is not None:
+                        _, fn_type = self.get_function(funcidx)
+                        self.run(funcidx, [I32.from_value(0) for _ in fn_type.params])
 
     @logger.logger
     def start(self, field: bytes, param: list[AnyType]):
