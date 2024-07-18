@@ -6,7 +6,6 @@ from src.wasm.optimizer.optimizer import WasmOptimizer
 from src.wasm.optimizer.struct import (
     CodeInstructionOptimize,
     CodeSectionOptimize,
-    ElementSectionOptimize,
     TableSectionOptimize,
     TypeSectionOptimize,
     WasmSectionsOptimize,
@@ -15,7 +14,6 @@ from src.wasm.runtime.code_exec import CodeSectionBlock
 from src.wasm.runtime.stack import NumericStack
 from src.wasm.type.base import AnyType
 from src.wasm.type.bytes.numpy.base import NumpyBytesType
-from src.wasm.type.numeric.numpy.int import I32
 from src.wasm.type.table.base import TableType
 
 
@@ -34,10 +32,11 @@ class WasmExec:
         self.memory = NumpyBytesType.from_size(len(self.sections.memory_section) * 64 * 1024 * memory_size)
         self.globals = [WasmOptimizer.get_any_type(x.type).from_null() for x in self.sections.global_section]
         self.tables = [
-            TableType.from_size(WasmOptimizer.get_ref_type(x.element_type), x.limits_min)
+            TableType(WasmOptimizer.get_ref_type(x.element_type), x.limits_min, x.limits_max)
             for x in self.sections.table_section
         ]
         self.init_memory: list[NumpyBytesType] = []
+        self.disable_elem = [False for _ in self.sections.element_section]
 
         for data_section in self.sections.data_section:
             if data_section.active is not None:
@@ -48,24 +47,17 @@ class WasmExec:
             # self.memory.store(offset=0, value=data_section.init)
         self.table_init()
 
-    def get_table_elem(self, index: int) -> Optional[ElementSectionOptimize]:
-        """関数のインデックスからCode SectionとType Sectionを取得する"""
-        element = [x for x in self.sections.element_section if x.active is not None and x.active.table == index]
-        elem = element[0] if len(element) > 0 else None
-        return elem
-
     def table_init(self):
         for elem in self.sections.element_section:
-            if elem.funcidx is not None:
-                for funcidx in elem.funcidx:
-                    if elem is not None and elem.active is not None:
-                        table = self.sections.table_section[elem.active.table]
-                        offset = self.run_data_int(elem.active.offset)
-                        ref = WasmOptimizer.get_ref_type(table.element_type)
-                        self.tables[elem.active.table][offset] = ref.from_value(funcidx)
-                    elif elem is not None:
-                        _, fn_type = self.get_function(funcidx)
-                        self.run(funcidx, [I32.from_value(0) for _ in fn_type.params])
+            if elem.active is not None:
+                elem.active.table
+                se = self.sections.table_section[elem.active.table]
+                self.tables.append(TableType(WasmOptimizer.get_ref_type(se.element_type), se.limits_min, se.limits_max))
+                for i, funcidx in enumerate(elem.funcidx or []):
+                    table = self.sections.table_section[elem.active.table]
+                    offset = self.run_data_int(elem.active.offset)
+                    ref = WasmOptimizer.get_ref_type(table.element_type)
+                    self.tables[elem.active.table][i] = ref.from_value(funcidx)
 
     @logger.logger
     def start(self, field: bytes, param: list[AnyType]):

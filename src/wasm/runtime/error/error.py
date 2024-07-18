@@ -51,6 +51,10 @@ class WasmUninitializedElementError(WasmRuntimeError):
     MESSAGE = "uninitialized element"
 
 
+class WasmUninitialized2ElementError(WasmRuntimeError):
+    MESSAGE = "uninitialized element 2"
+
+
 class WasmIndirectCallTypeMismatchError(WasmRuntimeError):
     MESSAGE = "indirect call type mismatch"
 

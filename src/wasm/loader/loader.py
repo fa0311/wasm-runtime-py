@@ -243,10 +243,12 @@ class WasmLoader:
                 active = ModeActive(table=0, offset=offset)
                 section = ElementSection(elem=elem, type=0x70, funcidx=funcidx, active=active, ref=None)
                 res.append(section)
-            # elif elem == 1:  # Passive
-            #     expr = data.read_byte()
-            #     count = data.read_leb128()
-            #     funcidx = [data.read_leb128() for _ in range(count)]
+            elif elem == 1:  # Passive
+                type = data.read_byte()
+                count = data.read_leb128()
+                funcidx = [data.read_leb128() for _ in range(count)]
+                section = ElementSection(elem=elem, type=type, funcidx=funcidx, active=None, ref=None)
+                res.append(section)
             elif elem == 2:  # Active
                 table = data.read_leb128()
                 offset = self.code_section_instructions(data)
@@ -266,6 +268,7 @@ class WasmLoader:
                 type = data.read_byte()
                 ref = self.code_section_instructions(data)
                 section = ElementSection(elem=elem, type=type, funcidx=None, active=None, ref=ref)
+                res.append(section)
             else:
                 raise Exception("invalid elem_type")
 

@@ -1024,12 +1024,12 @@ class CodeSectionSpec(ABC):
 
     @abstractmethod
     @Metadata.opcode(0xFC0C)
-    def table_init(self):
+    def table_init(self, index: int, index2: int):
         pass
 
     @abstractmethod
     @Metadata.opcode(0xFC0D)
-    def elem_drop(self):
+    def elem_drop(self, index: int):
         pass
 
     @abstractmethod

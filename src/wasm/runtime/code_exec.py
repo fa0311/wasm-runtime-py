@@ -114,8 +114,8 @@ class CodeSectionBlock(CodeSectionRun):
 
     def call_indirect(self, index: int, elm_index: int):
         a = self.stack.i32()
-        element = self.env.sections.element_section[elm_index]
-        self.call(element.get_funcidx()[a.value])
+        table = self.env.tables[elm_index]
+        self.call(int(table[int(a)]))
 
     def drop(self):
         self.stack.any()
@@ -920,11 +920,32 @@ class CodeSectionBlock(CodeSectionRun):
         value = I8.astype(b)
         self.env.memory[a.value : a.value + c.value] = value.value
 
-    def table_init(self):
-        pass
+    def table_init(self, index: int, index2: int):
+        c, b, a = self.stack.i32(), self.stack.i32(), self.stack.i32()
+        elem = self.env.sections.element_section[index]
+        # _, fn_type = self.env.get_function(funcidx)
+        # param = [self.stack.any() for _ in fn_type.params][::-1]
+        # res = self.env.run(index, param)
+        # self.env.tables[a.value + b.value][c.value] = res
 
-    def elem_drop(self):
-        pass
+        table = self.env.sections.table_section[index]
+        ref = WasmOptimizer.get_ref_type(table.element_type)
+        res = [ref.from_value(elem.get_funcidx()[int(b) + i]) for i in range(int(c))]
+        self.env.tables[index][int(a) : int(a) + int(c)] = res
+
+        # table_type = self.env.sections.table_section[index]
+        # ref = WasmOptimizer.get_ref_type(table_type.element_type)
+        # table = TableType(type=ref, min=table_type.limits_min, max=table_type.limits_max)
+
+        # for i, funcidx in enumerate(elem.funcidx or []):
+        #     table[i] = ref.from_value(funcidx)
+
+        # self.env.tables[index] = table
+
+    def elem_drop(self, index: int):
+        if index < len(self.env.tables):
+            if 0 < len(self.env.tables[index]):
+                self.env.tables[index].pop()
 
     def table_copy(self):
         pass

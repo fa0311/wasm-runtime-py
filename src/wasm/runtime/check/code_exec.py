@@ -10,6 +10,8 @@ from src.wasm.runtime.error.error import (
     WasmOutOfBoundsMemoryAccessError,
     WasmOutOfBoundsTableAccessError,
     WasmUndefinedElementError,
+    WasmUninitialized2ElementError,
+    WasmUninitializedElementError,
     WasmUnreachableError,
 )
 from src.wasm.runtime.error.helper import NumpyErrorHelper
@@ -23,15 +25,15 @@ class CodeSectionBlockDebug(CodeSectionBlock):
     def call_indirect(self, index: int, elm_index: int):
         fn_type_params, fn_type_returns = self.env.get_type(index)
         a = self.stack.i32(read_only=True)
+
         element = self.env.sections.element_section[elm_index]
 
-        # if not isinstance(element.active, ElementSectionActiveOptimize):
-        #     raise Exception("ElementSectionActiveOptimize is not found")
-        # offset = self.env.run_data_int(element.active.offset)
-        # k = self.env.tables[element.active.table][offset]
-        # table = self.env.sections.table_section[element.active.table]
-
         try:
+            table = self.env.tables[elm_index]
+            if all(x is None for x in table):
+                raise WasmUninitialized2ElementError()
+            if table[int(a)] is None:
+                raise WasmUninitializedElementError()
             b, fn_type = self.env.get_function(element.get_funcidx()[a.value])
             TypeCheck.list_check(fn_type.params, fn_type_params)
             TypeCheck.list_check(fn_type.returns, fn_type_returns or [])
@@ -590,6 +592,20 @@ class CodeSectionBlockDebug(CodeSectionBlock):
             raise WasmOutOfBoundsMemoryAccessError()
         except FloatingPointError:
             raise WasmOutOfBoundsMemoryAccessError()
+
+    def table_init(self, index: int, index2: int):
+        c, b, a = (
+            self.stack.i32(read_only=True, key=-1),
+            self.stack.i32(read_only=True, key=-2),
+            self.stack.i32(read_only=True, key=-3),
+        )
+        elem = self.env.sections.element_section[index]
+
+        if int(a) + int(c) > len(self.env.tables[index]):
+            raise WasmOutOfBoundsTableAccessError()
+        if int(b) + int(c) > len(elem.get_funcidx()):
+            raise WasmOutOfBoundsTableAccessError()
+        return super().table_init(index, index2)
 
     @NumpyErrorHelper.seterr("raise")
     def table_grow(self, index: int):
