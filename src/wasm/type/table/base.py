@@ -10,11 +10,14 @@ class TableType:
         self.max = max
         self.value = [type.from_null() for _ in range(min)]
 
-    def __getitem__(self, key):
-        return self.value[key]
+    def __getitem__(self, key) -> RefType:
+        return self.value.__getitem__(key)
 
     def __setitem__(self, key, value):
-        self.value[key] = value
+        self.value.__setitem__(key, value)
+
+    def __iter__(self):
+        return iter(self.value)
 
     def __len__(self):
         return len(self.value)

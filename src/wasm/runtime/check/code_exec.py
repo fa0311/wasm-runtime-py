@@ -24,7 +24,7 @@ class CodeSectionBlockDebug(CodeSectionBlock):
 
     def call_indirect(self, index: int, elm_index: int):
         fn_type_params, fn_type_returns = self.env.get_type(index)
-        a = self.stack.i32(read_only=True)
+        a = self.stack.int(read_only=True)
 
         element = self.env.tables[elm_index]
 
@@ -32,9 +32,9 @@ class CodeSectionBlockDebug(CodeSectionBlock):
             table = self.env.tables[elm_index]
             if all(x.is_none() for x in table):
                 raise WasmUninitialized2ElementError()
-            if table[int(a)].is_none():
+            if table[a].is_none():
                 raise WasmUninitializedElementError()
-            b, fn_type = self.env.get_function(int(element[int(a)]))
+            b, fn_type = self.env.get_function(int(element[a]))
             TypeCheck.list_check(fn_type.params, fn_type_params)
             TypeCheck.list_check(fn_type.returns, fn_type_returns or [])
             return super().call_indirect(index, elm_index)
@@ -211,9 +211,9 @@ class CodeSectionBlockDebug(CodeSectionBlock):
 
     @NumpyErrorHelper.seterr("raise")
     def i32_store(self, align: int, offset: int):
-        addr = self.stack.i32(read_only=True, key=-2)
+        addr = self.stack.int(read_only=True, key=-2)
         try:
-            if I32.from_int(len(self.env.memory)) < addr + I32.from_int(4):
+            if len(self.env.memory) < addr + 4:
                 raise WasmOutOfBoundsMemoryAccessError()
             else:
                 return super().i32_store(align, offset)
@@ -226,9 +226,9 @@ class CodeSectionBlockDebug(CodeSectionBlock):
 
     @NumpyErrorHelper.seterr("raise")
     def i64_store(self, align: int, offset: int):
-        addr = self.stack.i32(read_only=True, key=-2)
+        addr = self.stack.int(read_only=True, key=-2)
         try:
-            if I32.from_int(len(self.env.memory)) < addr + I32.from_int(8):
+            if len(self.env.memory) < addr + 8:
                 raise WasmOutOfBoundsMemoryAccessError()
             else:
                 return super().i64_store(align, offset)
@@ -241,9 +241,9 @@ class CodeSectionBlockDebug(CodeSectionBlock):
 
     @NumpyErrorHelper.seterr("raise")
     def f32_store(self, align: int, offset: int):
-        addr = self.stack.i32(read_only=True, key=-2)
+        addr = self.stack.int(read_only=True, key=-2)
         try:
-            if I32.from_int(len(self.env.memory)) < addr + I32.from_int(4):
+            if len(self.env.memory) < addr + 4:
                 raise WasmOutOfBoundsMemoryAccessError()
             else:
                 return super().f32_store(align, offset)
@@ -256,9 +256,9 @@ class CodeSectionBlockDebug(CodeSectionBlock):
 
     @NumpyErrorHelper.seterr("raise")
     def f64_store(self, align: int, offset: int):
-        addr = self.stack.i32(read_only=True, key=-2)
+        addr = self.stack.int(read_only=True, key=-2)
         try:
-            if I32.from_int(len(self.env.memory)) < addr + I32.from_int(8):
+            if len(self.env.memory) < addr + 8:
                 raise WasmOutOfBoundsMemoryAccessError()
             else:
                 return super().f64_store(align, offset)
@@ -271,9 +271,9 @@ class CodeSectionBlockDebug(CodeSectionBlock):
 
     @NumpyErrorHelper.seterr("raise")
     def i32_store8(self, align: int, offset: int):
-        addr = self.stack.i32(read_only=True, key=-2)
+        addr = self.stack.int(read_only=True, key=-2)
         try:
-            if I32.from_int(len(self.env.memory)) < addr + I32.from_int(1):
+            if len(self.env.memory) < addr + 1:
                 raise WasmOutOfBoundsMemoryAccessError()
             else:
                 return super().i32_store8(align, offset)
@@ -286,9 +286,9 @@ class CodeSectionBlockDebug(CodeSectionBlock):
 
     @NumpyErrorHelper.seterr("raise")
     def i32_store16(self, align: int, offset: int):
-        addr = self.stack.i32(read_only=True, key=-2)
+        addr = self.stack.int(read_only=True, key=-2)
         try:
-            if I32.from_int(len(self.env.memory)) < addr + I32.from_int(2):
+            if len(self.env.memory) < addr + 2:
                 raise WasmOutOfBoundsMemoryAccessError()
             else:
                 return super().i32_store16(align, offset)
@@ -301,9 +301,9 @@ class CodeSectionBlockDebug(CodeSectionBlock):
 
     @NumpyErrorHelper.seterr("raise")
     def i64_store8(self, align: int, offset: int):
-        addr = self.stack.i32(read_only=True, key=-2)
+        addr = self.stack.int(read_only=True, key=-2)
         try:
-            if I32.from_int(len(self.env.memory)) < addr + I32.from_int(1):
+            if len(self.env.memory) < addr + 1:
                 raise WasmOutOfBoundsMemoryAccessError()
             else:
                 return super().i64_store8(align, offset)
@@ -316,9 +316,9 @@ class CodeSectionBlockDebug(CodeSectionBlock):
 
     @NumpyErrorHelper.seterr("raise")
     def i64_store16(self, align: int, offset: int):
-        addr = self.stack.i32(read_only=True, key=-2)
+        addr = self.stack.int(read_only=True, key=-2)
         try:
-            if I32.from_int(len(self.env.memory)) < addr + I32.from_int(2):
+            if len(self.env.memory) < addr + 2:
                 raise WasmOutOfBoundsMemoryAccessError()
             else:
                 return super().i64_store16(align, offset)
@@ -331,9 +331,9 @@ class CodeSectionBlockDebug(CodeSectionBlock):
 
     @NumpyErrorHelper.seterr("raise")
     def i64_store32(self, align: int, offset: int):
-        addr = self.stack.i32(read_only=True, key=-2)
+        addr = self.stack.int(read_only=True, key=-2)
         try:
-            if I32.from_int(len(self.env.memory)) < addr + I32.from_int(4):
+            if len(self.env.memory) < addr + 4:
                 raise WasmOutOfBoundsMemoryAccessError()
             else:
                 return super().i64_store32(align, offset)
@@ -345,11 +345,11 @@ class CodeSectionBlockDebug(CodeSectionBlock):
             raise WasmOutOfBoundsMemoryAccessError()
 
     def memory_grow(self, index: int):
-        a = self.stack.i32(read_only=True)
+        a = self.stack.int(read_only=True)
         b = len(self.env.memory) // 64 // 1024
         section = self.env.sections.memory_section[index]
 
-        if I32.from_int(section.limits_max or I16.get_max()) < a + I32.from_int(b):
+        if (section.limits_max or I16.get_max()) < a + b:
             self.stack.i32()
             self.stack.push(I32.astype(SignedI32.from_int(-1)))
         else:
