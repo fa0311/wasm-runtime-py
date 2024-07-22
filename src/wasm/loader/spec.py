@@ -1034,7 +1034,7 @@ class CodeSectionSpec(ABC):
 
     @abstractmethod
     @Metadata.opcode(0xFC0E)
-    def table_copy(self):
+    def table_copy(self, index: int, index2: int):
         pass
 
     @abstractmethod

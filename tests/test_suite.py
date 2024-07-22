@@ -193,7 +193,7 @@ class TestSuite(unittest.TestCase):
             self.fail(f"expect: {len(numeric_expect)}, actual: {len(res)}")
         for i, (r, e) in enumerate(zip(res, numeric_expect)):
             a, b = r.value, e.value
-            if type(r) != type(e):
+            if type(r) is not type(e):
                 self.fail(f"expect: {e.__class__}, actual: {r.__class__}")
             if a is None and b is None:
                 continue

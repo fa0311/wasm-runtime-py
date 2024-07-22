@@ -41,6 +41,9 @@ class NumericStack:
     def bool(self, read_only=False, key=-1) -> bool:
         return bool(self.__pop(I32, read_only, key))
 
+    def int(self, read_only=False, key=-1) -> int:
+        return int(self.__pop(I32, read_only, key))
+
     def i32(self, read_only=False, key=-1) -> I32:
         return self.__pop(I32, read_only, key)
 

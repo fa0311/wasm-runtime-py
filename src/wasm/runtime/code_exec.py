@@ -147,11 +147,11 @@ class CodeSectionBlock(CodeSectionRun):
 
     def table_get(self, index: int):
         a = self.stack.i32()
-        self.stack.push(self.env.tables[index][a.value])
+        self.stack.push(self.env.tables[index][int(a)])
 
     def table_set(self, index: int):
         b, a = self.stack.ref(), self.stack.i32()
-        self.env.tables[index][a.value] = b
+        self.env.tables[index][int(a)] = b
 
     def i32_load(self, align: int, offset: int):
         a = self.stack.i32()
@@ -921,17 +921,17 @@ class CodeSectionBlock(CodeSectionRun):
         self.env.memory[a.value : a.value + c.value] = value.value
 
     def table_init(self, index: int, index2: int):
-        c, b, a = self.stack.i32(), self.stack.i32(), self.stack.i32()
-        elem = self.env.sections.element_section[index]
+        c, b, a = self.stack.int(), self.stack.int(), self.stack.int()
+        elem = self.env.sections.element_section[index2]
         # _, fn_type = self.env.get_function(funcidx)
         # param = [self.stack.any() for _ in fn_type.params][::-1]
         # res = self.env.run(index, param)
         # self.env.tables[a.value + b.value][c.value] = res
 
-        table = self.env.sections.table_section[index]
+        table = self.env.sections.table_section[index2]
         ref = WasmOptimizer.get_ref_type(table.element_type)
-        res = [ref.from_value(elem.get_funcidx()[int(b) + i]) for i in range(int(c))]
-        self.env.tables[index][int(a) : int(a) + int(c)] = res
+        res = [ref.from_value(elem.get_funcidx()[b + i]) for i in range(c)]
+        self.env.tables[index2][a : a + c] = res
 
         # table_type = self.env.sections.table_section[index]
         # ref = WasmOptimizer.get_ref_type(table_type.element_type)
@@ -947,8 +947,9 @@ class CodeSectionBlock(CodeSectionRun):
             if 0 < len(self.env.tables[index]):
                 self.env.tables[index].pop()
 
-    def table_copy(self):
-        pass
+    def table_copy(self, index: int, index2: int):
+        c, b, a = self.stack.int(), self.stack.int(), self.stack.int()
+        self.env.tables[index][a : a + c] = self.env.tables[index2][b : b + c]
 
     def table_grow(self, index: int):
         a = self.stack.i32()

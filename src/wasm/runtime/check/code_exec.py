@@ -26,15 +26,15 @@ class CodeSectionBlockDebug(CodeSectionBlock):
         fn_type_params, fn_type_returns = self.env.get_type(index)
         a = self.stack.i32(read_only=True)
 
-        element = self.env.sections.element_section[elm_index]
+        element = self.env.tables[elm_index]
 
         try:
             table = self.env.tables[elm_index]
-            if all(x is None for x in table):
+            if all(x.is_none() for x in table):
                 raise WasmUninitialized2ElementError()
-            if table[int(a)] is None:
+            if table[int(a)].is_none():
                 raise WasmUninitializedElementError()
-            b, fn_type = self.env.get_function(element.get_funcidx()[a.value])
+            b, fn_type = self.env.get_function(int(element[int(a)]))
             TypeCheck.list_check(fn_type.params, fn_type_params)
             TypeCheck.list_check(fn_type.returns, fn_type_returns or [])
             return super().call_indirect(index, elm_index)
@@ -599,13 +599,30 @@ class CodeSectionBlockDebug(CodeSectionBlock):
             self.stack.i32(read_only=True, key=-2),
             self.stack.i32(read_only=True, key=-3),
         )
-        elem = self.env.sections.element_section[index]
-
-        if int(a) + int(c) > len(self.env.tables[index]):
+        if len(self.env.tables) <= index2:
             raise WasmOutOfBoundsTableAccessError()
-        if int(b) + int(c) > len(elem.get_funcidx()):
+        if len(self.env.sections.element_section) <= index2:
+            raise WasmOutOfBoundsTableAccessError()
+        if int(a) + int(c) > len(self.env.tables[index2]):
+            raise WasmOutOfBoundsTableAccessError()
+        if int(b) + int(c) > len(self.env.sections.element_section[index2].get_funcidx()):
             raise WasmOutOfBoundsTableAccessError()
         return super().table_init(index, index2)
+
+    def table_copy(self, index: int, index2: int):
+        c, b, a = (
+            self.stack.int(read_only=True, key=-1),
+            self.stack.int(read_only=True, key=-2),
+            self.stack.int(read_only=True, key=-3),
+        )
+        try:
+            if a + c > len(self.env.tables[index]):
+                raise WasmOutOfBoundsTableAccessError()
+            if b + c > len(self.env.tables[index2]):
+                raise WasmOutOfBoundsTableAccessError()
+            return super().table_copy(index, index2)
+        except IndexError:
+            raise WasmOutOfBoundsTableAccessError()
 
     @NumpyErrorHelper.seterr("raise")
     def table_grow(self, index: int):

@@ -8,7 +8,7 @@ class TableType:
         self.type = type
         self.min = min
         self.max = max
-        self.value = [None for _ in range(min)]
+        self.value = [type.from_null() for _ in range(min)]
 
     def __getitem__(self, key):
         return self.value[key]
