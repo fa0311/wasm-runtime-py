@@ -17,10 +17,6 @@ class NumericType(AnyType):
         return cls(other.value)
 
     @classmethod
-    def from_int(cls, value: int):
-        return cls(value)
-
-    @classmethod
     def from_str(cls, value: Union[str, bytes]):
         return cls(int(value))
 

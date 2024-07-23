@@ -17,7 +17,7 @@ from src.wasm.loader.loader import WasmLoader
 from src.wasm.optimizer.optimizer import WasmOptimizer
 from src.wasm.runtime.entry import WasmExecEntry
 from src.wasm.runtime.error.error import WasmCallStackExhaustedError, WasmRuntimeError, WasmUnimplementedError
-from src.wasm.runtime.exec import WasmExec
+from src.wasm.runtime.exec import Export, WasmExec
 from src.wasm.type.base import AnyType
 from src.wasm.type.numeric.numpy.float import F32, F64
 from src.wasm.type.numeric.numpy.int import I32, I64
@@ -25,6 +25,8 @@ from src.wasm.type.ref.base import ExternRef, FuncRef
 
 
 class TestSuite(unittest.TestCase):
+    export: Export = {}
+
     def setUp(self):
         self.CI = os.getenv("CI") == "true"
         self.__set_logger()
@@ -103,6 +105,8 @@ class TestSuite(unittest.TestCase):
                 res.append((cmd["type"], self.__read_module(name, cmd["filename"]), []))
             elif cmd["type"] == "action":
                 res[-1][2].append(cmd)
+            elif cmd["type"] == "register":
+                res[-1][2].append(cmd)
             else:
                 self.fail(f"unknown command: {cmd['type']}")
         return res
@@ -134,7 +138,7 @@ class TestSuite(unittest.TestCase):
         elif t == "module":
             data = WasmLoader().load(wasm)
             optimizer = WasmOptimizer().optimize(data)
-            data = WasmExecEntry.entry(optimizer)
+            data = WasmExecEntry.entry(optimizer, export=self.export)
 
             for case, cmd in enumerate(cmds):
                 param = {"name": name, "index": f"{index:04d}", "case": f"{case:04d}"}
@@ -147,7 +151,7 @@ class TestSuite(unittest.TestCase):
         t, wasm, cmds = self.__get_test_suite_data(name)[index]
         data = WasmLoader().load(wasm)
         optimizer = WasmOptimizer().optimize(data)
-        data = WasmExecEntry.entry(optimizer)
+        data = WasmExecEntry.entry(optimizer, export=self.export)
         self.__test_run(data, cmds[case])
 
     def __test_run(self, data: WasmExec, cmd: dict):
@@ -160,6 +164,13 @@ class TestSuite(unittest.TestCase):
                 self.__test_run_assert_trap(data, cmd)
             elif cmd["type"] == "action":
                 self.__test_run_assert_return(data, cmd)
+            elif cmd["type"] == "register":
+                export = data.sections.export_section[0]
+                fn = data.sections.function_section[export.index]
+                type = data.sections.type_section[fn.type]
+                code = data.sections.code_section[export.index]
+
+                self.export[cmd["as"]] = (type, fn, code)
             else:
                 self.fail(f"expect: assert_return or assert_trap, actual: {cmd['type']}")
         except WasmUnimplementedError as e:

@@ -6,6 +6,7 @@ from src.wasm.optimizer.optimizer import WasmOptimizer
 from src.wasm.optimizer.struct import (
     CodeInstructionOptimize,
     CodeSectionOptimize,
+    FunctionSectionOptimize,
     TableSectionOptimize,
     TypeSectionOptimize,
     WasmSectionsOptimize,
@@ -16,6 +17,15 @@ from src.wasm.type.base import AnyType
 from src.wasm.type.bytes.numpy.base import NumpyBytesType
 from src.wasm.type.table.base import TableType
 
+Export = dict[
+    str,
+    tuple[
+        TypeSectionOptimize,
+        FunctionSectionOptimize,
+        CodeSectionOptimize,
+    ],
+]
+
 
 class WasmExec:
     """Code Sectionのデータ構造"""
@@ -23,14 +33,17 @@ class WasmExec:
     logger = NestedLogger(logging.getLogger(__name__))
     T = TypeVar("T")
 
-    def __init__(self, sections: WasmSectionsOptimize):
+    def __init__(self, sections: WasmSectionsOptimize, export: Optional[Export] = None):
         self.sections = sections
+        self.export = export or {}
         self.init()
 
     def init(self):
         memory_size = self.sections.memory_section[0].limits_min if self.sections.memory_section else 0
         self.memory = NumpyBytesType.from_size(len(self.sections.memory_section) * 64 * 1024 * memory_size)
-        self.globals = [WasmOptimizer.get_any_type(x.type).from_null() for x in self.sections.global_section]
+        self.globals = [
+            WasmOptimizer.get_any_type(x.type).from_int(self.run_data_int(x.init)) for x in self.sections.global_section
+        ]
         self.tables = [
             TableType(WasmOptimizer.get_ref_type(x.element_type), x.limits_min, x.limits_max)
             for x in self.sections.table_section
@@ -46,6 +59,18 @@ class WasmExec:
             self.init_memory.append(NumpyBytesType.from_str(data_section.init))
             # self.memory.store(offset=0, value=data_section.init)
         self.table_init()
+        self.import_init()
+
+    def import_init(self):
+        for elem in self.sections.import_section:
+            fn = self.export.get(elem.module.data.decode())
+            if fn is None:
+                raise Exception(f"import error: {elem.name}")
+            if elem.kind == 0x00:
+                # 要素の最初に追加
+                self.sections.type_section.insert(0, fn[0])
+                self.sections.function_section.insert(0, fn[1])
+                self.sections.code_section.insert(0, fn[2])
 
     def table_init(self):
         for elem in self.sections.element_section:

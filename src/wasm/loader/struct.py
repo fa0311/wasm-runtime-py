@@ -6,6 +6,15 @@ from src.wasm.loader.helper import ArgumentType
 
 
 @dataclass
+class ImportSection:
+    """Import Sectionのデータ構造"""
+
+    module: ByteReader = field(metadata={"description": "モジュール名"})
+    name: ByteReader = field(metadata={"description": "フィールド名"})
+    kind: int = field(metadata={"description": "インポートの種類"})
+
+
+@dataclass
 class TypeSection:
     """Type Sectionのデータ構造"""
 
@@ -110,6 +119,7 @@ class DataSection:
 
 @dataclass
 class WasmSections:
+    import_section: list[ImportSection]
     type_section: list[TypeSection]
     function_section: list[FunctionSection]
     table_section: list[TableSection]

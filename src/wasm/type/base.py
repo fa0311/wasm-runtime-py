@@ -11,3 +11,7 @@ class AnyType:
     @classmethod
     def from_null(cls):
         return cls(None)
+
+    @classmethod
+    def from_int(cls, value: int):
+        return cls(value)

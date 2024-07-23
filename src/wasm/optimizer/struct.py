@@ -6,6 +6,15 @@ from src.wasm.loader.helper import ArgumentType, CodeSectionSpecHelper
 
 
 @dataclass
+class ImportSectionOptimize:
+    """Import Sectionのデータ構造"""
+
+    module: ByteReader = field(metadata={"description": "モジュール名"})
+    name: ByteReader = field(metadata={"description": "フィールド名"})
+    kind: int = field(metadata={"description": "インポートの種類"})
+
+
+@dataclass
 class TypeSectionOptimize:
     """Type Sectionのデータ構造"""
 
@@ -114,6 +123,7 @@ class DataSectionOptimize:
 
 @dataclass
 class WasmSectionsOptimize:
+    import_section: list["ImportSectionOptimize"]
     type_section: list[TypeSectionOptimize]
     function_section: list[FunctionSectionOptimize]
     table_section: list[TableSectionOptimize]

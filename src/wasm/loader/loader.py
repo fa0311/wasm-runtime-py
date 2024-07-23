@@ -13,6 +13,7 @@ from src.wasm.loader.struct import (
     ExportSection,
     FunctionSection,
     GlobalSection,
+    ImportSection,
     MemorySection,
     ModeActive,
     TableSection,
@@ -49,7 +50,7 @@ class WasmLoader:
             size = data.read_leb128()
             section = data.read_bytes(size)
             assert self.logger.debug(f"id: {id}, size: {size}")
-            if id == 0:
+            if id == 2:
                 res.extend(self.import_section(section))
             elif id == 1:
                 res.extend(self.type_section(section))
@@ -73,6 +74,7 @@ class WasmLoader:
                 assert self.logger.error(f"unknown id: {id}")
 
         sections = WasmSections(
+            import_section=[x for x in res if isinstance(x, ImportSection)],
             type_section=[x for x in res if isinstance(x, TypeSection)],
             function_section=[x for x in res if isinstance(x, FunctionSection)],
             table_section=[x for x in res if isinstance(x, TableSection)],
@@ -92,11 +94,18 @@ class WasmLoader:
         """Import Sectionを読み込む"""
 
         # Import Sectionの数を読み込む
-        import_count = data.read_leb128()
-        assert self.logger.debug(f"import count: {import_count}")
+        count = data.read_leb128()
 
-        # Import Sectionのデータを読み込む
-        res = []
+        assert self.logger.debug(f"import count: {count}")
+
+        res: list["ImportSection"] = []
+
+        for _ in range(count):
+            module = data.read_bytes(data.read_leb128())
+            name = data.read_bytes(data.read_leb128())
+            kind = data.read_byte()
+            res.append(ImportSection(module=module, name=name, kind=kind))
+
         return res
 
     @logger.logger
