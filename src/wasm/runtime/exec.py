@@ -19,10 +19,13 @@ from src.wasm.type.table.base import TableType
 
 Export = dict[
     str,
-    tuple[
-        TypeSectionOptimize,
-        FunctionSectionOptimize,
-        CodeSectionOptimize,
+    dict[
+        str,
+        tuple[
+            TypeSectionOptimize,
+            FunctionSectionOptimize,
+            CodeSectionOptimize,
+        ],
     ],
 ]
 
@@ -63,12 +66,10 @@ class WasmExec:
 
     def import_init(self):
         for elem in self.sections.import_section:
-            fn = self.export.get(elem.module.data.decode())
-            if fn is None:
-                raise Exception(f"import error: {elem.name}")
+            fn = self.export[elem.module.data.decode()][elem.name.data.decode()]
             if elem.kind == 0x00:
                 # 要素の最初に追加
-                self.sections.type_section.insert(0, fn[0])
+                # self.sections.type_section.insert(0, fn[0])
                 self.sections.function_section.insert(0, fn[1])
                 self.sections.code_section.insert(0, fn[2])
 
@@ -121,7 +122,7 @@ class WasmExec:
         else:
             returns = block.stack.any()
         assert self.logger.debug(f"res: {returns}")
-        return int(returns.value)
+        return 0 if returns.is_none() else int(returns.value)
 
     def get_function(self, index: int) -> tuple[CodeSectionOptimize, TypeSectionOptimize]:
         """関数のインデックスからCode SectionとType Sectionを取得する"""

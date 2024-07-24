@@ -104,6 +104,7 @@ class WasmLoader:
             module = data.read_bytes(data.read_leb128())
             name = data.read_bytes(data.read_leb128())
             kind = data.read_byte()
+            _ = data.read_byte()
             res.append(ImportSection(module=module, name=name, kind=kind))
 
         return res

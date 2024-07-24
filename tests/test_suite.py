@@ -7,6 +7,7 @@ import subprocess
 import sys
 import unittest
 from pathlib import Path
+from typing import Optional
 
 import numpy as np
 
@@ -34,6 +35,7 @@ class TestSuite(unittest.TestCase):
             sys.setrecursionlimit(10**6)
         if not os.path.exists(".cache"):
             self.__set_wasm2json()
+        self.export["spectest"] = self.__to_export(self.__read_spectest())
 
     def tearDown(self):
         logging.shutdown()
@@ -78,10 +80,37 @@ class TestSuite(unittest.TestCase):
                 ],
             )
 
-    def __read_module(self, name: str, filename: str):
+        spectest = "tests/assets/spectest.wat"
+        subprocess.run(
+            [
+                "wat2wasm",
+                spectest,
+                "-o",
+                ".cache/spectest.wasm",
+            ],
+        )
+
+    def __read_module(self, name: str, filename: Optional[str] = None):
         with open(f".cache/{name}/{filename}", "rb") as f:
             wasm = f.read()
         return wasm
+
+    def __read_spectest(self):
+        with open(".cache/spectest.wasm", "rb") as f:
+            wasm = f.read()
+        data = WasmLoader().load(wasm)
+        optimizer = WasmOptimizer().optimize(data)
+        return WasmExec(optimizer)
+
+    def __to_export(self, data: WasmExec):
+        res: dict[str, tuple] = {}
+        for export in data.sections.export_section:
+            fn = data.sections.function_section[export.index]
+            type = data.sections.type_section[fn.type]
+            code = data.sections.code_section[export.index]
+            res[export.field_name.data.decode()] = (type, fn, code)
+
+        return res
 
     def __get_test_suite_data(self, name: str):
         path = pathlib.Path(f".cache/{name}/{name}.json")
@@ -106,6 +135,8 @@ class TestSuite(unittest.TestCase):
             elif cmd["type"] == "action":
                 res[-1][2].append(cmd)
             elif cmd["type"] == "register":
+                res[-1][2].append(cmd)
+            elif cmd["type"] == "assert_uninstantiable":
                 res[-1][2].append(cmd)
             else:
                 self.fail(f"unknown command: {cmd['type']}")
@@ -165,12 +196,9 @@ class TestSuite(unittest.TestCase):
             elif cmd["type"] == "action":
                 self.__test_run_assert_return(data, cmd)
             elif cmd["type"] == "register":
-                export = data.sections.export_section[0]
-                fn = data.sections.function_section[export.index]
-                type = data.sections.type_section[fn.type]
-                code = data.sections.code_section[export.index]
-
-                self.export[cmd["as"]] = (type, fn, code)
+                self.export[cmd["as"]] = self.__to_export(data)
+            elif cmd["type"] == "assert_uninstantiable":
+                self.__test_run_assert_trap(data, cmd)
             else:
                 self.fail(f"expect: assert_return or assert_trap, actual: {cmd['type']}")
         except WasmUnimplementedError as e:
