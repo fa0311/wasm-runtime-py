@@ -16,6 +16,7 @@ from src.wasm.loader.struct import (
     ImportSection,
     MemorySection,
     ModeActive,
+    StartSection,
     TableSection,
     TypeSection,
     WasmSections,
@@ -62,6 +63,8 @@ class WasmLoader:
                 res.extend(self.memory_section(section))
             elif id == 6:
                 res.extend(self.global_section(section))
+            elif id == 8:
+                res.extend(self.start_section(section))
             elif id == 9:
                 res.extend(self.element_section(section))
             elif id == 10:
@@ -80,6 +83,7 @@ class WasmLoader:
             table_section=[x for x in res if isinstance(x, TableSection)],
             memory_section=[x for x in res if isinstance(x, MemorySection)],
             global_section=[x for x in res if isinstance(x, GlobalSection)],
+            start_section=[x for x in res if isinstance(x, StartSection)],
             element_section=[x for x in res if isinstance(x, ElementSection)],
             code_section=[x for x in res if isinstance(x, CodeSection)],
             export_section=[x for x in res if isinstance(x, ExportSection)],
@@ -231,6 +235,25 @@ class WasmLoader:
 
         # 解析結果を返す
         return res
+
+    @logger.logger
+    def start_section(self, data: ByteReader) -> list[StartSection]:
+        """Start Sectionを読み込む"""
+
+        # Start Sectionの数を読み込む
+        # start_count = data.read_leb128()
+        # assert self.logger.debug(f"start count: {start_count}")
+
+        # # Start Sectionのデータを読み込む
+        # res: list[StartSection] = []
+        # for _ in range(start_count):
+        #     index = data.read_leb128()
+        #     section = StartSection(index=index)
+        #     assert self.logger.debug(section)
+        #     res.append(section)
+
+        # 解析結果を返す
+        return [StartSection(index=data.read_leb128())]
 
     @logger.logger
     def element_section(self, data: ByteReader) -> list[ElementSection]:

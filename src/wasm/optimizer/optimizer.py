@@ -13,6 +13,7 @@ from src.wasm.loader.struct import (
     ImportSection,
     MemorySection,
     ModeActive,
+    StartSection,
     TableSection,
     TypeSection,
     WasmSections,
@@ -28,6 +29,7 @@ from src.wasm.optimizer.struct import (
     ImportSectionOptimize,
     MemorySectionOptimize,
     ModeActiveOptimize,
+    StartSectionOptimize,
     TableSectionOptimize,
     TypeSectionOptimize,
     WasmSectionsOptimize,
@@ -108,6 +110,7 @@ class WasmOptimizer:
             function_section=[self.function_section(x) for x in sections.function_section],
             table_section=[self.table_section(x) for x in sections.table_section],
             memory_section=[self.memory_section(x) for x in sections.memory_section],
+            start_section=[self.start_section(x) for x in sections.start_section],
             global_section=[self.global_section(x) for x in sections.global_section],
             element_section=[self.element_section(x) for x in sections.element_section],
             code_section=[self.code_section(x) for x in sections.code_section],
@@ -146,6 +149,11 @@ class WasmOptimizer:
         return MemorySectionOptimize(
             limits_min=section.limits_min,
             limits_max=section.limits_max,
+        )
+
+    def start_section(self, section: "StartSection") -> "StartSectionOptimize":
+        return StartSectionOptimize(
+            index=section.index,
         )
 
     def global_section(self, section: "GlobalSection") -> "GlobalSectionOptimize":

@@ -64,8 +64,12 @@ class WasmExec:
         self.table_init()
         self.import_init()
 
+        start = self.sections.start_section[0].index if self.sections.start_section else None
+        if start is not None:
+            self.run(start, [])
+
     def import_init(self):
-        for elem in self.sections.import_section:
+        for elem in self.sections.import_section[::-1]:
             fn = self.export[elem.module.data.decode()][elem.name.data.decode()]
             if elem.kind == 0x00:
                 # 要素の最初に追加

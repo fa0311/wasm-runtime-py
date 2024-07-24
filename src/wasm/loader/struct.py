@@ -57,6 +57,13 @@ class GlobalSection:
 
 
 @dataclass
+class StartSection:
+    """Start Sectionのデータ構造"""
+
+    index: int = field(metadata={"description": "スタート関数のインデックス"})
+
+
+@dataclass
 class ElementSection:
     """Element Sectionのデータ構造"""
 
@@ -124,6 +131,7 @@ class WasmSections:
     function_section: list[FunctionSection]
     table_section: list[TableSection]
     memory_section: list[MemorySection]
+    start_section: list[StartSection]
     global_section: list[GlobalSection]
     element_section: list[ElementSection]
     code_section: list[CodeSection]

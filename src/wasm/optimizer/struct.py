@@ -48,6 +48,13 @@ class MemorySectionOptimize:
 
 
 @dataclass
+class StartSectionOptimize:
+    """Start Sectionのデータ構造"""
+
+    index: int = field(metadata={"description": "スタート関数のインデックス"})
+
+
+@dataclass
 class GlobalSectionOptimize:
     """Global Sectionのデータ構造"""
 
@@ -128,6 +135,7 @@ class WasmSectionsOptimize:
     function_section: list[FunctionSectionOptimize]
     table_section: list[TableSectionOptimize]
     memory_section: list[MemorySectionOptimize]
+    start_section: list["StartSectionOptimize"]
     global_section: list[GlobalSectionOptimize]
     element_section: list[ElementSectionOptimize]
     code_section: list[CodeSectionOptimize]

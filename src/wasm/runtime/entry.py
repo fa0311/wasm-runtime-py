@@ -22,6 +22,7 @@ class WasmExecEntry:
             function_section=[],
             table_section=[],
             memory_section=[],
+            start_section=[],
             global_section=[],
             export_section=[],
             element_section=[],
