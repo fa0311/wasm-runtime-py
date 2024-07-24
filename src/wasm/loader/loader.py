@@ -108,7 +108,27 @@ class WasmLoader:
             module = data.read_bytes(data.read_leb128())
             name = data.read_bytes(data.read_leb128())
             kind = data.read_byte()
-            _ = data.read_byte()
+            if kind == 0:
+                idx = data.read_leb128()
+                _ = idx
+            elif kind == 1:
+                type = data.read_leb128()
+                limit = data.read_byte()
+                if limit == 0:
+                    min = data.read_leb128()
+                    max = None
+                elif limit == 1:
+                    min = data.read_leb128()
+                    max = data.read_leb128()
+                else:
+                    raise Exception("invalid limit")
+                _ = type, min, max
+            elif kind == 3:
+                type = data.read_leb128()
+                const = data.read_byte()
+                _ = type, const
+            else:
+                raise Exception("invalid kind")
             res.append(ImportSection(module=module, name=name, kind=kind))
 
         return res

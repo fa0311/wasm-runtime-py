@@ -154,24 +154,26 @@ class TestSuite(unittest.TestCase):
 
     def __test_index(self, name: str, index: int):
         t, wasm, cmds = self.__get_test_suite_data(name)[index]
-        if t == "assert_invalid":
+        if len(cmds) == 0:
             pass
-            # try:
-            #     data = WasmLoader().load(wasm)
-            #     optimizer = WasmOptimizer().optimize(data)
-            #     data = WasmExec(optimizer)
-            #     self.fail("expect: invalid, actual: valid")
-            # except Exception:
-            #     self.assertTrue(True)
+        elif t == "assert_invalid":
+            pass
+            try:
+                data = WasmLoader().load(wasm)
+                optimizer = WasmOptimizer().optimize(data)
+                data = WasmExec(optimizer)
+                self.fail("expect: invalid, actual: valid")
+            except Exception:
+                self.assertTrue(True)
         elif t == "assert_malformed":
             pass
-            # try:
-            #     data = WasmLoader().load(wasm)
-            #     optimizer = WasmOptimizer().optimize(data)
-            #     data = WasmExecEntry.entry(optimizer, export=self.export)
-            #     self.fail("expect: malformed, actual: valid")
-            # except Exception:
-            #     self.assertTrue(True)
+            try:
+                data = WasmLoader().load(wasm)
+                optimizer = WasmOptimizer().optimize(data)
+                data = WasmExecEntry.entry(optimizer, export=self.export)
+                self.fail("expect: malformed, actual: valid")
+            except Exception:
+                self.assertTrue(True)
         elif t == "assert_uninstantiable":
             try:
                 data = WasmLoader().load(wasm)

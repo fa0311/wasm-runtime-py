@@ -44,9 +44,13 @@ class WasmExec:
     def init(self):
         memory_size = self.sections.memory_section[0].limits_min if self.sections.memory_section else 0
         self.memory = NumpyBytesType.from_size(len(self.sections.memory_section) * 64 * 1024 * memory_size)
-        self.globals = [
-            WasmOptimizer.get_any_type(x.type).from_int(self.run_data_int(x.init)) for x in self.sections.global_section
-        ]
+        # self.globals = [
+        #     WasmOptimizer.get_any_type(x.type).from_int(self.run_data_int(x.init)) for x in self.sections.global_section
+        # ]
+        self.globals = []
+        for g in self.sections.global_section:
+            self.globals.append(WasmOptimizer.get_any_type(g.type).from_int(self.run_data_int(g.init)))
+
         self.tables = [
             TableType(WasmOptimizer.get_ref_type(x.element_type), x.limits_min, x.limits_max)
             for x in self.sections.table_section
@@ -76,6 +80,8 @@ class WasmExec:
                 # self.sections.type_section.insert(0, fn[0])
                 self.sections.function_section.insert(0, fn[1])
                 self.sections.code_section.insert(0, fn[2])
+            else:
+                raise Exception("not implemented")
 
     def table_init(self):
         for elem in self.sections.element_section:
