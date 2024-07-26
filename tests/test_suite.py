@@ -143,6 +143,8 @@ class TestSuite(unittest.TestCase):
                 res[-1][2].append(cmd)
             elif cmd["type"] == "assert_uninstantiable":
                 res.append((cmd["type"], self.__read_module(name, cmd["filename"]), []))
+            elif cmd["type"] == "assert_unlinkable":
+                res.append((cmd["type"], self.__read_module(name, cmd["filename"]), []))
             else:
                 self.fail(f"unknown command: {cmd['type']}")
         return res
@@ -189,6 +191,9 @@ class TestSuite(unittest.TestCase):
 
             for case, cmd in enumerate(cmds):
                 param = {"name": name, "index": f"{index:04d}", "case": f"{case:04d}"}
+
+                if index == 6:
+                    pass
                 with self.subTest(**param):
                     self.__test_run(data, cmd)
         else:

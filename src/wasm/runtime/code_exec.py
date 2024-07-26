@@ -922,16 +922,14 @@ class CodeSectionBlock(CodeSectionRun):
 
     def table_init(self, index: int, index2: int):
         c, b, a = self.stack.int(), self.stack.int(), self.stack.int()
-        elem = self.env.sections.element_section[index2]
+        elem = self.env.sections.element_section[index]
         table = self.env.sections.table_section[index2]
         ref = WasmOptimizer.get_ref_type(table.element_type)
         res = [ref.from_value(x) for x in elem.get_funcidx()[b : b + c]]
         self.env.tables[index2][a : a + c] = res
 
     def elem_drop(self, index: int):
-        if index < len(self.env.tables):
-            if 0 < len(self.env.tables[index]):
-                self.env.tables[index].pop()
+        self.env.drop_elem[index] = True
 
     def table_copy(self, index: int, index2: int):
         c, b, a = self.stack.int(), self.stack.int(), self.stack.int()

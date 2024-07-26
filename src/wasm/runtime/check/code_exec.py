@@ -605,7 +605,10 @@ class CodeSectionBlockDebug(CodeSectionBlock):
             raise WasmOutOfBoundsTableAccessError()
         if int(a) + int(c) > len(self.env.tables[index2]):
             raise WasmOutOfBoundsTableAccessError()
-        if int(b) + int(c) > len(self.env.sections.element_section[index2].get_funcidx()):
+        if int(b) + int(c) > len(self.env.sections.element_section[index].get_funcidx()):
+            raise WasmOutOfBoundsTableAccessError()
+
+        if self.env.drop_elem[index] and int(c) > 0:
             raise WasmOutOfBoundsTableAccessError()
         return super().table_init(index, index2)
 
@@ -615,6 +618,7 @@ class CodeSectionBlockDebug(CodeSectionBlock):
             self.stack.int(read_only=True, key=-2),
             self.stack.int(read_only=True, key=-3),
         )
+
         try:
             if a + c > len(self.env.tables[index]):
                 raise WasmOutOfBoundsTableAccessError()

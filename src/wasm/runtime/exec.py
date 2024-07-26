@@ -56,7 +56,7 @@ class WasmExec:
             for x in self.sections.table_section
         ]
         self.init_memory: list[NumpyBytesType] = []
-        self.disable_elem = [False for _ in self.sections.element_section]
+        self.drop_elem = [False for _ in self.sections.element_section]
 
         for data_section in self.sections.data_section:
             if data_section.active is not None:
