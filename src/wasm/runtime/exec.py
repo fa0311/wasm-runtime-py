@@ -84,9 +84,9 @@ class WasmExec:
                 raise Exception("not implemented")
 
     def table_init(self):
-        for elem in self.sections.element_section:
+        for i, elem in enumerate(self.sections.element_section):
             if elem.active is not None:
-                elem.active.table
+                self.drop_elem[i] = True
                 # se = self.sections.table_section[elem.active.table]
                 # self.tables.append(TableType(WasmOptimizer.get_ref_type(se.element_type), se.limits_min, se.limits_max))
                 for i, funcidx in enumerate(elem.funcidx or []):
@@ -94,6 +94,7 @@ class WasmExec:
                     offset = self.run_data_int(elem.active.offset)
                     ref = WasmOptimizer.get_ref_type(table.element_type)
                     self.tables[elem.active.table][offset + i] = ref.from_value(funcidx)
+                    self.tables[elem.active.table].init = True
 
     @logger.logger
     def start(self, field: bytes, param: list[AnyType]):

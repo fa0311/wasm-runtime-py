@@ -191,9 +191,6 @@ class TestSuite(unittest.TestCase):
 
             for case, cmd in enumerate(cmds):
                 param = {"name": name, "index": f"{index:04d}", "case": f"{case:04d}"}
-
-                if index == 6:
-                    pass
                 with self.subTest(**param):
                     self.__test_run(data, cmd)
         else:

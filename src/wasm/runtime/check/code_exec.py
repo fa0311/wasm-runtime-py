@@ -10,7 +10,6 @@ from src.wasm.runtime.error.error import (
     WasmOutOfBoundsMemoryAccessError,
     WasmOutOfBoundsTableAccessError,
     WasmUndefinedElementError,
-    WasmUninitialized2ElementError,
     WasmUninitializedElementError,
     WasmUnreachableError,
 )
@@ -30,8 +29,8 @@ class CodeSectionBlockDebug(CodeSectionBlock):
 
         try:
             table = self.env.tables[elm_index]
-            if all(x.is_none() for x in table):
-                raise WasmUninitialized2ElementError()
+            if not table.init:
+                raise WasmUninitializedElementError()
             if table[a].is_none():
                 raise WasmUninitializedElementError()
             b, fn_type = self.env.get_function(int(element[a]))
@@ -601,13 +600,12 @@ class CodeSectionBlockDebug(CodeSectionBlock):
         )
         if len(self.env.tables) <= index2:
             raise WasmOutOfBoundsTableAccessError()
-        if len(self.env.sections.element_section) <= index2:
+        if len(self.env.sections.element_section) <= index:
             raise WasmOutOfBoundsTableAccessError()
         if int(a) + int(c) > len(self.env.tables[index2]):
             raise WasmOutOfBoundsTableAccessError()
         if int(b) + int(c) > len(self.env.sections.element_section[index].get_funcidx()):
             raise WasmOutOfBoundsTableAccessError()
-
         if self.env.drop_elem[index] and int(c) > 0:
             raise WasmOutOfBoundsTableAccessError()
         return super().table_init(index, index2)

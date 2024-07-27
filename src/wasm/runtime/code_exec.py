@@ -927,6 +927,7 @@ class CodeSectionBlock(CodeSectionRun):
         ref = WasmOptimizer.get_ref_type(table.element_type)
         res = [ref.from_value(x) for x in elem.get_funcidx()[b : b + c]]
         self.env.tables[index2][a : a + c] = res
+        self.env.tables[index2].init = True
 
     def elem_drop(self, index: int):
         self.env.drop_elem[index] = True
