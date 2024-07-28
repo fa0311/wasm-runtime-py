@@ -29,7 +29,7 @@ class CodeSectionBlockDebug(CodeSectionBlock):
 
         try:
             table = self.env.tables[elm_index]
-            if not table.init:
+            if all([x.is_none() for x in table]):
                 raise WasmUninitializedElementError()
             if table[a].is_none():
                 raise WasmUninitializedElementError()

@@ -8,7 +8,6 @@ class TableType:
         self.type = type
         self.min = min
         self.max = max
-        self.init = False
         self.value = [type.from_null() for _ in range(min)]
 
     def __getitem__(self, key) -> RefType:

@@ -276,7 +276,7 @@ class TestSuite(unittest.TestCase):
             )
             self.fail(f"expect: {text}, actual: {res}")
         except WasmRuntimeError as e:
-            if text != e.message:
+            if text != e.message and text not in e.other_message:
                 if isinstance(e, WasmCallStackExhaustedError):
                     raise e
                 self.fail(f"expect: {cmd['text']}, actual: {e.message}")

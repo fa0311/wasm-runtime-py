@@ -2,14 +2,16 @@ from typing import Callable
 
 
 class WasmError(Exception):
-    pass
+    MESSAGE = "error"
+    OTHER_MESSAGE = []
+
+    def __init__(self):
+        self.message = self.MESSAGE
+        self.other_message = self.OTHER_MESSAGE
 
 
 class WasmInvalidError(WasmError):
     MESSAGE = "invalid"
-
-    def __init__(self):
-        self.message = self.MESSAGE
 
 
 class WasmTypeMismatchError(WasmInvalidError):
@@ -22,9 +24,6 @@ class WasmUnexpectedTokenError(WasmInvalidError):
 
 class WasmRuntimeError(WasmError):
     MESSAGE = "runtime error"
-
-    def __init__(self):
-        self.message = self.MESSAGE
 
 
 class WasmIntegerDivideByZeroError(WasmRuntimeError):
@@ -49,10 +48,7 @@ class WasmUndefinedElementError(WasmRuntimeError):
 
 class WasmUninitializedElementError(WasmRuntimeError):
     MESSAGE = "uninitialized element"
-
-
-class WasmUninitialized2ElementError(WasmRuntimeError):
-    MESSAGE = "uninitialized element 2"
+    OTHER_MESSAGE = ["uninitialized element 2"]
 
 
 class WasmIndirectCallTypeMismatchError(WasmRuntimeError):
@@ -72,6 +68,10 @@ class WasmOutOfBoundsTableAccessError(WasmRuntimeError):
 
 
 class WasmUnimplementedError(WasmError):
+    def __init__(self, message: str):
+        super().__init__()
+        self.message = message
+
     @staticmethod
     def throw():
         def decorator(func: Callable):

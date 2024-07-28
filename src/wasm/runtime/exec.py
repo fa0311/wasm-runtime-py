@@ -94,7 +94,9 @@ class WasmExec:
                     offset = self.run_data_int(elem.active.offset)
                     ref = WasmOptimizer.get_ref_type(table.element_type)
                     self.tables[elem.active.table][offset + i] = ref.from_value(funcidx)
-                    self.tables[elem.active.table].init = True
+
+            # if elem.elem == 3:  # declarative
+            #     self.drop_elem[i] = True
 
     @logger.logger
     def start(self, field: bytes, param: list[AnyType]):

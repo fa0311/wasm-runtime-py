@@ -317,11 +317,11 @@ class WasmLoader:
                 funcidx = [data.read_leb128() for _ in range(count)]
                 section = ElementSection(elem=elem, type=type, funcidx=funcidx, active=None, ref=None)
                 res.append(section)
-            elif elem == 5:  # Passive
-                type = data.read_byte()
-                ref = self.code_section_instructions(data)
-                section = ElementSection(elem=elem, type=type, funcidx=None, active=None, ref=ref)
-                res.append(section)
+            # elif elem == 5:  # Passive
+            #     type = data.read_byte()
+            #     ref = self.code_section_instructions(data)
+            #     section = ElementSection(elem=elem, type=type, funcidx=None, active=None, ref=ref)
+            #     res.append(section)
             else:
                 raise Exception("invalid elem_type")
 
