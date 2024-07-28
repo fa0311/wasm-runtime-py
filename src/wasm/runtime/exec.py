@@ -30,6 +30,7 @@ class WasmExec:
         self.init()
 
     def init(self):
+        self.import_init()
         memory_size = self.sections.memory_section[0].limits_min if self.sections.memory_section else 0
         self.memory = NumpyBytesType.from_size(len(self.sections.memory_section) * 64 * 1024 * memory_size)
         # self.globals = [
@@ -37,7 +38,11 @@ class WasmExec:
         # ]
         self.globals = []
         for g in self.sections.global_section:
-            self.globals.append(WasmOptimizer.get_any_type(g.type).from_int(self.run_data_int(g.init)))
+            data = self.run_data_int(g.init)
+            if data is None:
+                self.globals.append(WasmOptimizer.get_any_type(g.type).from_null())
+            else:
+                self.globals.append(WasmOptimizer.get_any_type(g.type).from_int(data))
 
         self.tables = [
             TableType(WasmOptimizer.get_ref_type(x.element_type), x.limits_min, x.limits_max)
@@ -49,12 +54,12 @@ class WasmExec:
         for data_section in self.sections.data_section:
             if data_section.active is not None:
                 offset = self.run_data_int(data_section.active.offset)
+                assert isinstance(offset, int)
                 self.memory.store(offset=offset, value=data_section.init)
             # elif data_section.active is None:
             self.init_memory.append(NumpyBytesType.from_str(data_section.init))
             # self.memory.store(offset=0, value=data_section.init)
         self.table_init()
-        self.import_init()
 
         start = self.sections.start_section[0].index if self.sections.start_section else None
         if start is not None:
@@ -118,6 +123,7 @@ class WasmExec:
                 for i, funcidx in enumerate(elem.funcidx or []):
                     table = self.sections.table_section[elem.active.table]
                     offset = self.run_data_int(elem.active.offset)
+                    assert isinstance(offset, int)
                     ref = WasmOptimizer.get_ref_type(table.element_type)
                     self.tables[elem.active.table][offset + i] = ref.from_value(funcidx)
 
@@ -161,7 +167,7 @@ class WasmExec:
         else:
             returns = block.stack.any()
         assert self.logger.debug(f"res: {returns}")
-        return 0 if returns.is_none() else int(returns.value)
+        return None if returns.is_none() else int(returns.value)
 
     def get_function(self, index: int) -> tuple[CodeSectionOptimize, TypeSectionOptimize]:
         """関数のインデックスからCode SectionとType Sectionを取得する"""
