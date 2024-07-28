@@ -6,28 +6,16 @@ from src.wasm.optimizer.optimizer import WasmOptimizer
 from src.wasm.optimizer.struct import (
     CodeInstructionOptimize,
     CodeSectionOptimize,
-    FunctionSectionOptimize,
     TableSectionOptimize,
     TypeSectionOptimize,
     WasmSectionsOptimize,
 )
 from src.wasm.runtime.code_exec import CodeSectionBlock
+from src.wasm.runtime.export import WasmExport, WasmExportFunction, WasmExportGlobal, WasmExportMemory, WasmExportTable
 from src.wasm.runtime.stack import NumericStack
 from src.wasm.type.base import AnyType
 from src.wasm.type.bytes.numpy.base import NumpyBytesType
 from src.wasm.type.table.base import TableType
-
-Export = dict[
-    str,
-    dict[
-        str,
-        tuple[
-            TypeSectionOptimize,
-            FunctionSectionOptimize,
-            CodeSectionOptimize,
-        ],
-    ],
-]
 
 
 class WasmExec:
@@ -36,9 +24,9 @@ class WasmExec:
     logger = NestedLogger(logging.getLogger(__name__))
     T = TypeVar("T")
 
-    def __init__(self, sections: WasmSectionsOptimize, export: Optional[Export] = None):
+    def __init__(self, sections: WasmSectionsOptimize, export: list[WasmExport] = []):
         self.sections = sections
-        self.export = export or {}
+        self.export = export
         self.init()
 
     def init(self):
@@ -74,14 +62,52 @@ class WasmExec:
 
     def import_init(self):
         for elem in self.sections.import_section[::-1]:
-            fn = self.export[elem.module.data.decode()][elem.name.data.decode()]
+            name = elem.name.data.decode()
+            namespace = elem.module.data.decode()
+            data = [x for x in self.export if x.name == name and x.namespace == namespace][0].data
+
             if elem.kind == 0x00:
-                # 要素の最初に追加
-                # self.sections.type_section.insert(0, fn[0])
-                self.sections.function_section.insert(0, fn[1])
-                self.sections.code_section.insert(0, fn[2])
+                assert isinstance(data, WasmExportFunction)
+                self.sections.function_section.insert(0, data.function)
+                self.sections.code_section.insert(0, data.code)
+            elif elem.kind == 0x01:
+                assert isinstance(data, WasmExportTable)
+                self.sections.table_section.insert(0, data.table)
+            elif elem.kind == 0x02:
+                assert isinstance(data, WasmExportMemory)
+                self.sections.memory_section.insert(0, data.memory)
+            elif elem.kind == 0x03:
+                assert isinstance(data, WasmExportGlobal)
+                self.sections.global_section.insert(0, data.global_)
             else:
-                raise Exception("not implemented")
+                raise Exception("not implemented import kind")
+
+    def get_export(self, namespace: str) -> list[WasmExport]:
+        res: list[WasmExport] = []
+
+        for elem in self.sections.export_section:
+            if elem.kind == 0x00:
+                data = WasmExportFunction(
+                    function=self.sections.function_section[elem.index],
+                    code=self.sections.code_section[elem.index],
+                )
+            elif elem.kind == 0x01:
+                data = WasmExportTable(
+                    table=self.sections.table_section[elem.index],
+                )
+            elif elem.kind == 0x02:
+                data = WasmExportMemory(
+                    memory=self.sections.memory_section[elem.index],
+                )
+            elif elem.kind == 0x03:
+                data = WasmExportGlobal(
+                    global_=self.sections.global_section[elem.index],
+                )
+            else:
+                raise Exception("not implemented export kind")
+
+            res.append(WasmExport(namespace=namespace, name=elem.field_name.data.decode(), data=data))
+        return res
 
     def table_init(self):
         for i, elem in enumerate(self.sections.element_section):

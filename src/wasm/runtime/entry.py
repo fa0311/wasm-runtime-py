@@ -1,14 +1,14 @@
 import os
-from typing import Optional
 
 from src.wasm.optimizer.struct import WasmSectionsOptimize
 from src.wasm.runtime.check.exec import WasmExecCheck, WasmExecRelease
-from src.wasm.runtime.exec import Export, WasmExec
+from src.wasm.runtime.exec import WasmExec
+from src.wasm.runtime.export import WasmExport
 
 
 class WasmExecEntry:
     @staticmethod
-    def entry(sections: WasmSectionsOptimize, export: Optional[Export] = None) -> WasmExec:
+    def entry(sections: WasmSectionsOptimize, export: list[WasmExport] = []) -> WasmExec:
         if os.getenv("WASM_FAST") == "true":
             return WasmExecRelease(sections, export)
         else:

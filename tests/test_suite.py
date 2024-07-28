@@ -11,6 +11,8 @@ from typing import Optional
 
 import numpy as np
 
+from src.wasm.runtime.export import WasmExport
+
 sys.path.append(str(Path(__file__).parent.parent))
 sys.path.append(str(Path(__file__).parent.parent / "src"))
 
@@ -23,7 +25,7 @@ from src.wasm.runtime.error.error import (
     WasmRuntimeError,
     WasmUnimplementedError,
 )
-from src.wasm.runtime.exec import Export, WasmExec
+from src.wasm.runtime.exec import WasmExec
 from src.wasm.type.base import AnyType
 from src.wasm.type.numeric.numpy.float import F32, F64
 from src.wasm.type.numeric.numpy.int import I32, I64
@@ -31,7 +33,7 @@ from src.wasm.type.ref.base import ExternRef, FuncRef
 
 
 class TestSuite(unittest.TestCase):
-    export: Export = {}
+    export: list[WasmExport] = []
 
     def setUp(self):
         self.CI = os.getenv("CI") == "true"
@@ -40,7 +42,7 @@ class TestSuite(unittest.TestCase):
             sys.setrecursionlimit(10**6)
         if not os.path.exists(".cache"):
             self.__set_wasm2json()
-        self.export["spectest"] = self.__to_export(self.__read_spectest())
+        self.export.extend(self.__read_spectest().get_export(namespace="spectest"))
 
     def tearDown(self):
         logging.shutdown()
@@ -84,12 +86,10 @@ class TestSuite(unittest.TestCase):
                     f".cache/{name}/{name}.json",
                 ],
             )
-
-        spectest = "tests/assets/spectest.wat"
         subprocess.run(
             [
                 "wat2wasm",
-                spectest,
+                "tests/assets/spectest.wat",
                 "-o",
                 ".cache/spectest.wasm",
             ],
@@ -106,16 +106,6 @@ class TestSuite(unittest.TestCase):
         data = WasmLoader().load(wasm)
         optimizer = WasmOptimizer().optimize(data)
         return WasmExec(optimizer)
-
-    def __to_export(self, data: WasmExec):
-        res: dict[str, tuple] = {}
-        for export in data.sections.export_section:
-            fn = data.sections.function_section[export.index]
-            type = data.sections.type_section[fn.type]
-            code = data.sections.code_section[export.index]
-            res[export.field_name.data.decode()] = (type, fn, code)
-
-        return res
 
     def __get_test_suite_data(self, name: str):
         path = pathlib.Path(f".cache/{name}/{name}.json")
@@ -214,7 +204,7 @@ class TestSuite(unittest.TestCase):
             elif cmd["type"] == "action":
                 self.__test_run_assert_return(data, cmd)
             elif cmd["type"] == "register":
-                self.export[cmd["as"]] = self.__to_export(data)
+                self.export.extend(data.get_export(namespace=cmd["as"]))
             else:
                 self.fail(f"expect: assert_return or assert_trap, actual: {cmd['type']}")
         except WasmUnimplementedError as e:
