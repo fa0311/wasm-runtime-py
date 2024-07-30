@@ -1,13 +1,13 @@
 from dataclasses import dataclass, field
-from typing import Union
+from typing import Callable, Union
 
 from src.wasm.optimizer.struct import (
-    CodeSectionOptimize,
     FunctionSectionOptimize,
     GlobalSectionOptimize,
     MemorySectionOptimize,
     TableSectionOptimize,
 )
+from src.wasm.type.base import AnyType
 
 
 @dataclass
@@ -20,7 +20,8 @@ class WasmExport:
 @dataclass
 class WasmExportFunction:
     function: FunctionSectionOptimize = field(metadata={"description": "Function Sectionのデータ構造"})
-    code: "CodeSectionOptimize" = field(metadata={"description": "Code Sectionのデータ構造"})
+    # code: "CodeSectionOptimize" = field(metadata={"description": "Code Sectionのデータ構造"})
+    call: Callable[[list[AnyType]], list[AnyType]] = field(metadata={"description": "Functionの実行"})
 
 
 @dataclass

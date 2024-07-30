@@ -109,7 +109,7 @@ class CodeSectionBlock(CodeSectionRun):
     def call(self, index: int):
         _, fn_type = self.env.get_function(index)
         param = [self.stack.any() for _ in fn_type.params][::-1]
-        res = self.env.run(index, param)
+        res = self.env.functions[index](param)
         self.stack.extend(res)
 
     def call_indirect(self, index: int, elm_index: int):

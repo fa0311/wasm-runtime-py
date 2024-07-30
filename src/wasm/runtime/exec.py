@@ -1,5 +1,5 @@
 import logging
-from typing import Optional, TypeVar
+from typing import Callable, Optional, TypeVar
 
 from src.tools.logger import NestedLogger
 from src.wasm.optimizer.optimizer import WasmOptimizer
@@ -30,6 +30,9 @@ class WasmExec:
         self.init()
 
     def init(self):
+        self.functions: list[Callable[[list[AnyType]], list[AnyType]]] = [
+            (lambda x, self=self, i=i: self.run(i, x)) for i in range(len(self.sections.function_section))
+        ]
         self.import_init()
         memory_size = self.sections.memory_section[0].limits_min if self.sections.memory_section else 0
         self.memory = NumpyBytesType.from_size(len(self.sections.memory_section) * 64 * 1024 * memory_size)
@@ -63,7 +66,7 @@ class WasmExec:
 
         start = self.sections.start_section[0].index if self.sections.start_section else None
         if start is not None:
-            self.run(start, [])
+            self.functions[start]([])
 
     def import_init(self):
         for elem in self.sections.import_section[::-1]:
@@ -73,8 +76,13 @@ class WasmExec:
 
             if elem.kind == 0x00:
                 assert isinstance(data, WasmExportFunction)
+                code = CodeSectionOptimize(
+                    data=[CodeInstructionOptimize(opcode=0x00, args=[], child=[], else_child=[])],
+                    local=[],
+                )
                 self.sections.function_section.insert(0, data.function)
-                self.sections.code_section.insert(0, data.code)
+                self.sections.code_section.insert(0, code)
+                self.functions.insert(0, data.call)
             elif elem.kind == 0x01:
                 assert isinstance(data, WasmExportTable)
                 self.sections.table_section.insert(0, data.table)
@@ -94,7 +102,8 @@ class WasmExec:
             if elem.kind == 0x00:
                 data = WasmExportFunction(
                     function=self.sections.function_section[elem.index],
-                    code=self.sections.code_section[elem.index],
+                    # code=self.sections.code_section[elem.index],
+                    call=self.functions[elem.index],
                 )
             elif elem.kind == 0x01:
                 data = WasmExportTable(
@@ -139,7 +148,7 @@ class WasmExec:
         # エントリーポイントの関数を取得する
         start = [fn for fn in self.sections.export_section if fn.field_name == field][0]
 
-        return self.run(start.index, param)
+        return self.functions[start.index](param)
 
     def run(self, index: int, param: list[AnyType]):
         fn, fn_type = self.get_function(index)
@@ -159,14 +168,18 @@ class WasmExec:
 
         return returns
 
-    def run_data_int(self, data: list[CodeInstructionOptimize]):
+    def run_data_result(self, data: list[CodeInstructionOptimize]):
         block = self.get_block(locals=[], stack=[])
         res = block.run(data)
         if isinstance(res, list):
-            returns = res.pop()
+            returns = [res.pop() for _ in range(len(block.stack.value))]
         else:
-            returns = block.stack.any()
+            returns = [block.stack.any() for _ in range(len(block.stack.value))]
         assert self.logger.debug(f"res: {returns}")
+        return returns
+
+    def run_data_int(self, data: list[CodeInstructionOptimize]):
+        returns = self.run_data_result(data)[0]
         return None if returns.is_none() else int(returns.value)
 
     def get_function(self, index: int) -> tuple[CodeSectionOptimize, TypeSectionOptimize]:
