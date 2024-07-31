@@ -8,9 +8,6 @@ from src.wasm.type.base import AnyType
 from src.wasm.type.numeric.base import NumericType
 from src.wasm.type.numeric.numpy.int import I32
 
-# def init_wasi(sec: WasmSectionsOptimize, value: list[WasmExport]):
-#     helper = ExportHelper(optimizer, [])
-
 
 class WasiResult:
     SUCCESS = (I32.from_int(0),)
@@ -65,27 +62,6 @@ class WasiExportHelperUtil:
                 )
 
         return data
-
-
-# ByteReader(b"proc_exit")
-# ByteReader(b"clock_time_get")
-# ByteReader(b"fd_filestat_get")
-# ByteReader(b"poll_oneoff")
-# ByteReader(b"fd_write")
-# ByteReader(b"fd_read")
-# ByteReader(b"fd_close")
-# ByteReader(b"fd_seek")
-# ByteReader(b"fd_prestat_get")
-# ByteReader(b"fd_prestat_dir_name")
-# ByteReader(b"fd_fdstat_get")
-# ByteReader(b"path_open")
-# ByteReader(b"path_filestat_get")
-# ByteReader(b"path_create_directory")
-# ByteReader(b"args_sizes_get")
-# ByteReader(b"args_get")
-# ByteReader(b"environ_sizes_get")
-# ByteReader(b"environ_get")
-# ByteReader(b"fd_fdstat_set_flags")
 
 
 class Wasi:
