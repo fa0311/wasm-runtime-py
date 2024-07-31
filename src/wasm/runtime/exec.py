@@ -6,6 +6,7 @@ from src.wasm.optimizer.optimizer import WasmOptimizer
 from src.wasm.optimizer.struct import (
     CodeInstructionOptimize,
     CodeSectionOptimize,
+    FunctionSectionOptimize,
     TableSectionOptimize,
     TypeSectionOptimize,
     WasmSectionsOptimize,
@@ -31,12 +32,12 @@ class WasmExec:
         self.init()
 
     def init(self):
-        self.functions: list[Callable[[list[AnyType]], list[AnyType]]] = []
+        self.functions: list[Callable[[WasmExec, list[AnyType]], list[AnyType]]] = []
         self.globals: list[GlobalsType] = []
 
         self.import_init()
         for i in range(len(self.functions), len(self.functions) + len(self.sections.function_section)):
-            self.functions.append(lambda x, self=self, i=i: self.run(i, x))
+            self.functions.append(lambda env, x, self=self, i=i: self.run(i, x))
         memory_size = self.sections.memory_section[0].limits_min if self.sections.memory_section else 0
         self.memory = NumpyBytesType.from_size(len(self.sections.memory_section) * 64 * 1024 * memory_size)
         # self.globals = [
@@ -67,7 +68,7 @@ class WasmExec:
         self.table_init()
 
         if len(self.sections.start_section) > 0:
-            self.functions[self.sections.start_section[0].index]([])
+            self.functions[self.sections.start_section[0].index](self, [])
 
     def import_init(self):
         for elem in self.sections.import_section[::-1]:
@@ -77,7 +78,9 @@ class WasmExec:
 
             if elem.kind == 0x00:
                 assert isinstance(data, WasmExportFunction)
-                self.sections.function_section.insert(0, data.function)
+                self.sections.type_section.append(data.type)
+                f = FunctionSectionOptimize(type=len(self.sections.type_section) - 1)
+                self.sections.function_section.insert(0, f)
                 self.sections.code_section.insert(0, data.code)
                 self.functions.insert(0, data.call)
             elif elem.kind == 0x01:
@@ -98,7 +101,7 @@ class WasmExec:
         for elem in self.sections.export_section:
             if elem.kind == 0x00:
                 data = WasmExportFunction(
-                    function=self.sections.function_section[elem.index],
+                    type=self.sections.type_section[self.sections.function_section[elem.index].type],
                     code=self.sections.code_section[elem.index],
                     call=self.functions[elem.index],
                 )
@@ -146,7 +149,7 @@ class WasmExec:
         start = [fn for fn in self.sections.export_section if fn.field_name == field][0]
         assert start.kind == 0x00
 
-        return self.functions[start.index](param)
+        return self.functions[start.index](self, param)
 
     @logger.logger
     def get_global(self, field: bytes) -> GlobalsType:
@@ -203,13 +206,14 @@ class WasmExec:
     def get_type(self, index: int) -> tuple[list[int], Optional[list[int]]]:
         """関数のインデックスからCode SectionとType Sectionを取得する"""
 
-        if index < len(self.sections.type_section):
+        type = WasmOptimizer.get_type_or_none(index)
+        if type is None:
+            return [], []
+        elif index < len(self.sections.type_section):
             type = self.sections.type_section[index]
             return type.params, type.returns
         else:
-            type = WasmOptimizer.get_type_or_none(index)
-            returns = None if type is None else [type]
-            return [], returns
+            return [], [type]
 
     def get_table(self, index: int) -> tuple[TableSectionOptimize, TableType]:
         """関数のインデックスからCode SectionとType Sectionを取得する"""
