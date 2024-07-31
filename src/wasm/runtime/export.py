@@ -1,13 +1,14 @@
 from dataclasses import dataclass, field
-from typing import Union
+from typing import Callable, Union
 
 from src.wasm.optimizer.struct import (
     CodeSectionOptimize,
     FunctionSectionOptimize,
-    GlobalSectionOptimize,
     MemorySectionOptimize,
-    TableSectionOptimize,
 )
+from src.wasm.type.base import AnyType
+from src.wasm.type.globals.base import GlobalsType
+from src.wasm.type.table.base import TableType
 
 
 @dataclass
@@ -21,11 +22,12 @@ class WasmExport:
 class WasmExportFunction:
     function: FunctionSectionOptimize = field(metadata={"description": "Function Sectionのデータ構造"})
     code: "CodeSectionOptimize" = field(metadata={"description": "Code Sectionのデータ構造"})
+    call: Callable[[list[AnyType]], list[AnyType]] = field(metadata={"description": "Functionの実行"})
 
 
 @dataclass
 class WasmExportTable:
-    table: TableSectionOptimize = field(metadata={"description": "Table Sectionのデータ構造"})
+    table: TableType = field(metadata={"description": "Table Sectionのデータ構造"})
 
 
 @dataclass
@@ -35,4 +37,4 @@ class WasmExportMemory:
 
 @dataclass
 class WasmExportGlobal:
-    global_: GlobalSectionOptimize = field(metadata={"description": "Global Sectionのデータ構造"})
+    globals: GlobalsType = field(metadata={"description": "Global Sectionのデータ構造"})

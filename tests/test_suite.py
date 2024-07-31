@@ -34,6 +34,7 @@ from src.wasm.type.ref.base import ExternRef, FuncRef
 
 class TestSuite(unittest.TestCase):
     export: list[WasmExport] = []
+    resolve_table: dict[str, str] = {}
 
     def setUp(self):
         self.CI = os.getenv("CI") == "true"
@@ -204,6 +205,8 @@ class TestSuite(unittest.TestCase):
             elif cmd["type"] == "action":
                 self.__test_run_assert_return(data, cmd)
             elif cmd["type"] == "register":
+                if cmd.get("name"):
+                    self.resolve_table[cmd["name"]] = cmd["as"]
                 self.export.extend(data.get_export(namespace=cmd["as"]))
             else:
                 self.fail(f"expect: assert_return or assert_trap, actual: {cmd['type']}")
@@ -216,7 +219,9 @@ class TestSuite(unittest.TestCase):
                 self.fail(str(e))
 
     def __test_run_assert_return(self, data: WasmExec, cmd: dict):
-        field = bytes(cmd["action"]["field"], "utf-8")
+        module = self.resolve_table.get(cmd["action"].get("module"))
+        field_name = f"{module}.{cmd['action']['field']}" if module else cmd["action"]["field"]
+        field = bytes(field_name, "utf-8")
         type_map = {
             "i32": lambda x: I32.from_str(x),
             "i64": lambda x: I64.from_str(x),
@@ -225,15 +230,17 @@ class TestSuite(unittest.TestCase):
             "externref": lambda x: ExternRef.from_value(x if x != "null" else None),
             "funcref": lambda x: FuncRef.from_value(x if x != "null" else None),
         }
-        args = cmd["action"]["args"]
         expect = cmd["expected"]
-        numeric_args: list[AnyType] = [type_map[value["type"]](value["value"]) for value in args]
         numeric_expect: list[AnyType] = [type_map[value["type"]](value["value"]) for value in expect]
         assert data is not None
-        res = data.start(
-            field=field,
-            param=numeric_args,
-        )
+        if cmd["action"]["type"] == "invoke":
+            args = cmd["action"]["args"]
+            numeric_args: list[AnyType] = [type_map[value["type"]](value["value"]) for value in args]
+            res = data.start(field=field, param=numeric_args)
+        elif cmd["action"]["type"] == "get":
+            res = [data.get_global(field=field).get()]
+        else:
+            raise ValueError(f"unknown action type: {cmd['action']['type']}")
         if len(res) != len(numeric_expect):
             self.fail(f"expect: {len(numeric_expect)}, actual: {len(res)}")
         for i, (r, e) in enumerate(zip(res, numeric_expect)):

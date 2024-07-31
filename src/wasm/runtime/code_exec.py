@@ -109,7 +109,7 @@ class CodeSectionBlock(CodeSectionRun):
     def call(self, index: int):
         _, fn_type = self.env.get_function(index)
         param = [self.stack.any() for _ in fn_type.params][::-1]
-        res = self.env.run(index, param)
+        res = self.env.functions[index](param)
         self.stack.extend(res)
 
     def call_indirect(self, index: int, elm_index: int):
@@ -140,10 +140,10 @@ class CodeSectionBlock(CodeSectionRun):
         self.locals[index] = self.stack.any(read_only=True)
 
     def global_get(self, index: int):
-        self.stack.push(self.env.globals[index])
+        self.stack.push(self.env.globals[index].get())
 
     def global_set(self, index: int):
-        self.env.globals[index] = self.stack.any()
+        self.env.globals[index].set(self.stack.any())
 
     def table_get(self, index: int):
         a = self.stack.int()

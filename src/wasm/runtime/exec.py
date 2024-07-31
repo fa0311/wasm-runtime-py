@@ -1,5 +1,5 @@
 import logging
-from typing import Optional, TypeVar
+from typing import Callable, Optional, TypeVar
 
 from src.tools.logger import NestedLogger
 from src.wasm.optimizer.optimizer import WasmOptimizer
@@ -15,6 +15,7 @@ from src.wasm.runtime.export import WasmExport, WasmExportFunction, WasmExportGl
 from src.wasm.runtime.stack import NumericStack
 from src.wasm.type.base import AnyType
 from src.wasm.type.bytes.numpy.base import NumpyBytesType
+from src.wasm.type.globals.base import GlobalsType
 from src.wasm.type.table.base import TableType
 
 
@@ -30,19 +31,23 @@ class WasmExec:
         self.init()
 
     def init(self):
+        self.functions: list[Callable[[list[AnyType]], list[AnyType]]] = []
+        self.globals: list[GlobalsType] = []
+
         self.import_init()
+        for i in range(len(self.functions), len(self.functions) + len(self.sections.function_section)):
+            self.functions.append(lambda x, self=self, i=i: self.run(i, x))
         memory_size = self.sections.memory_section[0].limits_min if self.sections.memory_section else 0
         self.memory = NumpyBytesType.from_size(len(self.sections.memory_section) * 64 * 1024 * memory_size)
         # self.globals = [
         #     WasmOptimizer.get_any_type(x.type).from_int(self.run_data_int(x.init)) for x in self.sections.global_section
         # ]
-        self.globals = []
         for g in self.sections.global_section:
             data = self.run_data_int(g.init)
             if data is None:
-                self.globals.append(WasmOptimizer.get_any_type(g.type).from_null())
+                self.globals.append(GlobalsType(WasmOptimizer.get_any_type(g.type).from_null()))
             else:
-                self.globals.append(WasmOptimizer.get_any_type(g.type).from_int(data))
+                self.globals.append(GlobalsType(WasmOptimizer.get_any_type(g.type).from_int(data)))
 
         self.tables = [
             TableType(WasmOptimizer.get_ref_type(x.element_type), x.limits_min, x.limits_max)
@@ -61,9 +66,8 @@ class WasmExec:
             # self.memory.store(offset=0, value=data_section.init)
         self.table_init()
 
-        start = self.sections.start_section[0].index if self.sections.start_section else None
-        if start is not None:
-            self.run(start, [])
+        if len(self.sections.start_section) > 0:
+            self.functions[self.sections.start_section[0].index]([])
 
     def import_init(self):
         for elem in self.sections.import_section[::-1]:
@@ -75,15 +79,16 @@ class WasmExec:
                 assert isinstance(data, WasmExportFunction)
                 self.sections.function_section.insert(0, data.function)
                 self.sections.code_section.insert(0, data.code)
+                self.functions.insert(0, data.call)
             elif elem.kind == 0x01:
                 assert isinstance(data, WasmExportTable)
-                self.sections.table_section.insert(0, data.table)
+                self.tables.insert(0, data.table)
             elif elem.kind == 0x02:
                 assert isinstance(data, WasmExportMemory)
                 self.sections.memory_section.insert(0, data.memory)
             elif elem.kind == 0x03:
                 assert isinstance(data, WasmExportGlobal)
-                self.sections.global_section.insert(0, data.global_)
+                self.globals.insert(0, data.globals)
             else:
                 raise Exception("not implemented import kind")
 
@@ -95,10 +100,11 @@ class WasmExec:
                 data = WasmExportFunction(
                     function=self.sections.function_section[elem.index],
                     code=self.sections.code_section[elem.index],
+                    call=self.functions[elem.index],
                 )
             elif elem.kind == 0x01:
                 data = WasmExportTable(
-                    table=self.sections.table_section[elem.index],
+                    table=self.tables[elem.index],
                 )
             elif elem.kind == 0x02:
                 data = WasmExportMemory(
@@ -106,7 +112,7 @@ class WasmExec:
                 )
             elif elem.kind == 0x03:
                 data = WasmExportGlobal(
-                    global_=self.sections.global_section[elem.index],
+                    globals=self.globals[elem.index],
                 )
             else:
                 raise Exception("not implemented export kind")
@@ -131,15 +137,28 @@ class WasmExec:
             #     self.drop_elem[i] = True
 
     @logger.logger
-    def start(self, field: bytes, param: list[AnyType]):
+    def start(self, field: bytes, param: list[AnyType]) -> list[AnyType]:
         """エントリーポイントを実行する"""
 
         assert self.logger.info(f"field: {field.decode()}")
 
         # エントリーポイントの関数を取得する
         start = [fn for fn in self.sections.export_section if fn.field_name == field][0]
+        assert start.kind == 0x00
 
-        return self.run(start.index, param)
+        return self.functions[start.index](param)
+
+    @logger.logger
+    def get_global(self, field: bytes) -> GlobalsType:
+        """グローバル変数を取得する"""
+
+        assert self.logger.info(f"field: {field.decode()}")
+
+        # エントリーポイントの関数を取得する
+        start = [fn for fn in self.sections.export_section if fn.field_name == field][0]
+        assert start.kind == 0x03
+
+        return self.globals[start.index]
 
     def run(self, index: int, param: list[AnyType]):
         fn, fn_type = self.get_function(index)
@@ -159,14 +178,18 @@ class WasmExec:
 
         return returns
 
-    def run_data_int(self, data: list[CodeInstructionOptimize]):
+    def run_data_result(self, data: list[CodeInstructionOptimize]):
         block = self.get_block(locals=[], stack=[])
         res = block.run(data)
         if isinstance(res, list):
-            returns = res.pop()
+            returns = [res.pop() for _ in range(len(block.stack.value))]
         else:
-            returns = block.stack.any()
+            returns = [block.stack.any() for _ in range(len(block.stack.value))]
         assert self.logger.debug(f"res: {returns}")
+        return returns
+
+    def run_data_int(self, data: list[CodeInstructionOptimize]):
+        returns = self.run_data_result(data)[0]
         return None if returns.is_none() else int(returns.value)
 
     def get_function(self, index: int) -> tuple[CodeSectionOptimize, TypeSectionOptimize]:
