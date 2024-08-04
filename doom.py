@@ -25,7 +25,7 @@ def set_logger():
 
 
 if __name__ == "__main__":
-    set_logger()
+    # with open("websockets-doom.wasm", "rb") as f:
     with open("wasidoom2.wasm", "rb") as f:
         wasm = f.read()
 
@@ -33,9 +33,10 @@ if __name__ == "__main__":
     optimizer = WasmOptimizer().optimize(data)
 
     export = WasiExportHelperUtil.export(Wasi, "wasi_snapshot_preview1")
+    dummy = WasiExportHelperUtil.dummy(optimizer)
 
-    for a in optimizer.import_section:
-        print(a.name)
-    vm = WasmExec(optimizer, export)
+    vm = WasmExec(optimizer, export + dummy)
 
+    set_logger()
     vm.start(b"_start", [])
+    # vm.start(b"main", [])

@@ -208,7 +208,7 @@ class WasmExec:
 
         type = WasmOptimizer.get_type_or_none(index)
         if type is None:
-            return [], []
+            return [], None
         elif index < len(self.sections.type_section):
             type = self.sections.type_section[index]
             return type.params, type.returns

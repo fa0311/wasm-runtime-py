@@ -11,8 +11,6 @@ from typing import Optional
 
 import numpy as np
 
-from src.wasm.runtime.export import WasmExport
-
 sys.path.append(str(Path(__file__).parent.parent))
 sys.path.append(str(Path(__file__).parent.parent / "src"))
 
@@ -26,6 +24,7 @@ from src.wasm.runtime.error.error import (
     WasmUnimplementedError,
 )
 from src.wasm.runtime.exec import WasmExec
+from src.wasm.runtime.export import WasmExport
 from src.wasm.type.base import AnyType
 from src.wasm.type.numeric.numpy.float import F32, F64
 from src.wasm.type.numeric.numpy.int import I32, I64
