@@ -86,7 +86,7 @@ f_pal = io.BytesIO()
 
 
 def stdout_write(data):
-    print(data.decode(), end="")
+    sys.stdout.buffer.write(data)
 
 
 vfs = {
@@ -109,25 +109,36 @@ class Wasi:
         sys.exit(int(a))
 
     def clock_time_get(self, env: WasmExec, a: I32, b: I32, c: I32, d: I32):
-        pass
+        raise Exception("not implemented")
 
     def fd_filestat_get(self, env: WasmExec, a: I32, b: I32):
-        pass
+        raise Exception("not implemented")
 
     def poll_oneoff(self, env: WasmExec, a: I32, b: I32, c: I32):
-        pass
+        raise Exception("not implemented")
 
     def fd_write(self, env: WasmExec, a: I32, b: I32, c: I32, d: I32):
-        pass
+        data = b""
+        if int(a) == 2:
+            for i in range(int(c)):
+                iov = int(b) + 8 * i
+                off = I32.from_bits(env.memory[iov : iov + 4])
+                size = I32.from_bits(env.memory[iov + 4 : iov + 8])
+                data += env.memory[int(off) : int(off) + int(size)].tobytes()
+
+            print(data.decode(), end="")
+            return WasiResult.SUCCESS
+
+        raise Exception("invalid fd")
 
     def fd_read(self, env: WasmExec, a: I32, b: I32, c: I32, d: I32):
-        pass
+        raise Exception("not implemented")
 
     def fd_close(self, env: WasmExec, a: I32):
-        pass
+        raise Exception("not implemented")
 
     def fd_seek(self, env: WasmExec, a: I32, b: I32, c: I32, d: I32):
-        pass
+        raise Exception("not implemented")
 
     def fd_prestat_get(self, env: WasmExec, a: I32, b: I32) -> tuple[I32]:
         if int(a) != 3:
@@ -140,37 +151,41 @@ class Wasi:
         return WasiResult.SUCCESS
 
     def fd_prestat_dir_name(self, env: WasmExec, a: I32, b: I32, c: I32):
-        pass
+        raise Exception("not implemented")
 
     def fd_fdstat_get(self, env: WasmExec, a: I32, b: I32):
-        pass
+        raise Exception("not implemented")
 
     def path_open(self, env: WasmExec, a: I32, b: I32, c: I32, d: I32, e: I32, f: I32):
-        pass
+        raise Exception("not implemented")
 
     def path_filestat_get(self, env: WasmExec, a: I32, b: I32, c: I32):
-        pass
+        raise Exception("not implemented")
 
     def path_create_directory(self, env: WasmExec, a: I32, b: I32, c: I32):
-        pass
+        raise Exception("not implemented")
 
     def args_sizes_get(self, env: WasmExec, a: I32, b: I32):
+        raise Exception("not implemented")
+
         env.memory[int(a) : int(a) + 4] = I32.from_int(3).to_bytes()[0:4]
         env.memory[int(b) : int(b) + 4] = I32.from_int(32).to_bytes()[0:4]
 
         return WasiResult.SUCCESS
 
     def args_get(self, env: WasmExec, a: I32, b: I32):
+        raise Exception("not implemented")
+
         env.memory[int(a) : int(a) + 4] = b.to_bytes()[0:4]
         env.memory.store(int(b), b"doom\0")
 
         return WasiResult.SUCCESS
 
     def environ_sizes_get(self, env: WasmExec, a: I32, b: I32):
-        pass
+        raise Exception("not implemented")
 
     def environ_get(self, env: WasmExec, a: I32, b: I32):
-        pass
+        raise Exception("not implemented")
 
     def fd_fdstat_set_flags(self, env: WasmExec, a: I32, b: I32):
-        pass
+        raise Exception("not implemented")

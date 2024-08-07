@@ -212,7 +212,7 @@ class CodeSectionBlockDebug(CodeSectionBlock):
     def i32_store(self, align: int, offset: int):
         addr = self.stack.int(read_only=True, key=-2)
         try:
-            if len(self.env.memory) < addr + 4:
+            if len(self.env.memory) < addr + offset + 4:
                 raise WasmOutOfBoundsMemoryAccessError()
             else:
                 return super().i32_store(align, offset)
@@ -227,7 +227,7 @@ class CodeSectionBlockDebug(CodeSectionBlock):
     def i64_store(self, align: int, offset: int):
         addr = self.stack.int(read_only=True, key=-2)
         try:
-            if len(self.env.memory) < addr + 8:
+            if len(self.env.memory) < addr + offset + 8:
                 raise WasmOutOfBoundsMemoryAccessError()
             else:
                 return super().i64_store(align, offset)
@@ -242,7 +242,7 @@ class CodeSectionBlockDebug(CodeSectionBlock):
     def f32_store(self, align: int, offset: int):
         addr = self.stack.int(read_only=True, key=-2)
         try:
-            if len(self.env.memory) < addr + 4:
+            if len(self.env.memory) < addr + offset + 4:
                 raise WasmOutOfBoundsMemoryAccessError()
             else:
                 return super().f32_store(align, offset)
@@ -257,7 +257,7 @@ class CodeSectionBlockDebug(CodeSectionBlock):
     def f64_store(self, align: int, offset: int):
         addr = self.stack.int(read_only=True, key=-2)
         try:
-            if len(self.env.memory) < addr + 8:
+            if len(self.env.memory) < addr + offset + 8:
                 raise WasmOutOfBoundsMemoryAccessError()
             else:
                 return super().f64_store(align, offset)
@@ -272,7 +272,7 @@ class CodeSectionBlockDebug(CodeSectionBlock):
     def i32_store8(self, align: int, offset: int):
         addr = self.stack.int(read_only=True, key=-2)
         try:
-            if len(self.env.memory) < addr + 1:
+            if len(self.env.memory) < addr + offset + 1:
                 raise WasmOutOfBoundsMemoryAccessError()
             else:
                 return super().i32_store8(align, offset)
@@ -287,7 +287,7 @@ class CodeSectionBlockDebug(CodeSectionBlock):
     def i32_store16(self, align: int, offset: int):
         addr = self.stack.int(read_only=True, key=-2)
         try:
-            if len(self.env.memory) < addr + 2:
+            if len(self.env.memory) < addr + offset + 2:
                 raise WasmOutOfBoundsMemoryAccessError()
             else:
                 return super().i32_store16(align, offset)
@@ -302,7 +302,7 @@ class CodeSectionBlockDebug(CodeSectionBlock):
     def i64_store8(self, align: int, offset: int):
         addr = self.stack.int(read_only=True, key=-2)
         try:
-            if len(self.env.memory) < addr + 1:
+            if len(self.env.memory) < addr + offset + 1:
                 raise WasmOutOfBoundsMemoryAccessError()
             else:
                 return super().i64_store8(align, offset)
@@ -317,7 +317,7 @@ class CodeSectionBlockDebug(CodeSectionBlock):
     def i64_store16(self, align: int, offset: int):
         addr = self.stack.int(read_only=True, key=-2)
         try:
-            if len(self.env.memory) < addr + 2:
+            if len(self.env.memory) < addr + offset + 2:
                 raise WasmOutOfBoundsMemoryAccessError()
             else:
                 return super().i64_store16(align, offset)
@@ -332,7 +332,7 @@ class CodeSectionBlockDebug(CodeSectionBlock):
     def i64_store32(self, align: int, offset: int):
         addr = self.stack.int(read_only=True, key=-2)
         try:
-            if len(self.env.memory) < addr + 4:
+            if len(self.env.memory) < addr + offset + 4:
                 raise WasmOutOfBoundsMemoryAccessError()
             else:
                 return super().i64_store32(align, offset)
