@@ -26,6 +26,7 @@ def set_logger():
 
 if __name__ == "__main__":
     # with open("websockets-doom.wasm", "rb") as f:
+    # with open("wasidoom2-with-strace-stderr.wasm", "rb") as f:
     with open("wasidoom2.wasm", "rb") as f:
         wasm = f.read()
 

@@ -62,14 +62,14 @@ class WasmOptimizer:
         raise Exception(f"invalid type: {type:02X}")
 
     @staticmethod
-    def from_type(type: NumericType):
-        if type == I32:
+    def from_type(type: type[NumericType]):
+        if type is I32:
             return 0x7F
-        if type == I64:
+        if type is I64:
             return 0x7E
-        if type == F32:
+        if type is F32:
             return 0x7D
-        if type == F64:
+        if type is F64:
             return 0x7C
         raise Exception(f"invalid type: {type}")
 
