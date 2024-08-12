@@ -139,7 +139,8 @@ def update_screen():
 
 
 def stdout_write(data):
-    sys.stdout.buffer.write(data)
+    sys.stdout.write(data.decode())
+    sys.stdout.flush()
 
 
 vfs = {

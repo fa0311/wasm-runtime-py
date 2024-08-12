@@ -22,6 +22,7 @@ def set_logger():
         format="%(message)s",
         handlers=[handler],
     )
+    return True
 
 
 if __name__ == "__main__":
