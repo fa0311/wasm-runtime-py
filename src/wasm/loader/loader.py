@@ -123,6 +123,16 @@ class WasmLoader:
                 else:
                     raise Exception("invalid limit")
                 _ = type, min, max
+            elif kind == 2:
+                limit = data.read_byte()
+                if limit == 0:
+                    min = data.read_leb128()
+                    max = None
+                elif limit == 1:
+                    min = data.read_leb128()
+                    max = data.read_leb128()
+                else:
+                    raise Exception("invalid limit")
             elif kind == 3:
                 type = data.read_leb128()
                 const = data.read_byte()

@@ -38,6 +38,6 @@ if __name__ == "__main__":
 
     vm = WasmExec(optimizer, export + dummy)
 
-    set_logger()
+    assert set_logger()
     vm.start(b"_start", [])
     # vm.start(b"main", [])
