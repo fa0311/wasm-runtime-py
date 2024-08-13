@@ -4,7 +4,7 @@ import os
 from src.wasm.loader.loader import WasmLoader
 from src.wasm.optimizer.optimizer import WasmOptimizer
 from src.wasm.runtime.exec import WasmExec
-from src.wasm.runtime.wasi import FS, Screen, Wasi, WasiExportHelperUtil
+from src.wasm.runtime.wasi import WasiExportHelperUtil
 
 
 def set_logger():
@@ -26,26 +26,17 @@ def set_logger():
 
 
 if __name__ == "__main__":
-    with open("assets/wasidoom2.wasm", "rb") as f:
+    with open("hello_server.wasm", "rb") as f:
         wasm = f.read()
+
+    assert set_logger()
 
     data = WasmLoader().load(wasm)
     optimizer = WasmOptimizer().optimize(data)
 
-    screen = Screen.get_instance()
-
-    f_doom = open("./assets/doom1.wad", "rb")
-
-    files = FS.get_instance()
-    files.mount("./doom1.wad", 5, f_doom, True)
-    files.mount("./screen.data", 6, screen.f_scr, False)
-    files.mount("./palette.raw", 7, screen.f_pal, False)
-
-    export = WasiExportHelperUtil.export(Wasi, "wasi_snapshot_preview1")
     dummy = WasiExportHelperUtil.dummy(optimizer)
 
-    vm = WasmExec(optimizer, export + dummy)
+    vm = WasmExec(optimizer, dummy)
 
-    assert set_logger()
     vm.start(b"_start", [])
     # vm.start(b"main", [])

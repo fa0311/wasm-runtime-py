@@ -3,7 +3,7 @@ import logging
 import os
 import sys
 import time
-from typing import Callable
+from typing import Callable, Optional
 
 import numpy as np
 import pygame
@@ -16,8 +16,6 @@ from src.wasm.runtime.export import WasmExport, WasmExportFunction
 from src.wasm.type.base import AnyType
 from src.wasm.type.numeric.base import NumericType
 from src.wasm.type.numeric.numpy.int import I32, I64
-
-os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "true"
 
 
 class WasiResult:
@@ -97,45 +95,54 @@ class WasiExportHelperUtil:
         return data
 
 
-WAD = "mount/doom1.wad"
-f_doom = open(WAD, "rb")
-f_scr = io.BytesIO()
-f_pal = io.BytesIO()
+class Screen:
+    ins_list: list["Screen"] = []
 
+    def __init__(self) -> None:
+        os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "true"
+        self.img_size = (320, 200)
 
-img_size = (320, 200)
-(img_w, img_h) = img_size
-scr_size = (img_w * 2, img_h * 2)
-pygame.init()
-surface = pygame.display.set_mode(scr_size)
-pygame.display.set_caption("DOOM")
-clock = pygame.time.Clock()
+        self.f_scr = io.BytesIO()
+        self.f_pal = io.BytesIO()
 
+        (img_w, img_h) = self.img_size
+        self.scr_size = (img_w * 2, img_h * 2)
+        pygame.init()
+        self.surface = pygame.display.set_mode(self.scr_size)
+        pygame.display.set_caption("DOOM")
+        self.clock = pygame.time.Clock()
 
-def update_screen():
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
-            pygame.quit()
-            sys.exit()
+    def update_screen(self):
+        for event in pygame.event.get():
+            quit_key = event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE
+            if event.type == pygame.QUIT or quit_key:
+                pygame.quit()
+                sys.exit()
 
-    if len(f_pal.getbuffer()) != 3 * 256 or len(f_scr.getbuffer()) != 320 * 200:
-        return
+        if len(self.f_pal.getbuffer()) != 3 * 256 or len(self.f_scr.getbuffer()) != 320 * 200:
+            return
 
-    scr = np.frombuffer(f_scr.getbuffer(), dtype=np.uint8)
-    pal = np.frombuffer(f_pal.getbuffer(), dtype=np.uint8).reshape((256, 3))
+        scr = np.frombuffer(self.f_scr.getbuffer(), dtype=np.uint8)
+        pal = np.frombuffer(self.f_pal.getbuffer(), dtype=np.uint8).reshape((256, 3))
 
-    # Convert indexed color to RGB
-    arr = pal[scr]
+        # Convert indexed color to RGB
+        arr = pal[scr]
 
-    data = arr.astype(np.uint8).tobytes()
+        data = arr.astype(np.uint8).tobytes()
 
-    img = pygame.image.frombuffer(data, img_size, "RGB")
+        img = pygame.image.frombuffer(data, self.img_size, "RGB")
 
-    img_scaled = pygame.transform.scale(img, scr_size)
-    surface.blit(img_scaled, (0, 0))
-    pygame.display.flip()
+        img_scaled = pygame.transform.scale(img, self.scr_size)
+        self.surface.blit(img_scaled, (0, 0))
+        pygame.display.flip()
 
-    clock.tick(60)
+        self.clock.tick(60)
+
+    @classmethod
+    def get_instance(cls):
+        ins = cls()
+        cls.ins_list.append(ins)
+        return ins
 
 
 def stdout_write(data):
@@ -143,16 +150,32 @@ def stdout_write(data):
     sys.stdout.flush()
 
 
-vfs = {
-    "<stdin>": {"fd": 0, "type": FileType.REG, "write": stdout_write},
-    "<stdout>": {"fd": 1, "type": FileType.REG, "write": stdout_write},
-    "<stderr>": {"fd": 2, "type": FileType.REG, "write": stdout_write},
-    "/": {"fd": 3, "type": FileType.DIR, "dirname": b"/\x00"},
-    "./doom1.wad": {"fd": 5, "type": FileType.REG, "file": f_doom, "exists": True},
-    "./screen.data": {"fd": 6, "type": FileType.REG, "file": f_scr, "exists": False},
-    "./palette.raw": {"fd": 7, "type": FileType.REG, "file": f_pal, "exists": False},
-}
-vfs_fds = {v["fd"]: v for (k, v) in vfs.items()}
+class FS:
+    ins: Optional["FS"] = None
+
+    def __init__(self) -> None:
+        self.files = {
+            "<stdin>": {"fd": 0, "type": FileType.REG, "write": stdout_write},
+            "<stdout>": {"fd": 1, "type": FileType.REG, "write": stdout_write},
+            "<stderr>": {"fd": 2, "type": FileType.REG, "write": stdout_write},
+            "/": {"fd": 3, "type": FileType.DIR, "dirname": b"/\x00"},
+        }
+
+    def mount(self, path: str, fd: int, file: io.BufferedIOBase, exists: bool = True):
+        self.files[path] = {"fd": fd, "type": FileType.REG, "file": file, "exists": exists}
+
+    @property
+    def fds(self):
+        return {v["fd"]: v for (k, v) in self.files.items()}
+
+    @classmethod
+    def get_instance(cls):
+        if cls.ins is None:
+            cls.ins = cls()
+        return cls.ins
+
+
+fs = FS.get_instance()
 
 
 class Wasi:
@@ -182,17 +205,17 @@ class Wasi:
         if envs != 3:
             return WasiResult.BADF
 
-        name_len = len(vfs_fds[envs]["dirname"])
+        name_len = len(fs.fds[envs]["dirname"])
         env.memory[buf : buf + 4] = I32.from_int(0).to_bytes()[0:4]
         env.memory[buf + 4 : buf + 8] = I32.from_int(name_len).to_bytes()[0:4]
 
         return WasiResult.SUCCESS
 
     def fd_fdstat_get(self, env: WasmExec, fd: int, result: int):
-        if fd >= len(vfs_fds):
+        if fd >= len(fs.fds):
             return WasiResult.BADF
 
-        f = vfs_fds[fd]
+        f = fs.fds[fd]
         env.memory[result : result + 1] = I32.from_int(f["type"]).to_bytes()[0:1]
         env.memory[result + 1 : result + 2] = I32.from_int(0).to_bytes()[0:1]
         env.memory[result + 2 : result + 10] = I64.from_int(I64.get_max()).to_bytes()[0:8]
@@ -201,16 +224,16 @@ class Wasi:
         return WasiResult.SUCCESS
 
     def fd_prestat_dir_name(self, env: WasmExec, fd: int, name: int, name_len: int) -> tuple[I32]:
-        path = vfs_fds[fd]["dirname"]
+        path = fs.fds[fd]["dirname"]
         env.memory.store(name, path)
         return WasiResult.SUCCESS
 
     def path_filestat_get(self, env: WasmExec, fd: int, flags: int, path: int, path_len: int, buff: int) -> tuple[I32]:
         path_str = env.memory[path : path + path_len].tobytes().decode()
-        if path_str not in vfs or not vfs[path_str]["exists"]:
+        if path_str not in fs.files or not fs.files[path_str]["exists"]:
             return WasiResult.BADF
 
-        f = vfs[path_str]
+        f = fs.files[path_str]
         if "size" in f:
             size = f["size"]
         elif "file" in f:
@@ -245,10 +268,10 @@ class Wasi:
         fd: int,
     ) -> tuple[I32]:
         path_name = env.memory[path : path + path_len].tobytes().decode()
-        if path_name not in vfs:
+        if path_name not in fs.files:
             return WasiResult.NOENT
         else:
-            f = vfs[path_name]
+            f = fs.files[path_name]
             f["exists"] = True
             fd_val = f["fd"]
             env.memory[fd : fd + 4] = I32.from_int(fd_val).to_bytes()[0:4]
@@ -256,13 +279,13 @@ class Wasi:
             return WasiResult.SUCCESS
 
     def fd_seek(self, env: WasmExec, fd: int, offset: int, whence: int, result: int) -> tuple[I32]:
-        if fd not in vfs_fds:
+        if fd not in fs.fds:
             return WasiResult.BADF
 
-        if "file" not in vfs_fds[fd]:
+        if "file" not in fs.fds[fd]:
             return WasiResult.INVAL
 
-        f = vfs_fds[fd]["file"]
+        f = fs.fds[fd]["file"]
         f.seek(offset, whence)
         res = f.tell()
         env.memory[result : result + 8] = I64.from_int(res).to_bytes()[0:8]
@@ -280,11 +303,11 @@ class Wasi:
             data_sz += int(size)
 
         data = None
-        if fd in vfs_fds:
-            if "read" in vfs_fds[fd]:
-                data = vfs_fds[fd]["read"](data_sz)
-            elif "file" in vfs_fds[fd]:
-                data = vfs_fds[fd]["file"].read(data_sz)
+        if fd in fs.fds:
+            if "read" in fs.fds[fd]:
+                data = fs.fds[fd]["read"](data_sz)
+            elif "file" in fs.fds[fd]:
+                data = fs.fds[fd]["file"].read(data_sz)
 
         if not data:
             return WasiResult.BADF
@@ -309,14 +332,15 @@ class Wasi:
             size = I32.from_bits(env.memory[iov + 4 : iov + 8])
             data += env.memory[int(off) : int(off) + int(size)].tobytes()
 
-        if fd not in vfs_fds:
+        if fd not in fs.fds:
             return WasiResult.BADF
 
-        if "write" in vfs_fds[fd]:
-            vfs_fds[fd]["write"](data)
-        elif "file" in vfs_fds[fd]:
-            vfs_fds[fd]["file"].write(data)
-            update_screen()
+        if "write" in fs.fds[fd]:
+            fs.fds[fd]["write"](data)
+        elif "file" in fs.fds[fd]:
+            fs.fds[fd]["file"].write(data)
+            for ins in Screen.ins_list:
+                ins.update_screen()
 
         env.memory[nwritten : nwritten + 4] = I32.from_int(len(data)).to_bytes()[0:4]
         return WasiResult.SUCCESS
