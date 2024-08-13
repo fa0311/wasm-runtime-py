@@ -1,6 +1,7 @@
 import io
 import logging
 import os
+import random
 import sys
 import time
 from typing import Callable, Optional
@@ -8,6 +9,7 @@ from typing import Callable, Optional
 import numpy as np
 import pygame
 
+from src.tools.byte import ByteReader
 from src.tools.logger import NestedLogger
 from src.wasm.optimizer.optimizer import WasmOptimizer
 from src.wasm.optimizer.struct import CodeSectionOptimize, TypeSectionOptimize, WasmSectionsOptimize
@@ -88,11 +90,15 @@ class WasiExportHelperUtil:
                     data=WasmExportFunction(
                         type=TypeSectionOptimize(form=0, params=[], returns=[]),
                         code=CodeSectionOptimize(data=[], local=[]),
-                        call=lambda env, x: [],
+                        call=lambda env, x, name=a.name: cls.unreachable(name),
                     ),
                 )
             )
         return data
+
+    @classmethod
+    def unreachable(cls, name: ByteReader):
+        raise Exception("not implemented wasi function: " + name.data.decode())
 
 
 class Screen:
@@ -364,3 +370,8 @@ class Wasi:
 
     def fd_fdstat_set_flags(self, env: WasmExec, a: I32, b: I32):
         raise Exception("not implemented")
+
+    def random_get(self, env: WasmExec, a: I32, b: int):
+        rand = random.randint(0, 2**32 - 1)
+        env.memory[b : b + 4] = I32.from_int(rand).to_bytes()[0:4]
+        return WasiResult.SUCCESS

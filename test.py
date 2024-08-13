@@ -26,7 +26,7 @@ def set_logger():
 
 
 if __name__ == "__main__":
-    with open("assets/hello_server.wasm", "rb") as f:
+    with open("assets/hello_world.wasm", "rb") as f:
         wasm = f.read()
 
     assert set_logger()

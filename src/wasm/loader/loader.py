@@ -351,6 +351,13 @@ class WasmLoader:
         # Code Sectionのデータを読み込む
         res: list[CodeSection] = []
         for _ in range(code_count):
+            if _ == 89:
+                pass
+            if _ == 90:
+                pass
+            if _ == 91:
+                pass
+
             body_size = data.read_leb128()
             assert self.logger.debug(f"body size: {body_size}")
             local = self.code_section_local(data)

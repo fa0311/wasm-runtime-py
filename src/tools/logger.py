@@ -22,7 +22,7 @@ class NestedLogger:
                 result = func(*args, **kwargs)
             except Exception as e:
                 self.logging.error(f"{'┃' * NestedLogger.nested}┣━[ {func.__name__} ]")
-                self.logging.error(f"{'┃' * NestedLogger.nested}┗━[ Error ] {e}")
+                self.logging.error(f"{'┃' * NestedLogger.nested}┗━[ Error {func.__name__} ]")
                 NestedLogger.nested -= 1
                 raise e
 

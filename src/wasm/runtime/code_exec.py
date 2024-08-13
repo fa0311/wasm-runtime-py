@@ -10,7 +10,7 @@ from src.wasm.type.ref.base import FuncRef
 
 class CodeSectionBlock(CodeSectionRun):
     def unreachable(self):
-        pass
+        raise Exception("unreachable")
 
     def nop(self):
         pass
