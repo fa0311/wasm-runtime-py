@@ -33,21 +33,42 @@ Wasm を実行するためのランタイムを Python で実装する。
 
 ## 開発計画
 
-- [ ] テスト可能な実装にする
+- [x] テスト可能な実装にする
   - [x] assert_return
   - [x] assert_trap
   - [x] assert_malformed
-  - [ ] assert_invalid
-- [ ] テストを通す
+  - [x] assert_invalid
+- [x] テストを通す
   - [x] Control Instructions の実装
     - [x] call_indirect の実装
   - [x] Variable Instructions の実装
-  - [ ] Table Instructions の実装
-  - [ ] Memory Instructions の実装
+  - [x] Table Instructions の実装
+  - [x] Memory Instructions の実装
   - [x] Numeric Instructions の実装
-  - [ ] FC extensions の実装
+  - [x] FC extensions の実装
   - [ ] SIMD instructions の実装
 - [ ] WASI の実装
+
+## インストール
+
+```sh
+pip install -r requirements.txt 
+```
+
+## 実行
+
+```tree
+assets
+├── doom1.wad
+└── wasidoom2.wasm
+```
+
+```sh
+# デバッグ
+python doom.py
+# 本番
+python -OO doom.py
+```
 
 ## テスト
 
