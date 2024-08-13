@@ -32,12 +32,12 @@ class WasmExec:
         self.init()
 
     def init(self):
-        self.functions: list[Callable[[WasmExec, list[AnyType]], list[AnyType]]] = []
+        self.functions: list[Callable[[list[AnyType]], list[AnyType]]] = []
         self.globals: list[GlobalsType] = []
 
         self.import_init()
         for i in range(len(self.functions), len(self.functions) + len(self.sections.function_section)):
-            self.functions.append(lambda env, x, self=self, i=i: self.run(i, x))
+            self.functions.append(lambda x, self=self, i=i: self.run(i, x))
         memory_size = self.sections.memory_section[0].limits_min if self.sections.memory_section else 0
         self.memory = NumpyBytesType.from_size(len(self.sections.memory_section) * 64 * 1024 * memory_size)
         # self.globals = [
@@ -68,7 +68,7 @@ class WasmExec:
         self.table_init()
 
         if len(self.sections.start_section) > 0:
-            self.functions[self.sections.start_section[0].index](self, [])
+            self.functions[self.sections.start_section[0].index]([])
 
     def import_init(self):
         for elem in self.sections.import_section[::-1]:
@@ -149,7 +149,7 @@ class WasmExec:
         start = [fn for fn in self.sections.export_section if fn.field_name == field][0]
         assert start.kind == 0x00
 
-        return self.functions[start.index](self, param)
+        return self.functions[start.index](param)
 
     @logger.logger
     def get_global(self, field: bytes) -> GlobalsType:

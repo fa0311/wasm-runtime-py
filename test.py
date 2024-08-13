@@ -4,7 +4,7 @@ import os
 from src.wasm.loader.loader import WasmLoader
 from src.wasm.optimizer.optimizer import WasmOptimizer
 from src.wasm.runtime.exec import WasmExec
-from src.wasm.runtime.wasi import Wasi, WasiExportHelperUtil
+from src.wasm.runtime.wasi import WasiExportHelperUtil
 
 
 def set_logger():
@@ -34,10 +34,11 @@ if __name__ == "__main__":
     data = WasmLoader().load(wasm)
     optimizer = WasmOptimizer().optimize(data)
 
-    export = WasiExportHelperUtil.export(Wasi, "wasi_snapshot_preview1")
+    ins, export = WasiExportHelperUtil.export("wasi_snapshot_preview1")
     dummy = WasiExportHelperUtil.dummy(optimizer)
 
-    vm = WasmExec(optimizer, export + dummy)
+    env = WasmExec(optimizer, export + dummy)
+    ins.init(env=env)
 
-    vm.start(b"_start", [])
-    # vm.start(b"main", [])
+    env.start(b"_start", [])
+    # env.start(b"main", [])

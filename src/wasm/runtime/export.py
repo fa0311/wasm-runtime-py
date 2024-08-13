@@ -11,7 +11,7 @@ from src.wasm.type.globals.base import GlobalsType
 from src.wasm.type.table.base import TableType
 
 if TYPE_CHECKING:
-    from src.wasm.runtime.exec import WasmExec
+    pass
 
 
 @dataclass
@@ -26,7 +26,7 @@ class WasmExportFunction:
     # function: FunctionSectionOptimize = field(metadata={"description": "Function Sectionのデータ構造"})
     type: TypeSectionOptimize = field(metadata={"description": "Type Sectionのデータ構造"})
     code: "CodeSectionOptimize" = field(metadata={"description": "Code Sectionのデータ構造"})
-    call: Callable[["WasmExec", list[AnyType]], list[AnyType]] = field(metadata={"description": "Functionの実行"})
+    call: Callable[[list[AnyType]], list[AnyType]] = field(metadata={"description": "Functionの実行"})
 
 
 @dataclass
