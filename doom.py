@@ -44,10 +44,10 @@ if __name__ == "__main__":
     ins, export = WasiExportHelperUtil.export("wasi_snapshot_preview1")
     dummy = WasiExportHelperUtil.dummy(optimizer)
 
-    env = WasmExec(optimizer, export + dummy)
+    exec = WasmExec(optimizer, export + dummy)
 
-    ins.init(env=env, fs=files, screen=screen)
+    ins.init(exec=exec, fs=files, screen=screen, environ={"HOME": "/"})
 
     assert set_logger()
-    env.start(b"_start", [])
-    # env.start(b"main", [])
+    exec.start(b"_start", [])
+    # exec.start(b"main", [])

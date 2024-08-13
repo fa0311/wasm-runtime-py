@@ -170,38 +170,43 @@ class Wasi:
     fs: FS
     env: WasmExec
     screen: Optional[Screen]
+    environ: dict[str, str]
 
-    def init(self, env: WasmExec, fs: Optional[FS] = None, screen: Optional[Screen] = None):
-        self.env = env
+    def init(
+        self,
+        exec: WasmExec,
+        fs: Optional[FS] = None,
+        screen: Optional[Screen] = None,
+        environ: Optional[dict[str, str]] = None,
+    ):
+        self.exec = exec
         self.fs = fs or FS()
+        self.screen = screen
+        self.environ = environ or {}
         if screen:
             self.screen = screen
 
     def args_sizes_get(self, argc: int, buf_szv: int) -> tuple[I32]:
-        self.env.memory[argc : argc + 4] = I32.from_int(3).to_bytes()[0:4]
-        self.env.memory[buf_szv : buf_szv + 4] = I32.from_int(32).to_bytes()[0:4]
+        self.exec.memory[argc : argc + 4] = I32.from_int(3).to_bytes()[0:4]
+        self.exec.memory[buf_szv : buf_szv + 4] = I32.from_int(32).to_bytes()[0:4]
         return WasiResult.SUCCESS
 
     def args_get(self, argv: int, buf: I32) -> tuple[I32]:
-        self.env.memory[argv : argv + 4] = buf.to_bytes()[0:4]
-        self.env.memory.store(int(buf), b"doom\0")
+        self.exec.memory[argv : argv + 4] = buf.to_bytes()[0:4]
+        self.exec.memory.store(int(buf), b"doom\0")
 
         return WasiResult.SUCCESS
 
     def environ_sizes_get(self, envc: int, buf_sz: int) -> tuple[I32]:
-        self.env.memory[envc : envc + 4] = I32.from_int(1).to_bytes()[0:4]
-        self.env.memory[buf_sz : buf_sz + 4] = I32.from_int(32).to_bytes()[0:4]
+        self.exec.memory[envc : envc + 4] = I32.from_int(len(self.environ)).to_bytes()[0:4]
+        self.exec.memory[buf_sz : buf_sz + 4] = I32.from_int(32).to_bytes()[0:4]
 
         return WasiResult.SUCCESS
 
     def environ_get(self, a: int, b: I32) -> tuple[I32]:
-        self.env.memory[a : a + 4] = b.to_bytes()[0:4]
+        self.exec.memory[a : a + 4] = b.to_bytes()[0:4]
 
-        aa = {
-            "HOME": b"",
-            "PATH": b"/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
-        }
-        self.env.memory.store(int(b), "\0".join([f"{k}={v}" for k, v in aa.items()]).encode())
+        self.exec.memory.store(int(b), "\0".join([f"{k}={v}" for k, v in self.environ.items()]).encode())
         return WasiResult.SUCCESS
 
     def fd_prestat_get(self, envs: int, buf: int) -> tuple[I32]:
@@ -209,8 +214,8 @@ class Wasi:
             return WasiResult.BADF
 
         name_len = len(self.fs.fds[envs]["dirname"])
-        self.env.memory[buf : buf + 4] = I32.from_int(0).to_bytes()[0:4]
-        self.env.memory[buf + 4 : buf + 8] = I32.from_int(name_len).to_bytes()[0:4]
+        self.exec.memory[buf : buf + 4] = I32.from_int(0).to_bytes()[0:4]
+        self.exec.memory[buf + 4 : buf + 8] = I32.from_int(name_len).to_bytes()[0:4]
 
         return WasiResult.SUCCESS
 
@@ -219,20 +224,20 @@ class Wasi:
             return WasiResult.BADF
 
         f = self.fs.fds[fd]
-        self.env.memory[result : result + 1] = I32.from_int(f["type"]).to_bytes()[0:1]
-        self.env.memory[result + 1 : result + 2] = I32.from_int(0).to_bytes()[0:1]
-        self.env.memory[result + 2 : result + 10] = I64.from_int(I64.get_max()).to_bytes()[0:8]
-        self.env.memory[result + 10 : result + 18] = I64.from_int(I64.get_max()).to_bytes()[0:8]
+        self.exec.memory[result : result + 1] = I32.from_int(f["type"]).to_bytes()[0:1]
+        self.exec.memory[result + 1 : result + 2] = I32.from_int(0).to_bytes()[0:1]
+        self.exec.memory[result + 2 : result + 10] = I64.from_int(I64.get_max()).to_bytes()[0:8]
+        self.exec.memory[result + 10 : result + 18] = I64.from_int(I64.get_max()).to_bytes()[0:8]
 
         return WasiResult.SUCCESS
 
     def fd_prestat_dir_name(self, fd: int, name: int, name_len: int) -> tuple[I32]:
         path = self.fs.fds[fd]["dirname"]
-        self.env.memory.store(name, path)
+        self.exec.memory.store(name, path)
         return WasiResult.SUCCESS
 
     def path_filestat_get(self, fd: int, flags: int, path: int, path_len: int, buff: int) -> tuple[I32]:
-        path_str = self.env.memory[path : path + path_len].tobytes().decode()
+        path_str = self.exec.memory[path : path + path_len].tobytes().decode()
         if path_str not in self.fs.files or not self.fs.files[path_str]["exists"]:
             return WasiResult.BADF
 
@@ -246,14 +251,14 @@ class Wasi:
             size = fh.tell()
             fh.seek(cur, 0)
 
-        self.env.memory[buff : buff + 8] = I64.from_int(1).to_bytes()[0:8]
-        self.env.memory[buff + 8 : buff + 16] = I64.from_int(1).to_bytes()[0:8]
-        self.env.memory[buff + 16 : buff + 17] = I32.from_int(f["type"]).to_bytes()[0:1]
-        self.env.memory[buff + 17 : buff + 24] = I64.from_int(1).to_bytes()[0:7]
-        self.env.memory[buff + 24 : buff + 32] = I64.from_int(size).to_bytes()[0:8]
-        self.env.memory[buff + 32 : buff + 40] = I64.from_int(0).to_bytes()[0:8]
-        self.env.memory[buff + 40 : buff + 48] = I64.from_int(0).to_bytes()[0:8]
-        self.env.memory[buff + 48 : buff + 56] = I64.from_int(0).to_bytes()[0:8]
+        self.exec.memory[buff : buff + 8] = I64.from_int(1).to_bytes()[0:8]
+        self.exec.memory[buff + 8 : buff + 16] = I64.from_int(1).to_bytes()[0:8]
+        self.exec.memory[buff + 16 : buff + 17] = I32.from_int(f["type"]).to_bytes()[0:1]
+        self.exec.memory[buff + 17 : buff + 24] = I64.from_int(1).to_bytes()[0:7]
+        self.exec.memory[buff + 24 : buff + 32] = I64.from_int(size).to_bytes()[0:8]
+        self.exec.memory[buff + 32 : buff + 40] = I64.from_int(0).to_bytes()[0:8]
+        self.exec.memory[buff + 40 : buff + 48] = I64.from_int(0).to_bytes()[0:8]
+        self.exec.memory[buff + 48 : buff + 56] = I64.from_int(0).to_bytes()[0:8]
 
         return WasiResult.SUCCESS
 
@@ -269,14 +274,14 @@ class Wasi:
         fs_flags: int,
         fd: int,
     ) -> tuple[I32]:
-        path_name = self.env.memory[path : path + path_len].tobytes().decode()
+        path_name = self.exec.memory[path : path + path_len].tobytes().decode()
         if path_name not in self.fs.files:
             return WasiResult.NOENT
         else:
             f = self.fs.files[path_name]
             f["exists"] = True
             fd_val = f["fd"]
-            self.env.memory[fd : fd + 4] = I32.from_int(fd_val).to_bytes()[0:4]
+            self.exec.memory[fd : fd + 4] = I32.from_int(fd_val).to_bytes()[0:4]
 
             return WasiResult.SUCCESS
 
@@ -290,7 +295,7 @@ class Wasi:
         f = self.fs.fds[fd]["file"]
         f.seek(offset, whence)
         res = f.tell()
-        self.env.memory[result : result + 8] = I64.from_int(res).to_bytes()[0:8]
+        self.exec.memory[result : result + 8] = I64.from_int(res).to_bytes()[0:8]
         return WasiResult.SUCCESS
 
     def fd_close(self, a: I32):
@@ -300,8 +305,8 @@ class Wasi:
         data_sz = 0
         for i in range(iovs_len):
             iov = iovs + 8 * i
-            off = I32.from_bits(self.env.memory[iov : iov + 4])
-            size = I32.from_bits(self.env.memory[iov + 4 : iov + 8])
+            off = I32.from_bits(self.exec.memory[iov : iov + 4])
+            size = I32.from_bits(self.exec.memory[iov + 4 : iov + 8])
             data_sz += int(size)
 
         data = None
@@ -317,22 +322,22 @@ class Wasi:
         data_off = 0
         for i in range(iovs_len):
             iov = iovs + 8 * i
-            off = I32.from_bits(self.env.memory[iov : iov + 4])
-            size = I32.from_bits(self.env.memory[iov + 4 : iov + 8])
+            off = I32.from_bits(self.exec.memory[iov : iov + 4])
+            size = I32.from_bits(self.exec.memory[iov + 4 : iov + 8])
             d = data[data_off : data_off + int(size)]
-            self.env.memory.store(int(off), d)
+            self.exec.memory.store(int(off), d)
             data_off += len(d)
 
-        self.env.memory[nread : nread + 4] = I32.from_int(data_off).to_bytes()[0:4]
+        self.exec.memory[nread : nread + 4] = I32.from_int(data_off).to_bytes()[0:4]
         return WasiResult.SUCCESS
 
     def fd_write(self, fd: int, iovs: int, iovs_len: int, nwritten: int) -> tuple[I32]:
         data = b""
         for i in range(iovs_len):
             iov = iovs + 8 * i
-            off = I32.from_bits(self.env.memory[iov : iov + 4])
-            size = I32.from_bits(self.env.memory[iov + 4 : iov + 8])
-            data += self.env.memory[int(off) : int(off) + int(size)].tobytes()
+            off = I32.from_bits(self.exec.memory[iov : iov + 4])
+            size = I32.from_bits(self.exec.memory[iov + 4 : iov + 8])
+            data += self.exec.memory[int(off) : int(off) + int(size)].tobytes()
 
         if fd not in self.fs.fds:
             return WasiResult.BADF
@@ -344,12 +349,12 @@ class Wasi:
             if self.screen:
                 self.screen.update_screen()
 
-        self.env.memory[nwritten : nwritten + 4] = I32.from_int(len(data)).to_bytes()[0:4]
+        self.exec.memory[nwritten : nwritten + 4] = I32.from_int(len(data)).to_bytes()[0:4]
         return WasiResult.SUCCESS
 
     def clock_time_get(self, clk_id: int, precision: int, result: int) -> tuple[I32]:
         t = int(time.time_ns())
-        self.env.memory[result : result + 8] = I64.from_int(t).to_bytes()[0:8]
+        self.exec.memory[result : result + 8] = I64.from_int(t).to_bytes()[0:8]
         return WasiResult.SUCCESS
 
     def proc_exit(self, a: int):
@@ -369,7 +374,7 @@ class Wasi:
 
     def random_get(self, a: I32, b: int):
         rand = random.randint(0, 2**32 - 1)
-        self.env.memory[b : b + 4] = I32.from_int(rand).to_bytes()[0:4]
+        self.exec.memory[b : b + 4] = I32.from_int(rand).to_bytes()[0:4]
         return WasiResult.SUCCESS
 
     def sock_open(self, family: int, sock_type: int, fd: int) -> tuple[I32]:
@@ -379,7 +384,7 @@ class Wasi:
         self.socket = socket.socket(family, sock_type)
         res = self.socket.fileno()
 
-        self.env.memory[fd : fd + 4] = I32.from_int(res).to_bytes()[0:4]
+        self.exec.memory[fd : fd + 4] = I32.from_int(res).to_bytes()[0:4]
 
         return WasiResult.SUCCESS
 
@@ -393,17 +398,17 @@ class Wasi:
     ) -> tuple[I32]:
         self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         return WasiResult.SUCCESS
-        flag = I8.from_bits(self.env.memory[flag_ptr : flag_ptr + flag_size])
+        flag = I8.from_bits(self.exec.memory[flag_ptr : flag_ptr + flag_size])
 
         self.socket.setsockopt(level, name, int(flag))
 
         return WasiResult.SUCCESS
 
     def sock_bind(self, fd: int, addr: int, port: int) -> tuple[I32]:
-        off = I32.from_bits(self.env.memory[addr : addr + 4])
-        size = I32.from_bits(self.env.memory[addr + 4 : addr + 8])
+        off = I32.from_bits(self.exec.memory[addr : addr + 4])
+        size = I32.from_bits(self.exec.memory[addr + 4 : addr + 8])
 
-        addr_str = self.env.memory[int(off) : int(off) + int(size)].tobytes()
+        addr_str = self.exec.memory[int(off) : int(off) + int(size)].tobytes()
         addr_str = ".".join([str(x) for x in addr_str])
         self.socket.bind((addr_str, port))
 
