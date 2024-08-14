@@ -1,6 +1,5 @@
 import io
 import logging
-import os
 import random
 import socket as sk
 import sys
@@ -9,7 +8,6 @@ from dataclasses import dataclass
 from typing import Callable, Optional
 
 import numpy as np
-import pygame
 
 from src.tools.logger import NestedLogger
 from src.wasm.optimizer.optimizer import WasmOptimizer
@@ -19,6 +17,11 @@ from src.wasm.runtime.export import WasmExport, WasmExportFunction
 from src.wasm.type.base import AnyType
 from src.wasm.type.numeric.base import NumericType
 from src.wasm.type.numeric.numpy.int import I8, I32, I64
+
+if "pypy" in sys.executable:
+    from src.wasm.runtime.screen.pypy import Screen
+else:
+    from src.wasm.runtime.screen.cpython import Screen
 
 
 class WasiResult:
@@ -37,9 +40,8 @@ class WasiExportHelperUtil:
     logger = NestedLogger(logging.getLogger(__name__))
 
     @classmethod
-    def export(cls, namespace: str) -> tuple["Wasi", list[WasmExport]]:
-        value = Wasi.__dict__.values()
-        ins = Wasi()
+    def export(cls, ins: "WasiBase", namespace: str) -> list[WasmExport]:
+        value = ins.__class__.__dict__.values()
         data: list[WasmExport] = []
         for v in value:
             if isinstance(v, Callable) and v.__name__ != "init":
@@ -78,7 +80,7 @@ class WasiExportHelperUtil:
                     )
                 )
 
-        return (ins, data)
+        return data
 
     @classmethod
     def dummy(cls, opt: WasmSectionsOptimize) -> list[WasmExport]:
@@ -101,48 +103,6 @@ class WasiExportHelperUtil:
     @classmethod
     def unreachable(cls, name: str):
         raise Exception("not implemented wasi function: " + name)
-
-
-class Screen:
-    def __init__(self) -> None:
-        os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "true"
-        self.img_size = (320, 200)
-
-        self.f_scr = io.BytesIO()
-        self.f_pal = io.BytesIO()
-
-        (img_w, img_h) = self.img_size
-        self.scr_size = (img_w * 2, img_h * 2)
-        pygame.init()
-        self.surface = pygame.display.set_mode(self.scr_size)
-        pygame.display.set_caption("DOOM")
-        self.clock = pygame.time.Clock()
-
-    def update_screen(self):
-        for event in pygame.event.get():
-            quit_key = event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE
-            if event.type == pygame.QUIT or quit_key:
-                pygame.quit()
-                sys.exit()
-
-        if len(self.f_pal.getbuffer()) != 3 * 256 or len(self.f_scr.getbuffer()) != 320 * 200:
-            return
-
-        scr = np.frombuffer(self.f_scr.getbuffer(), dtype=np.uint8)
-        pal = np.frombuffer(self.f_pal.getbuffer(), dtype=np.uint8).reshape((256, 3))
-
-        # Convert indexed color to RGB
-        arr = pal[scr]
-
-        data = arr.astype(np.uint8).tobytes()
-
-        img = pygame.image.frombuffer(data, self.img_size, "RGB")
-
-        img_scaled = pygame.transform.scale(img, self.scr_size)
-        self.surface.blit(img_scaled, (0, 0))
-        pygame.display.flip()
-
-        self.clock.tick(60)
 
 
 def stdout_write(data: bytes):
@@ -187,9 +147,15 @@ class FS:
         return {v.fd: v for (k, v) in self.files.items()}
 
 
-class Wasi:
-    fs: FS
+class WasiBase:
     env: WasmExec
+
+    def init(self, exec: WasmExec):
+        self.exec = exec
+
+
+class Wasi(WasiBase):
+    fs: FS
     screen: Optional[Screen]
     environ: dict[str, str]
 
@@ -590,6 +556,8 @@ class Wasi:
         #     self.exec.memory.store(int(off), d)
         #     total_size += len(d)
 
+        print(data.decode())
+
         total_size = 0
         for i in range(ri_data_len):
             iov = ri_data + 8 * i
@@ -618,6 +586,7 @@ class Wasi:
             data += self.exec.memory[int(off) : int(off) + int(size)].tobytes()
 
         socket.send(data)
+        print(data.decode())
         return WasiResult.SUCCESS
 
 
