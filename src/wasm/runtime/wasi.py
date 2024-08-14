@@ -390,11 +390,15 @@ class Wasi:
     def fd_filestat_get(self, a: I32, b: I32):
         raise Exception("not implemented")
 
-    def poll_oneoff(self, in_ptr: int, out_ptr: int, n_subscriptions: int, n_events_ptr: int) -> tuple[I32]:
-        self.exec.memory[out_ptr : out_ptr + 4] = I32.from_int(5).to_bytes()[0:4]
-        self.exec.memory[n_events_ptr : n_events_ptr + 4] = I32.from_int(5).to_bytes()[0:4]
+    # def poll_oneoff(self, in_ptr: int, out_ptr: int, n_subscriptions: int, n_events_ptr: int) -> tuple[I32]:
+    #     self.exec.memory[n_events_ptr : n_events_ptr + 4] = I32.from_int(1).to_bytes()[0:4]
+    #     self.exec.memory[out_ptr : out_ptr + 8] = I64.from_int(0).to_bytes()[0:8]
+    #     self.exec.memory[out_ptr + 8 : out_ptr + 10] = I16.from_int(0).to_bytes()[0:2]
+    #     self.exec.memory[out_ptr + 10 : out_ptr + 11] = I8.from_int(0).to_bytes()[0:1]
+    #     self.exec.memory[out_ptr + 11 : out_ptr + 19] = I64.from_int(1).to_bytes()[0:8]
+    #     self.exec.memory[out_ptr + 19 : out_ptr + 27] = I64.from_int(0).to_bytes()[0:8]
 
-        return WasiResult.SUCCESS
+    #     return WasiResult.SUCCESS
 
     def path_create_directory(self, a: I32, b: I32, c: I32):
         raise Exception("not implemented")
