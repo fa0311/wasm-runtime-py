@@ -37,9 +37,9 @@ if __name__ == "__main__":
     f_doom = open("./assets/doom1.wad", "rb")
 
     files = FS()
-    files.mount("./doom1.wad", 5, f_doom, True)
-    files.mount("./screen.data", 6, screen.f_scr, False)
-    files.mount("./palette.raw", 7, screen.f_pal, False)
+    files.mount("./doom1.wad", f_doom, fd=5, exists=True)
+    files.mount("./screen.data", screen.f_scr, fd=6, exists=False)
+    files.mount("./palette.raw", screen.f_pal, fd=7, exists=False)
 
     ins, export = WasiExportHelperUtil.export("wasi_snapshot_preview1")
     dummy = WasiExportHelperUtil.dummy(optimizer)
