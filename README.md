@@ -23,6 +23,7 @@ Wasm を実行するためのランタイムを Python で実装する。
 
 - Python 3.12 以上
   - 3.9 - 3.11 では深い再帰でクラッシュする
+- Pypy
 
 - NumPy 1.26 以上
   - 古いバージョンで試していない
@@ -49,10 +50,38 @@ Wasm を実行するためのランタイムを Python で実装する。
   - [ ] SIMD instructions の実装
 - [ ] WASI の実装
 
-## インストール
+## 環境の作成
 
 ```sh
+python -m venv .venv
+source venv/bin/activate
 pip install -r requirements.txt 
+```
+
+```sh
+pypy3 -m venv .pypy
+source .pypy/bin/activate
+pypy3 -m pip install -r requirements.txt 
+```
+
+## サンプル用アセットのビルド
+
+```sh
+git submodule update --init --recursive
+rustup target add wasm32-wasi
+
+cd assets/execute
+cargo build --target wasm32-wasi --release 
+cd -
+cd assets/wasm_http_server
+cargo build --target wasm32-wasi --release
+cd -
+cd assets/wasm_static_file_server
+cargo build --target wasm32-wasi --release
+cd -
+cd assets/mewz/examples/hello_server
+cargo build --target wasm32-wasi --release
+cd -
 ```
 
 ## 実行
