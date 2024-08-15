@@ -11,7 +11,6 @@ from src.wasm.runtime.wasi import FS, Wasi, WasiExportHelperUtil
 
 
 def set_logger():
-    np.seterr(all="ignore")
     filename = "latest.log"
     if os.path.exists(filename):
         os.remove(filename)
@@ -53,6 +52,7 @@ if __name__ == "__main__":
 
     ins.init(exec=execute, fs=files, screen=screen, environ={"HOME": "/"})
 
+    np.seterr(all="ignore")
     assert set_logger()
     execute.start(b"_start", [])
     # exec.start(b"main", [])

@@ -11,7 +11,6 @@ from src.wasm.runtime.wasi import FS, Wasi, WasiExportHelperUtil
 
 
 def set_logger():
-    np.seterr(all="ignore")
     filename = "latest.log"
     if os.path.exists(filename):
         os.remove(filename)
@@ -33,6 +32,7 @@ if __name__ == "__main__":
     with open("./assets/read_file.wasm", "rb") as f:
         wasm = f.read()
 
+    np.seterr(all="ignore")
     assert set_logger()
 
     data = WasmLoader().load(wasm)
