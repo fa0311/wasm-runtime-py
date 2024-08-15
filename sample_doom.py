@@ -36,7 +36,7 @@ def set_logger():
 
 
 if __name__ == "__main__":
-    with open("assets/wasidoom2.wasm", "rb") as f:
+    with open("./assets/pywasm3-doom-demo/wasidoom.wasm", "rb") as f:
         wasm = f.read()
 
     data = WasmLoader().load(wasm)
@@ -44,7 +44,7 @@ if __name__ == "__main__":
 
     screen = Screen()
 
-    f_doom = open("./assets/doom1.wad", "rb")
+    f_doom = open("./assets/pywasm3-doom-demo/doom1.wad", "rb")
 
     files = FS()
     files.mount("./doom1.wad", f_doom, fd=5, exists=True)

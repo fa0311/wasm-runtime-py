@@ -1,3 +1,15 @@
 [submodule "testsuite"]
 	path = testsuite
 	url = https://github.com/WebAssembly/testsuite
+[submodule "assets/pywasm3-doom-demo"]
+	path = assets/pywasm3-doom-demo
+	url = https://github.com/wasm3/pywasm3-doom-demo
+[submodule "assets/mewz"]
+	path = assets/mewz
+	url = https://github.com/mewz-project/mewz
+[submodule "assets/wasmedge_wasi_socket"]
+	path = assets/wasmedge_wasi_socket
+	url = https://github.com/second-state/wasmedge_wasi_socket
+[submodule "assets/wasm_http_server"]
+	path = assets/wasm_http_server
+	url = https://github.com/fa0311/wasm_http_server

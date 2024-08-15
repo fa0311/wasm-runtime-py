@@ -1,10 +1,12 @@
 import logging
 import os
 
+import numpy as np
+
 from src.wasm.loader.loader import WasmLoader
 from src.wasm.optimizer.optimizer import WasmOptimizer
 from src.wasm.runtime.exec import WasmExec
-from src.wasm.runtime.wasi import Wasi, WasiExportHelperUtil
+from src.wasm.runtime.wasi import FS, Wasi, WasiExportHelperUtil
 
 
 def set_logger():
@@ -26,7 +28,7 @@ def set_logger():
 
 
 if __name__ == "__main__":
-    with open("assets/hello_world.wasm", "rb") as f:
+    with open("./assets/wasm_http_server/target/wasm32-wasi/release/http_server.wasm", "rb") as f:
         wasm = f.read()
 
     assert set_logger()
@@ -34,12 +36,15 @@ if __name__ == "__main__":
     data = WasmLoader().load(wasm)
     optimizer = WasmOptimizer().optimize(data)
 
+    files = FS()
+    np.seterr(all="ignore")
+
     ins = Wasi()
     export = WasiExportHelperUtil.export(ins, "wasi_snapshot_preview1")
     dummy = WasiExportHelperUtil.dummy(optimizer)
 
     exec = WasmExec(optimizer, export + dummy)
-    ins.init(exec=exec)
+    ins.init(exec=exec, fs=files)
 
     exec.start(b"_start", [])
     # exec.start(b"main", [])

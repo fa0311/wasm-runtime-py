@@ -556,8 +556,6 @@ class Wasi(WasiBase):
         #     self.exec.memory.store(int(off), d)
         #     total_size += len(d)
 
-        print(data.decode())
-
         total_size = 0
         for i in range(ri_data_len):
             iov = ri_data + 8 * i
@@ -586,7 +584,6 @@ class Wasi(WasiBase):
             data += self.exec.memory[int(off) : int(off) + int(size)].tobytes()
 
         socket.send(data)
-        print(data.decode())
         return WasiResult.SUCCESS
 
 

@@ -4,3 +4,5 @@ __pycache__
 .pypy
 *.log
 .ipynb_checkpoints
+.DS_Store
+*.pyc
