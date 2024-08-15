@@ -54,7 +54,7 @@ Wasm を実行するためのランタイムを Python で実装する。
 
 ```sh
 python -m venv .venv
-source venv/bin/activate
+source .venv/bin/activate
 pip install -r requirements.txt 
 ```
 

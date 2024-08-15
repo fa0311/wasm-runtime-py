@@ -1,3 +1,4 @@
+import sys
 from math import ceil, floor, trunc
 
 from src.wasm.optimizer.optimizer import WasmOptimizer
@@ -10,7 +11,8 @@ from src.wasm.type.ref.base import FuncRef
 
 class CodeSectionBlock(CodeSectionRun):
     def unreachable(self):
-        raise Exception("unreachable")
+        print("unreachable")
+        sys.exit(1)
 
     def nop(self):
         pass

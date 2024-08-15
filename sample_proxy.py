@@ -39,7 +39,10 @@ def proxy(name: str, path: str = ""):
     )
     with urllib.request.urlopen(req) as res:
         body = res.read()
-
+    try:
+        body = body.decode().replace("セキュリティ", "インチキ").replace("デジタル", "インチキ").encode("utf-8")
+    except UnicodeDecodeError:
+        pass
     # with open(f"./files{name}", "wb") as f:
     #     f.write(body)
 
@@ -65,6 +68,24 @@ if __name__ == "__main__":
     files.mount(**proxy("/common/img/icon-fb.png"))
     files.mount(**proxy("/common/img/icon-tw.png"))
     files.mount(**proxy("/common/img/icon-yt.png"))
+    files.mount(**proxy("/common/js/vender.js"))
+    files.mount(**proxy("/jinzai/security-camp/2024/camp/zenkoku/m42obm0000005pyq-img/m42obm0000005q3w.png"))
+    files.mount(**proxy("/common/img/icon-search_w.png"))
+    files.mount(**proxy("/jinzai/security-camp/2024/camp/zenkoku/m42obm0000005pyq-img/m42obm0000005q4c.png"))
+    files.mount(**proxy("/common/img/digital-hr/digital-hr_mv_pc.png"))
+    files.mount(**proxy("/common/img/arw-down.png"))
+    files.mount(**proxy("/common/js/common.js"))
+    files.mount(**proxy("/common/img/icon-out.png"))
+    files.mount(**proxy("/common/img/icon-send.png"))
+    files.mount(**proxy("/icon-192x192.png"))
+    files.mount(**proxy("/common/js/jvn.js"))
+    files.mount(**proxy("/jinzai/security-camp/2024/camp/zenkoku/m42obm0000005pyq-img/m42obm0000005r4r.png"))
+    files.mount(**proxy("/jinzai/security-camp/2024/camp/zenkoku/m42obm0000005pyq-img/m42obm0000005r51.png"))
+    files.mount(**proxy("/jinzai/security-camp/2024/camp/zenkoku/m42obm0000005pyq-img/m42obm0000005r5b.png"))
+    files.mount(**proxy("/jvn.rdf"))
+    files.mount(**proxy("/k3q2q4000000ejg8-img/qv6pgp0000000s3p.png"))
+    files.mount(**proxy("/k3q2q4000000ejg8-img/ps6vr7000000ih98.png"))
+    files.mount(**proxy("/k3q2q4000000ejg8-img/ps6vr7000000iha0.png"))
 
     ins = Wasi()
     export = WasiExportHelperUtil.export(ins, "wasi_snapshot_preview1")
