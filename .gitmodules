@@ -16,3 +16,6 @@
 [submodule "assets/wasm_static_file_server"]
 	path = assets/wasm_static_file_server
 	url = https://github.com/saza-ku/wasm_static_file_server
+[submodule "assets/doom-wasm"]
+	path = assets/doom-wasm
+	url = https://github.com/cloudflare/doom-wasm
