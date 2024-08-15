@@ -13,3 +13,6 @@
 [submodule "assets/wasm_http_server"]
 	path = assets/wasm_http_server
 	url = https://github.com/fa0311/wasm_http_server
+[submodule "assets/wasm_static_file_server"]
+	path = assets/wasm_static_file_server
+	url = https://github.com/saza-ku/wasm_static_file_server

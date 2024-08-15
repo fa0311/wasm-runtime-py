@@ -1,7 +1,7 @@
 import io
 
 import numpy as np
-from PIL import Image  # type: ignore
+from PIL import Image  # type: ignore # noqa
 
 
 class Screen:

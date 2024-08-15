@@ -12,6 +12,7 @@ from src.wasm.type.numeric.numpy.int import I32
 
 
 def set_logger():
+    np.seterr(all="ignore")
     filename = "latest.log"
     if os.path.exists(filename):
         os.remove(filename)
@@ -60,7 +61,6 @@ if __name__ == "__main__":
     optimizer = WasmOptimizer().optimize(data)
 
     files = FS()
-    np.seterr(all="ignore")
 
     env_ins = Env()
     env = WasiExportHelperUtil.export(env_ins, "env")

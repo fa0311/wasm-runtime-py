@@ -14,14 +14,10 @@ from src.wasm.optimizer.optimizer import WasmOptimizer
 from src.wasm.optimizer.struct import CodeSectionOptimize, TypeSectionOptimize, WasmSectionsOptimize
 from src.wasm.runtime.exec import WasmExec
 from src.wasm.runtime.export import WasmExport, WasmExportFunction
+from src.wasm.runtime.screen.screen import Screen
 from src.wasm.type.base import AnyType
 from src.wasm.type.numeric.base import NumericType
 from src.wasm.type.numeric.numpy.int import I8, I32, I64
-
-if "pypy" in sys.executable:
-    from src.wasm.runtime.screen.pypy import Screen
-else:
-    from src.wasm.runtime.screen.cpython import Screen
 
 
 class WasiResult:
@@ -57,6 +53,7 @@ class WasiExportHelperUtil:
                     args_int = [
                         x if issubclass(annotations[i], NumericType) else annotations[i](x) for i, x in enumerate(args)
                     ]
+
                     return getattr(ins, name)(*args_int) or []
 
                 data.append(
@@ -196,12 +193,12 @@ class Wasi(WasiBase):
         self.exec.memory.store(int(b), "\0".join([f"{k}={v}" for k, v in self.environ.items()]).encode())
         return WasiResult.SUCCESS
 
-    def fd_prestat_get(self, envs: int, buf: int) -> tuple[I32]:
-        if envs != 3:
+    def fd_prestat_get(self, fd: int, buf: int) -> tuple[I32]:
+        if fd != 3:
             return WasiResult.BADF
 
-        assert self.fs.fds[envs].dirname
-        name_len = len(self.fs.fds[envs].dirname or "")
+        assert self.fs.fds[fd].dirname
+        name_len = len(self.fs.fds[fd].dirname or "")
         self.exec.memory[buf : buf + 4] = I32.from_int(0).to_bytes()[0:4]
         self.exec.memory[buf + 4 : buf + 8] = I32.from_int(name_len).to_bytes()[0:4]
 
@@ -265,7 +262,7 @@ class Wasi(WasiBase):
         fd: int,
     ) -> tuple[I32]:
         path_name = self.exec.memory[path : path + path_len].tobytes().decode()
-        if path_name not in self.fs.files:
+        if path_name not in self.fs.files.keys():
             return WasiResult.NOENT
         else:
             f = self.fs.files[path_name]
@@ -288,7 +285,15 @@ class Wasi(WasiBase):
         self.exec.memory[result : result + 8] = I64.from_int(res).to_bytes()[0:8]
         return WasiResult.SUCCESS
 
-    def fd_close(self, a: I32):
+    def fd_close(self, fd: int):
+        if fd not in self.fs.fds:
+            return WasiResult.BADF
+
+        f = self.fs.fds[fd].buffer
+        if not f:
+            return WasiResult.INVAL
+
+        f.seek(0)
         return WasiResult.SUCCESS
 
     def fd_read(self, fd: int, iovs: int, iovs_len: int, nread: int):
@@ -305,8 +310,8 @@ class Wasi(WasiBase):
             if b.buffer:
                 data = b.buffer.read(data_sz)
 
-        if not data:
-            return WasiResult.BADF
+        # if not data:
+        #     return WasiResult.BADF
 
         total_size = 0
         for i in range(iovs_len):
@@ -354,7 +359,7 @@ class Wasi(WasiBase):
         sys.exit(a)
 
     def fd_filestat_get(self, a: I32, b: I32):
-        raise Exception("not implemented")
+        return WasiResult.SUCCESS
 
     # def poll_oneoff(self, in_ptr: int, out_ptr: int, n_subscriptions: int, n_events_ptr: int) -> tuple[I32]:
     #     self.exec.memory[n_events_ptr : n_events_ptr + 4] = I32.from_int(1).to_bytes()[0:4]
@@ -456,76 +461,6 @@ class Wasi(WasiBase):
 
         return WasiResult.SUCCESS
 
-    # Expect<uint32_t> WasiSockRecvV1::body(const Runtime::CallingFrame &Frame,
-    #                                       int32_t Fd, uint32_t RiDataPtr,
-    #                                       uint32_t RiDataLen, uint32_t RiFlags,
-    #                                       uint32_t /* Out */ RoDataLenPtr,
-    #                                       uint32_t /* Out */ RoFlagsPtr) {
-    #   // Check memory instance from module.
-    #   auto *MemInst = Frame.getMemoryByIndex(0);
-    #   if (MemInst == nullptr) {
-    #     return __WASI_ERRNO_FAULT;
-    #   }
-
-    #   __wasi_riflags_t WasiRiFlags;
-    #   if (auto Res = cast<__wasi_riflags_t>(RiFlags); unlikely(!Res)) {
-    #     return Res.error();
-    #   } else {
-    #     WasiRiFlags = *Res;
-    #   }
-
-    #   const __wasi_size_t WasiRiDataLen = RiDataLen;
-    #   if (unlikely(WasiRiDataLen > WASI::kIOVMax)) {
-    #     return __WASI_ERRNO_INVAL;
-    #   }
-
-    #   // Check for invalid address.
-    #   const auto RiDataArray =
-    #       MemInst->getSpan<__wasi_iovec_t>(RiDataPtr, WasiRiDataLen);
-    #   if (unlikely(RiDataArray.size() != WasiRiDataLen)) {
-    #     return __WASI_ERRNO_FAULT;
-    #   }
-
-    #   auto *const RoDataLen = MemInst->getPointer<__wasi_size_t *>(RoDataLenPtr);
-    #   if (unlikely(RoDataLen == nullptr)) {
-    #     return __WASI_ERRNO_FAULT;
-    #   }
-
-    #   auto *const RoFlags = MemInst->getPointer<__wasi_roflags_t *>(RoFlagsPtr);
-    #   if (unlikely(RoFlags == nullptr)) {
-    #     return __WASI_ERRNO_FAULT;
-    #   }
-    #   __wasi_size_t TotalSize = 0;
-    #   StaticVector<Span<uint8_t>, WASI::kIOVMax> WasiRiData;
-
-    #   for (auto &RiData : RiDataArray) {
-    #     // Capping total size.
-    #     const __wasi_size_t Space =
-    #         std::numeric_limits<__wasi_size_t>::max() - TotalSize;
-    #     const __wasi_size_t BufLen =
-    #         unlikely(RiData.buf_len > Space) ? Space : RiData.buf_len;
-    #     TotalSize += BufLen;
-
-    #     // Check for invalid address.
-    #     const auto RiDataArr = MemInst->getSpan<uint8_t>(RiData.buf, BufLen);
-    #     // Check for invalid address.
-    #     if (unlikely(RiDataArr.size() != BufLen)) {
-    #       return __WASI_ERRNO_FAULT;
-    #     }
-    #     WasiRiData.emplace_back_unchecked(RiDataArr);
-    #   }
-
-    #   const __wasi_fd_t WasiFd = Fd;
-
-    #   if (auto Res =
-    #           Env.sockRecv(WasiFd, WasiRiData, WasiRiFlags, *RoDataLen, *RoFlags);
-    #       unlikely(!Res)) {
-    #     return Res.error();
-    #   }
-
-    #   return __WASI_ERRNO_SUCCESS;
-    # }
-
     def sock_recv(
         self,
         fd: int,
@@ -544,17 +479,6 @@ class Wasi(WasiBase):
             off = I32.from_bits(self.exec.memory[iov : iov + 4])
             size = I32.from_bits(self.exec.memory[iov + 4 : iov + 8])
             data += socket.recv(int(size))
-
-        # total_size = 0
-        # for i in range(iovs_len):
-        #     iov = iovs + 8 * i
-        #     max_space = int(I32.from_bits(self.exec.memory[iov + 4 : iov + 8]))
-        #     space = min(len(data) - total_size, max_space)
-        #     off = I32.from_bits(self.exec.memory[iov : iov + 4])
-        #     size = I32.from_int(space)
-        #     d = data[total_size : total_size + int(size)]
-        #     self.exec.memory.store(int(off), d)
-        #     total_size += len(d)
 
         total_size = 0
         for i in range(ri_data_len):

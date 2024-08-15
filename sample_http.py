@@ -10,6 +10,7 @@ from src.wasm.runtime.wasi import FS, Wasi, WasiExportHelperUtil
 
 
 def set_logger():
+    np.seterr(all="ignore")
     filename = "latest.log"
     if os.path.exists(filename):
         os.remove(filename)
@@ -37,7 +38,6 @@ if __name__ == "__main__":
     optimizer = WasmOptimizer().optimize(data)
 
     files = FS()
-    np.seterr(all="ignore")
 
     ins = Wasi()
     export = WasiExportHelperUtil.export(ins, "wasi_snapshot_preview1")

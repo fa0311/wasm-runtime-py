@@ -3,7 +3,7 @@ import os
 import sys
 
 import numpy as np
-import pygame  # type: ignore
+import pygame  # type: ignore # noqa
 
 
 class Screen:

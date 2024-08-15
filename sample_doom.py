@@ -1,23 +1,17 @@
 import logging
 import os
-import sys
+
+import numpy as np
 
 from src.wasm.loader.loader import WasmLoader
 from src.wasm.optimizer.optimizer import WasmOptimizer
 from src.wasm.runtime.exec import WasmExec
+from src.wasm.runtime.screen.screen import Screen
 from src.wasm.runtime.wasi import FS, Wasi, WasiExportHelperUtil
-
-if "pypy" in sys.executable:
-    import pypyjit  # type: ignore
-
-    from src.wasm.runtime.screen.pypy import Screen
-
-    pypyjit.set_param("max_unroll_recursion=-1")
-else:
-    from src.wasm.runtime.screen.cpython import Screen
 
 
 def set_logger():
+    np.seterr(all="ignore")
     filename = "latest.log"
     if os.path.exists(filename):
         os.remove(filename)
