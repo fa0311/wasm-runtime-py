@@ -262,7 +262,6 @@ class Wasi(WasiBase):
         fd: int,
     ) -> tuple[I32]:
         path_name = self.exec.memory[path : path + path_len].tobytes().decode()
-        print(f"path_open: {path_name}")
         if path_name not in self.fs.files.keys():
             return WasiResult.NOENT
         else:
